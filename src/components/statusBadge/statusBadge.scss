@@ -1,0 +1,27 @@
+.statusBadge {
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusBadge.available {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.35);
+}
+
+.statusBadge.sold {
+  background: rgba(255, 92, 92, 0.15);
+  color: #ff5c5c;
+  border: 1px solid rgba(255, 92, 92, 0.35);
+}
+
+.statusBadge.rented {
+  background: rgba(254, 206, 81, 0.15);
+  color: #fece51;
+  border: 1px solid rgba(254, 206, 81, 0.35);
+}

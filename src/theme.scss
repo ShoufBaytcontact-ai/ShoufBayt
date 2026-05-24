@@ -1,0 +1,81 @@
+:root,
+[data-theme="dark"] {
+  --bg-main: #0f1115;
+  --bg-card: #171a21;
+  --bg-card-dark: #11141a;
+
+  --text-main: #f5f7fa;
+  --text-secondary: #a9b0bc;
+
+  --border-color: #2a2f3a;
+
+  --accent: #fece51;
+  --accent-hover: #ffd970;
+
+  --shadow-color: rgba(0, 0, 0, 0.35);
+
+  --button-light: #ffffff;
+
+  --nav-bg: rgba(15, 17, 21, 0.94);
+  --mobile-menu-bg: rgba(15, 17, 21, 0.98);
+
+  --icon-filter: invert(90%);
+}
+
+[data-theme="light"] {
+  --bg-main: #f6f7fb;
+  --bg-card: #ffffff;
+  --bg-card-dark: #f0f2f6;
+
+  --text-main: #121826;
+  --text-secondary: #5f6b7a;
+
+  --border-color: #d9dee8;
+
+  --accent: #d9a21b;
+  --accent-hover: #f0bd3d;
+
+  --shadow-color: rgba(18, 24, 38, 0.08);
+
+  --button-light: #ffffff;
+
+  --nav-bg: rgba(255, 255, 255, 0.94);
+  --mobile-menu-bg: rgba(255, 255, 255, 0.98);
+
+  --icon-filter: invert(15%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+body {
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.pageFade {
+  animation: pageFadeIn 0.28s ease both;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

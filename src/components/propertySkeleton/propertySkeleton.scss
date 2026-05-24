@@ -1,0 +1,112 @@
+@import "../../responsive.scss";
+
+.propertySkeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.propertySkeleton {
+  width: 100%;
+  min-height: 300px;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  border-radius: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 45px var(--shadow-color);
+  overflow: hidden;
+
+  @include md {
+    grid-template-columns: 1fr;
+  }
+
+  .skeletonImage,
+  .skeletonContent span,
+  .skeletonContent h3,
+  .skeletonContent p,
+  .skeletonFeatures small,
+  .skeletonActions button {
+    background: linear-gradient(
+      90deg,
+      var(--bg-main),
+      rgba(254, 206, 81, 0.12),
+      var(--bg-main)
+    );
+    background-size: 220% 100%;
+    animation: skeletonMove 1.25s ease-in-out infinite;
+  }
+
+  .skeletonImage {
+    min-height: 300px;
+
+    @include md {
+      min-height: 220px;
+    }
+  }
+
+  .skeletonContent {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    span {
+      width: 120px;
+      height: 32px;
+      border-radius: 999px;
+    }
+
+    h3 {
+      width: 70%;
+      height: 34px;
+      border-radius: 12px;
+      margin: 0;
+    }
+
+    p {
+      width: 100%;
+      height: 56px;
+      border-radius: 14px;
+      margin: 0;
+    }
+
+    .skeletonFeatures {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+
+      @include sm {
+        grid-template-columns: 1fr;
+      }
+
+      small {
+        height: 78px;
+        border-radius: 18px;
+      }
+    }
+
+    .skeletonActions {
+      margin-top: auto;
+      display: flex;
+      gap: 12px;
+
+      button {
+        width: 130px;
+        height: 50px;
+        border: none;
+        border-radius: 16px;
+      }
+    }
+  }
+}
+
+@keyframes skeletonMove {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}

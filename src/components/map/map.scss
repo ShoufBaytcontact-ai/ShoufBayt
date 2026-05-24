@@ -1,0 +1,173 @@
+.mapWrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  position: relative;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--bg-main);
+
+  .map {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    z-index: 1;
+  }
+
+  .leaflet-container {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    background: var(--bg-main);
+    font-family: inherit;
+  }
+
+  .leaflet-control-zoom {
+    border: none;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+
+    a {
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      font-size: 18px;
+      font-weight: 950;
+      transition: 0.25s ease;
+
+      &:first-child {
+        border-radius: 12px 12px 0 0;
+      }
+
+      &:last-child {
+        border-radius: 0 0 12px 12px;
+      }
+
+      &:hover {
+        background: var(--accent);
+        color: #111111;
+      }
+    }
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(15, 15, 15, 0.68);
+    color: white;
+    border-radius: 999px 0 0 0;
+    padding: 4px 8px;
+    font-size: 10px;
+    backdrop-filter: blur(12px);
+
+    a {
+      color: var(--accent);
+    }
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 18px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  .leaflet-popup-content {
+    margin: 0;
+    min-width: 210px;
+  }
+
+  .leaflet-popup-tip {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+  }
+
+  .leaflet-marker-icon {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+  }
+
+  .mapInfoBadge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 500;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #111111;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 950;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  }
+
+  .mapEmptyOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 450;
+    background:
+      radial-gradient(circle at top left, rgba(254, 206, 81, 0.12), transparent 34%),
+      rgba(15, 15, 15, 0.72);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    text-align: center;
+
+    div {
+      max-width: 320px;
+      padding: 28px;
+      border-radius: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+    }
+
+    span {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 16px;
+      border-radius: 20px;
+      background: rgba(254, 206, 81, 0.12);
+      border: 1px solid rgba(254, 206, 81, 0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      color: var(--text-main);
+      font-size: 21px;
+      font-weight: 950;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+}
+
+body.light {
+  .mapWrapper {
+    .leaflet-control-attribution {
+      background: rgba(255, 255, 255, 0.78);
+      color: #111111;
+    }
+
+    .mapEmptyOverlay {
+      background:
+        radial-gradient(circle at top left, rgba(254, 206, 81, 0.16), transparent 34%),
+        rgba(255, 255, 255, 0.72);
+    }
+  }
+}

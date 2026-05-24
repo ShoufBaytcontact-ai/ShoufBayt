@@ -1,0 +1,220 @@
+@import "../../responsive.scss";
+
+.smartSearchAssistant {
+  width: 100%;
+  padding: 28px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(254, 206, 81, 0.13), transparent 55%),
+    var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 45px var(--shadow-color);
+  box-sizing: border-box;
+
+  @include sm {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  .smartHeader {
+    margin-bottom: 20px;
+
+    span {
+      width: fit-content;
+      min-height: 32px;
+      padding: 0 13px;
+      border-radius: 999px;
+      background: rgba(254, 206, 81, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(254, 206, 81, 0.25);
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 13px;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      color: var(--text-main);
+      font-size: 30px;
+      font-weight: 950;
+
+      @include sm {
+        font-size: 24px;
+      }
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+  }
+
+  .smartInputBox {
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-main);
+      outline: none;
+      resize: vertical;
+      font-size: 15px;
+      line-height: 1.7;
+      box-sizing: border-box;
+
+      &::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.75;
+      }
+
+      &:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(254, 206, 81, 0.12);
+      }
+    }
+
+    .smartActions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      @include sm {
+        flex-direction: column;
+      }
+
+      button {
+        min-height: 48px;
+        padding: 0 20px;
+        border: none;
+        border-radius: 15px;
+        background: var(--bg-main);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        font-size: 14px;
+        font-weight: 950;
+        cursor: pointer;
+        transition: 0.25s ease;
+
+        &:hover:not(:disabled) {
+          color: var(--accent);
+          border-color: var(--accent);
+          transform: translateY(-2px);
+        }
+
+        &.searchBtn {
+          background: var(--accent);
+          color: #111111;
+          border-color: var(--accent);
+
+          &:hover:not(:disabled) {
+            background: var(--accent-hover);
+            color: #111111;
+          }
+        }
+
+        &:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  .smartExamples {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    button {
+      min-height: 36px;
+      padding: 0 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(254, 206, 81, 0.24);
+      background: rgba(254, 206, 81, 0.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.25s ease;
+
+      &:hover {
+        background: var(--accent);
+        color: #111111;
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  .smartError {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 118, 118, 0.1);
+    color: #ff7676;
+    border: 1px solid rgba(255, 118, 118, 0.25);
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.6;
+  }
+
+  .detectedBox {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+
+    h3 {
+      margin: 0 0 15px;
+      color: var(--text-main);
+      font-size: 20px;
+      font-weight: 950;
+    }
+
+    .detectedGrid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+
+      @include md {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @include sm {
+        grid-template-columns: 1fr;
+      }
+
+      div {
+        padding: 13px;
+        border-radius: 15px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+
+        span {
+          display: block;
+          margin-bottom: 6px;
+          color: var(--text-secondary);
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        b {
+          color: var(--text-main);
+          font-size: 14px;
+          font-weight: 950;
+          text-transform: capitalize;
+        }
+      }
+    }
+  }
+}

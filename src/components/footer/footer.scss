@@ -1,0 +1,267 @@
+@import "../../responsive.scss";
+
+.footer {
+  width: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(254, 206, 81, 0.12), transparent 34%),
+    linear-gradient(180deg, var(--bg-card), var(--bg-main));
+  color: var(--text-main);
+  border-top: 1px solid var(--border-color);
+  padding: 55px 40px 24px;
+  box-sizing: border-box;
+
+  @include md {
+    padding: 45px 24px 22px;
+  }
+
+  @include sm {
+    padding: 35px 14px 20px;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  .footerContainer {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 0.7fr 0.8fr 1fr;
+    gap: 38px;
+    padding-bottom: 34px;
+
+    @include lg {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include sm {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+
+  .footerBrand {
+    .footerLogo {
+      width: fit-content;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      color: var(--text-main);
+      margin-bottom: 18px;
+
+      .footerLogoIcon {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        position: relative;
+        box-shadow: 0 14px 30px rgba(254, 206, 81, 0.18);
+        overflow: hidden;
+
+        .roof {
+          position: absolute;
+          width: 30px;
+          height: 30px;
+          top: 10px;
+          left: 12px;
+          border-top: 4px solid #111111;
+          border-left: 4px solid #111111;
+          transform: rotate(45deg);
+          border-radius: 3px;
+        }
+
+        .tower {
+          position: absolute;
+          width: 27px;
+          height: 24px;
+          left: 14px;
+          bottom: 10px;
+          border-radius: 4px;
+          background: #111111;
+        }
+
+        .door {
+          position: absolute;
+          width: 7px;
+          height: 12px;
+          left: 24px;
+          bottom: 10px;
+          border-radius: 4px 4px 0 0;
+          background: var(--accent);
+        }
+      }
+
+      .footerLogoText {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+
+        span {
+          color: var(--text-main);
+          font-size: 22px;
+          font-weight: 950;
+          letter-spacing: -0.5px;
+        }
+
+        small {
+          color: var(--text-secondary);
+          font-size: 12px;
+          font-weight: 850;
+          margin-top: 5px;
+        }
+      }
+    }
+
+    > p {
+      max-width: 430px;
+      margin: 0 0 22px;
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .footerSocials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      a {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--bg-main);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 900;
+        transition: 0.25s ease;
+
+        &:hover {
+          color: #111111;
+          background: var(--accent);
+          border-color: var(--accent);
+          transform: translateY(-2px);
+        }
+      }
+    }
+  }
+
+  .footerColumn,
+  .footerContact {
+    h3 {
+      margin: 0 0 18px;
+      color: var(--text-main);
+      font-size: 18px;
+      font-weight: 950;
+      letter-spacing: -0.25px;
+      position: relative;
+      padding-bottom: 12px;
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 38px;
+        height: 3px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+    }
+  }
+
+  .footerColumn {
+    display: flex;
+    flex-direction: column;
+
+    a {
+      width: fit-content;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 850;
+      margin-bottom: 12px;
+      transition: 0.25s ease;
+
+      &:hover {
+        color: var(--accent);
+        transform: translateX(5px);
+      }
+    }
+  }
+
+  .footerContact {
+    .contactItem {
+      padding: 15px;
+      border-radius: 18px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      margin-bottom: 12px;
+      transition: 0.25s ease;
+
+      &:hover {
+        border-color: rgba(254, 206, 81, 0.42);
+        transform: translateY(-2px);
+      }
+
+      span {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.45px;
+      }
+
+      p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+    }
+  }
+
+  .footerBottom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-top: 22px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    @include sm {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+
+      a {
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 850;
+        transition: 0.25s ease;
+
+        &:hover {
+          color: var(--accent);
+        }
+      }
+    }
+  }
+}

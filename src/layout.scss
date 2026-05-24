@@ -1,0 +1,19 @@
+.layout {
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-main);
+  transition: background 0.3s ease, color 0.3s ease;
+
+  .content {
+    min-height: calc(100vh - 90px);
+    max-width: 1366px;
+    margin: 0 auto;
+    padding: 0 20px;
+    background: var(--bg-main);
+    box-sizing: border-box;
+
+    @media (max-width: 738px) {
+      padding: 0 14px;
+    }
+  }
+}
