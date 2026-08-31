@@ -1,8 +1,10 @@
 html {
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 body {
+  width: 100%;
   overflow-x: hidden;
 }
 
@@ -29,15 +31,91 @@ textarea:disabled {
   box-sizing: border-box;
 }
 
+/* Soften common hardcoded dark panels toward theme tokens where possible */
+.pageCard,
+.panelCard,
+.dashboardCard {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-soft);
+}
+
 @media (max-width: 768px) {
+  :root,
+  [data-theme="light"],
+  body.light,
+  [data-theme="dark"],
+  body.dark {
+    --page-pad: 16px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+  }
+
   body {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   input,
   select,
   textarea,
   button {
-    font-size: 14px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .propertyCard,
+  .officeListing,
+  .leadBrief,
+  .profilePostCard,
+  .listingPathCard,
+  .requestCard,
+  .planCard {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .propertyCard h2 {
+    min-height: 0;
+    font-size: 1.08rem;
+  }
+
+  .propertyCard .propertyMedia,
+  .officeListingMedia,
+  .leadBriefMedia,
+  .profilePostImage {
+    aspect-ratio: 4 / 3;
+    height: auto;
+    min-height: 0;
+  }
+
+  .propertyCard .propertyContent {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .propertyCard .mediaPrice strong {
+    font-size: 1.28rem;
+  }
+
+  .propertyCard .detailsBtn,
+  .propertyCard .iconBtn {
+    min-height: 44px;
+  }
+
+  .propertyCard .iconBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cardsContainer,
+  .homeLatestGrid,
+  .recommendedGrid,
+  .officeListingGrid,
+  .listingGrid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
   }
 }

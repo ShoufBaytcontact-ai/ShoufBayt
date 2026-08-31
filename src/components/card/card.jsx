@@ -1,9 +1,16 @@
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./card.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import StatusBadge from "../statusBadge/statusBadge";
+import { getListingPhone, toCallHref } from "../../lib/listingContact";
+import {
+  canViewPropertyDetails,
+  isPropertyUnavailable,
+  toUiPropertyStatus,
+} from "../../lib/propertyStatus";
 
 function LocationIcon() {
   return (
@@ -75,6 +82,14 @@ function ChatIcon() {
   );
 }
 
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M7 4h3.2l1 4.2-2.1 1.2a12.2 12.2 0 0 0 5.5 5.5l1.2-2.1 4.2 1V17c0 .9-.7 1.6-1.6 1.6C9.6 18.6 5.4 14.4 5.4 7.6 5.4 6.7 6.1 6 7 6Z" />
+    </svg>
+  );
+}
+
 function ArrowIcon() {
   return (
     <svg viewBox="0 0 24 24">
@@ -82,6 +97,26 @@ function ArrowIcon() {
       <path d="M13 6l6 6-6 6" />
     </svg>
   );
+}
+
+function getImageUrl(image, fallback = "/no-image.png") {
+  const SERVER_URL = (
+    process.env.REACT_APP_API_URL || "http://localhost:8800/api"
+  ).replace("/api", "");
+
+  if (!image || typeof image !== "string") {
+    return fallback;
+  }
+
+  if (
+    image.startsWith("http") ||
+    image.startsWith("data:") ||
+    image.startsWith("/no-")
+  ) {
+    return image;
+  }
+
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 function getPostData(item) {
@@ -104,17 +139,10 @@ function formatPrice(price) {
   return numberPrice.toLocaleString();
 }
 
-function formatLabel(value, fallback = "Property") {
-  if (!value) {
-    return fallback;
-  }
-
-  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
-}
-
 function Card({ item }) {
   const navigate = useNavigate();
   const { currentUser } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const { post, postId } = getPostData(item);
 
@@ -126,38 +154,56 @@ function Card({ item }) {
     return null;
   }
 
-  const status = String(post.status || "available").toLowerCase();
-  const isUnavailable = status === "sold" || status === "rented";
+  const status = toUiPropertyStatus(post.status);
+  const isUnavailable = isPropertyUnavailable(post.status);
 
   const ownerId = String(post.userId || post.user?.id || "");
   const currentUserId = String(currentUser?.id || "");
   const isOwner = Boolean(currentUserId && ownerId && currentUserId === ownerId);
+  const listingPhone =
+    post.listingPhone || getListingPhone(post.user) || getListingPhone(post);
+  const callHref = toCallHref(listingPhone);
+  const canCall = !isOwner && !isUnavailable;
+  const canOpenDetails = canViewPropertyDetails(post.status, {
+    userId: currentUserId,
+    role: currentUser?.role,
+    listingAgentId: ownerId,
+    homeownerId: post.requestedByUserId,
+  });
 
-  const title = post.title || "Untitled Property";
-  const city = post.city || "Unknown City";
-  const address = post.address || "No address available";
+  const title = post.title || t("card.fallback.untitled");
+  const city = post.city || t("card.fallback.unknownCity");
+  const address = post.address || t("card.fallback.noAddress");
   const bedroom = post.bedroom ?? 0;
   const bathroom = post.bathroom ?? 0;
   const propertySize = post.postDetail?.size || post.size || 0;
 
   const images = Array.isArray(post.images) ? post.images : [];
-  const mainImage = images[0] || "/no-image.png";
+  const mainImage = getImageUrl(images[0], "/no-image.png");
 
+  const listingKind = String(post.listingType || post.type || "").toLowerCase();
   const dealLabel =
-    post.type === "rent"
-      ? "For Rent"
-      : post.type === "buy"
-      ? "For Sale"
-      : "Property";
+    listingKind === "rent"
+      ? t("card.labels.forRent")
+      : listingKind === "buy" || listingKind === "sale"
+      ? t("card.labels.forSale")
+      : t("card.labels.property");
 
-  const propertyLabel = formatLabel(post.property);
+  const propertyLabel = post.property
+    ? t(`card.propertyTypes.${post.property}`, {
+        defaultValue: String(post.property).charAt(0).toUpperCase() + String(post.property).slice(1),
+      })
+    : t("card.labels.property");
+
   const formattedPrice = formatPrice(post.price);
 
-  const unavailableText = status === "sold" ? "Sold" : "Rented";
+  const unavailableText =
+    status === "sold" ? t("card.status.sold") : t("card.status.rented");
+
   const unavailableMessage =
     status === "sold"
-      ? "This property has already been sold."
-      : "This property has already been rented.";
+      ? t("card.messages.sold")
+      : t("card.messages.rented");
 
   const handleSave = async () => {
     if (!currentUser) {
@@ -177,7 +223,7 @@ function Card({ item }) {
     } catch (err) {
       setSaved((prev) => !prev);
       console.log("SAVE PROPERTY ERROR:", err);
-      alert(err.response?.data?.message || "Failed to save property.");
+      alert(err.response?.data?.message || t("card.alerts.saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -195,12 +241,12 @@ function Card({ item }) {
     }
 
     if (!ownerId) {
-      alert("Cannot find the owner of this property.");
+      alert(t("card.alerts.ownerNotFound"));
       return;
     }
 
     if (isOwner) {
-      alert("You cannot send a message to yourself.");
+      alert(t("card.alerts.cannotMessageYourself"));
       return;
     }
 
@@ -212,6 +258,7 @@ function Card({ item }) {
       setIsOpeningChat(true);
 
       const res = await apiRequest.post("/chats", {
+        propertyId: postId,
         receiverId: ownerId,
       });
 
@@ -222,63 +269,71 @@ function Card({ item }) {
       });
     } catch (err) {
       console.log("OPEN CHAT ERROR:", err);
-      alert(err.response?.data?.message || "Failed to open chat.");
+      alert(err.response?.data?.message || t("card.alerts.chatFailed"));
     } finally {
       setIsOpeningChat(false);
     }
   };
 
+  const media = (
+    <>
+      <img
+        src={mainImage}
+        alt={title}
+        onError={(e) => {
+          e.currentTarget.src = "/no-image.png";
+        }}
+      />
+
+      <div className="mediaShade"></div>
+
+      <div className="mediaTop">
+        <span className="dealBadge">{dealLabel}</span>
+        <span className="typeBadge">{propertyLabel}</span>
+      </div>
+
+      <div className="mediaPrice">
+        <small>{t("card.labels.price")}</small>
+        <strong>
+          <span>$</span>
+          {formattedPrice}
+        </strong>
+      </div>
+
+      {isUnavailable && (
+        <div className="unavailableOverlay">{unavailableText}</div>
+      )}
+    </>
+  );
+
   return (
     <article
       className={isUnavailable ? "propertyCard unavailableCard" : "propertyCard"}
     >
-      <Link to={`/properties/${postId}`} className="propertyMedia">
-        <img
-          src={mainImage}
-          alt={title}
-          onError={(e) => {
-            e.currentTarget.src = "/no-image.png";
-          }}
-        />
-
-        <div className="mediaShade"></div>
-
-        <div className="mediaTop">
-          <span>{dealLabel}</span>
-          <span>{propertyLabel}</span>
-        </div>
-
-        <div className="mediaPrice">
-          <small>Price</small>
-          <strong>
-            <span>$</span>
-            {formattedPrice}
-          </strong>
-        </div>
-
-        {isUnavailable && (
-          <div className="unavailableOverlay">{unavailableText}</div>
-        )}
-      </Link>
+      {canOpenDetails ? (
+        <Link to={`/properties/${postId}`} className="propertyMedia">
+          {media}
+        </Link>
+      ) : (
+        <div className="propertyMedia">{media}</div>
+      )}
 
       <div className="propertyContent">
         <div className="propertyTop">
-          <div>
-            <span className="cityBadge">{city}</span>
-
-            <h2>
-              <Link to={`/properties/${postId}`}>{title}</Link>
-            </h2>
-          </div>
-
+          <span className="cityBadge">{city}</span>
           <StatusBadge status={status} />
         </div>
 
-        <div className="propertyAddress">
-          <span>
-            <LocationIcon />
-          </span>
+        <h2>
+          {canOpenDetails ? (
+            <Link to={`/properties/${postId}`}>{title}</Link>
+          ) : (
+            <span>{title}</span>
+          )}
+        </h2>
 
+        <div className="propertyAddress">
+          <LocationIcon />
           <p>{address}</p>
         </div>
 
@@ -288,62 +343,90 @@ function Card({ item }) {
 
         <div className="propertyFeatures">
           <div>
+            <BedIcon />
             <span>
-              <BedIcon />
+              {bedroom} {t("card.features.bedrooms")}
             </span>
-
-            <strong>{bedroom}</strong>
-            <small>Bedrooms</small>
           </div>
 
           <div>
+            <BathIcon />
             <span>
-              <BathIcon />
+              {bathroom} {t("card.features.bathrooms")}
             </span>
-
-            <strong>{bathroom}</strong>
-            <small>Bathrooms</small>
           </div>
 
           <div>
+            <SizeIcon />
             <span>
-              <SizeIcon />
+              {propertySize} {t("card.features.area")}
             </span>
-
-            <strong>{propertySize}</strong>
-            <small>m²</small>
           </div>
         </div>
 
         <div className="propertyActions">
-          <Link to={`/properties/${postId}`} className="detailsBtn">
-            View Details
-            <ArrowIcon />
-          </Link>
-
-          <div className="quickActions">
+          {canOpenDetails ? (
+            <Link to={`/properties/${postId}`} className="detailsBtn">
+              {t("card.buttons.viewDetails")}
+              <ArrowIcon />
+            </Link>
+          ) : (
             <button
               type="button"
-              className={saved ? "iconBtn active" : "iconBtn"}
-              onClick={handleSave}
-              disabled={isSaving}
-              title={saved ? "Remove from saved" : "Save property"}
+              className="detailsBtn disabled"
+              disabled
+              title={unavailableMessage}
             >
-              <SaveIcon active={saved} />
+              {t("card.buttons.viewDetails")}
             </button>
+          )}
 
-            {!isOwner && (
-              <button
-                type="button"
-                className={isUnavailable ? "iconBtn disabled" : "iconBtn"}
-                onClick={handleChat}
-                disabled={isOpeningChat || isUnavailable}
-                title={isUnavailable ? unavailableMessage : "Send message"}
+          <button
+            type="button"
+            className={saved ? "iconBtn saveBtn active" : "iconBtn saveBtn"}
+            onClick={handleSave}
+            disabled={isSaving}
+            title={
+              saved ? t("card.titles.removeSaved") : t("card.titles.saveProperty")
+            }
+          >
+            <SaveIcon active={saved} />
+          </button>
+
+          {!isOwner && (
+            <button
+              type="button"
+              className={isUnavailable ? "iconBtn disabled" : "iconBtn"}
+              onClick={handleChat}
+              disabled={isOpeningChat || isUnavailable}
+              title={
+                isUnavailable
+                  ? unavailableMessage
+                  : t("card.titles.sendMessage")
+              }
+            >
+              <ChatIcon />
+            </button>
+          )}
+
+          {canCall &&
+            (callHref ? (
+              <a
+                className="iconBtn callBtn"
+                href={callHref}
+                title={t("card.titles.callAgent", { defaultValue: "Call agent" })}
               >
-                <ChatIcon />
-              </button>
-            )}
-          </div>
+                <PhoneIcon />
+              </a>
+            ) : ownerId ? (
+              <Link
+                className="iconBtn callBtn"
+                to={`/agents/${ownerId}`}
+                title={t("card.titles.callAgent", { defaultValue: "Call agent" })}
+              >
+                <PhoneIcon />
+              </Link>
+            ) : null)}
         </div>
       </div>
     </article>

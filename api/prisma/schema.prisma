@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,184 +8,831 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  username  String   
-  password  String
-  avatar    String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  loginCodes LoginVerificationCode[]
-  agentRequests AgentRequest[]
-  posts           Post[]
-  savedPosts      SavedPost[]
-  messages        Message[]
-  contactMessages ContactMessage[]
-  agentProfile    AgentProfile?
-
-  chatIDs String[] @db.ObjectId @default([])
-  chats   Chat[]   @relation(fields: [chatIDs], references: [id])
+enum Role {
+  USER
+  AGENT
+  ADMIN
 }
 
-model Post {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  price     Int
-  images    String[] @default([])
-  address   String
-  city      String
-  bedroom   Int
-  bathroom  Int
-  latitude  String
-  longitude String
-  type      Type
-  property  Property
-  createdAt DateTime @default(now())
-  status String @default("available")
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
-
-  postDetail PostDetail?
-  savedPosts SavedPost[]
-}
-model AgentRequest {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-
-  name      String
-  title     String
-  phone     String
-  location  String
-  bio       String
-  image     String?
-
-  message   String?
-  status    String   @default("PENDING")
-  adminNote String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum AccountStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  BANNED
 }
 
-model PostDetail {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  desc String
-  size Int?
-
-  postId String @unique @db.ObjectId
-  post   Post   @relation(fields: [postId], references: [id])
+enum PropertyStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+  SOLD
+  RENTED
+  ARCHIVED
 }
 
-model SavedPost {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  postId    String   @db.ObjectId
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-  post Post @relation(fields: [postId], references: [id])
-
-  @@unique([userId, postId])
+enum SubscriptionPlan {
+  PREMIUM
 }
 
-model Chat {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt   DateTime @default(now())
-  lastMessage String?
-
-  userIDs String[] @db.ObjectId
-  users   User[]   @relation(fields: [userIDs], references: [id])
-
-  messages Message[]
-  seenBy   String[] @db.ObjectId @default([])
+enum SubscriptionStatus {
+  ACTIVE
+  GRACE
+  INACTIVE
+  EXPIRED
+  CANCELLED
 }
 
-model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  text      String
-  createdAt DateTime @default(now())
-
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
-
-  chatId String @db.ObjectId
-  chat   Chat   @relation(fields: [chatId], references: [id])
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
 }
 
-model ContactMessage {
-  id        String               @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  email     String
-  subject   String
-  message   String
-  type      ContactMessageType   @default(MESSAGE)
-  status    ContactMessageStatus @default(OPEN)
-  adminReply String?
-  adminRepliedAt DateTime?
-  createdAt DateTime             @default(now())
-
-  userId String? @db.ObjectId
-  user   User?   @relation(fields: [userId], references: [id])
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  OMT
+  BOB
+  WHISH
 }
 
-model AgentProfile {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  title     String
-  phone     String
-  location  String
-  bio       String
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId String @unique @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
-}
-model LoginVerificationCode {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String
-  codeHash  String
-  expiresAt DateTime
-  attempts  Int      @default(0)
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
+enum AgentApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum ContactMessageType {
   MESSAGE
   REPORT
 }
-enum AgentRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
+
 enum ContactMessageStatus {
   OPEN
   READ
   RESOLVED
 }
 
-enum Type {
-  buy
-  rent
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  LAND
+  VILLA
+  OFFICE
+  SHOP
+  WAREHOUSE
 }
 
-enum Property {
-  apartment
-  house
-  land
+enum ListingType {
+  SALE
+  RENT
 }
 
-enum Role {
-  USER
-  ADMIN
-  AGENT
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+enum VerificationCodeType {
+  EMAIL_VERIFICATION
+  LOGIN
+  PASSWORD_RESET
+  PHONE_VERIFY
+}
+
+enum NotificationType {
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_EXPIRED
+  AGENT_APPLICATION_APPROVED
+  AGENT_APPLICATION_REJECTED
+  PROPERTY_APPROVED
+  PROPERTY_REJECTED
+  CONTACT_REPLY
+  PAYMENT_CONFIRMED
+  PAYMENT_FAILED
+  NEW_MESSAGE
+  LISTING_REQUEST
+  LISTING_REQUEST_ACCEPTED
+  LISTING_REQUEST_REJECTED
+  LISTING_LEAD
+  LISTING_PROPOSAL
+  LISTING_PROPOSAL_ACCEPTED
+  LISTING_PROPOSAL_REJECTED
+  APPOINTMENT_SCHEDULED
+  APPOINTMENT_UPDATED
+  APPOINTMENT_REQUESTED
+  APPOINTMENT_REMINDER
+  GENERAL
+}
+
+enum ListingRequestStatus {
+  OPEN
+  AWARDED
+  CANCELLED
+  EXPIRED
+  // Legacy values kept for existing Mongo documents until migrated
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ListingRequestInviteStatus {
+  NOTIFIED
+  PROPOSED
+  EXPIRED
+  REJECTED
+  // Legacy
+  PENDING
+  ACCEPTED
+}
+
+enum ListingProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum ChatKind {
+  DIRECT
+  SUPPORT
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  email    String  @unique
+  username String  @unique
+  password String
+  avatar        String?
+  phone         String?
+  phoneKey      String?
+  phoneVerified Boolean @default(false)
+  pendingPhone  String?
+  googleId      String? @unique
+
+  role   Role          @default(USER)
+  status AccountStatus @default(ACTIVE)
+
+  emailVerified Boolean @default(false)
+
+  /** One-time 30-day Premium trial already granted (after verification only) */
+  premiumTrialClaimed Boolean @default(false)
+
+  /** Welcome email sent after the first successful sign-in */
+  welcomeEmailSentAt DateTime?
+
+  /** Stripe customer + default card for automatic Premium renewals */
+  stripeCustomerId       String?
+  stripePaymentMethodId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agentProfile         AgentProfile?
+  agentApplications    AgentApplication[] @relation("ApplicantApplications")
+  reviewedApplications AgentApplication[] @relation("ApplicationReviewer")
+
+  properties         Property[]
+  requestedProperties Property[] @relation("PropertyRequester")
+  reviewedProperties Property[] @relation("PropertyReviewer")
+
+  savedProperties SavedProperty[]
+
+  chatParticipants ChatParticipant[]
+
+  messages Message[]
+
+  subscriptions    Subscription[]
+  payments         Payment[]
+  reviewedPayments Payment[] @relation("PaymentReviewer")
+  notifications    Notification[]
+  contactMessages  ContactMessage[]
+  verificationCodes VerificationCode[]
+
+  propertyReviews PropertyReview[]
+  agentReviews    AgentReview[]
+  propertyReports PropertyReport[]
+  reviewedReports PropertyReport[] @relation("ReportReviewer")
+
+  listingRequests ListingRequest[] @relation("ListingRequester")
+
+  ownerAppointments Appointment[] @relation("AppointmentOwner")
+  agentAppointments Appointment[] @relation("AppointmentAgent")
+  buyerAppointments Appointment[] @relation("AppointmentBuyer")
+
+  @@index([role])
+  @@index([status])
+}
+
+// ─── Agent Application & Profile ─────────────────────────────────────────────
+
+model AgentApplication {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation("ApplicantApplications", fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName      String
+  phone         String
+  agencyName    String?
+  licenseNumber String?
+  location      String
+  bio           String
+  image         String?
+
+  status AgentApplicationStatus @default(PENDING)
+
+  rejectionReason String?
+  reviewedAt      DateTime?
+
+  reviewedBy String? @db.ObjectId
+  reviewer   User?   @relation("ApplicationReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([status, createdAt])
+  @@index([userId, status])
+  @@index([reviewedBy])
+}
+
+model AgentProfile {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name       String
+  agencyName String?
+  title      String?
+  phone      String
+  location   String
+  bio        String
+  image      String?
+
+  website   String?
+  facebook  String?
+  instagram String?
+  linkedin  String?
+
+  yearsExperience Int?
+  rating          Float @default(0)
+  totalReviews    Int   @default(0)
+
+  isVerified Boolean @default(false)
+
+  /** Cities/areas this agent covers (anti-spam matching) */
+  serviceAreas String[] @default([])
+
+  /** Property types this agent handles; empty = all types for verified agents */
+  specialties PropertyType[] @default([])
+
+  reviews AgentReview[]
+
+  listingRequestInvites ListingRequestInvite[]
+  acceptedListingRequests ListingRequest[] @relation("AcceptedByAgent")
+  listingProposals ListingProposal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── User → Agent listing handoff ────────────────────────────────────────────
+
+model ListingRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  requesterId String @db.ObjectId
+  requester   User   @relation("ListingRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  title   String
+  price   Int
+  images  String[] @default([])
+  address String
+  city    String
+  latitude  Float
+  longitude Float
+
+  bedrooms  Int
+  bathrooms Int
+  area      Int?
+
+  propertyType PropertyType
+  listingType  ListingType
+  description  String
+
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+
+  status ListingRequestStatus @default(OPEN)
+
+  acceptedByAgentId String?       @db.ObjectId
+  acceptedByAgent   AgentProfile? @relation("AcceptedByAgent", fields: [acceptedByAgentId], references: [id], onDelete: SetNull)
+  acceptedAt        DateTime?
+
+  // Not @unique: MongoDB unique indexes treat null as a value, so @unique on
+  // optional propertyId blocked every listing request after the first (409 Conflict).
+  propertyId String?   @db.ObjectId
+  property   Property? @relation("RequestToProperty", fields: [propertyId], references: [id], onDelete: SetNull)
+
+  invites   ListingRequestInvite[]
+  proposals ListingProposal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([status])
+  @@index([acceptedByAgentId])
+  @@index([city])
+  @@index([propertyId])
+}
+
+model ListingRequestInvite {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  listingRequestId String         @db.ObjectId
+  listingRequest   ListingRequest @relation(fields: [listingRequestId], references: [id], onDelete: Cascade)
+
+  agentProfileId String       @db.ObjectId
+  agentProfile   AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  status ListingRequestInviteStatus @default(NOTIFIED)
+
+  respondedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listingRequestId, agentProfileId])
+  @@index([agentProfileId, status])
+  @@index([listingRequestId, status])
+}
+
+model ListingProposal {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  listingRequestId String         @db.ObjectId
+  listingRequest   ListingRequest @relation(fields: [listingRequestId], references: [id], onDelete: Cascade)
+
+  agentProfileId String       @db.ObjectId
+  agentProfile   AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  message            String
+  estimatedDays      Int
+  commissionPercent  Float
+
+  status ListingProposalStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listingRequestId, agentProfileId])
+  @@index([listingRequestId, status])
+  @@index([agentProfileId, status])
+}
+
+// ─── Property ────────────────────────────────────────────────────────────────
+
+model Property {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  slug String @unique
+
+  title  String
+  price  Int
+  images String[] @default([])
+
+  address   String
+  city      String
+  latitude  Float
+  longitude Float
+
+  bedrooms  Int
+  bathrooms Int
+  area      Int?
+
+  propertyType PropertyType
+  listingType  ListingType
+  status       PropertyStatus @default(PENDING)
+
+  featured      Boolean   @default(false)
+  featuredUntil DateTime?
+
+  views       Int       @default(0)
+  publishedAt DateTime?
+
+  /** Hidden after grace ended; restored when agent renews Premium */
+  pausedBySubscription Boolean @default(false)
+
+  rejectionReason String?
+  moderationNote  String?
+  reviewedAt      DateTime?
+  reviewedBy      String?   @db.ObjectId
+  reviewer        User?     @relation("PropertyReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  // Single source of truth: agent who owns this listing (must be role AGENT)
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Original user who requested this listing via agent handoff
+  requestedByUserId String? @db.ObjectId
+  requestedByUser   User?   @relation("PropertyRequester", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  listingRequests ListingRequest[] @relation("RequestToProperty")
+
+  detail  PropertyDetail?
+  savedBy SavedProperty[]
+  reports PropertyReport[]
+  reviews PropertyReview[]
+
+  chats Chat[]
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([requestedByUserId])
+  @@index([city])
+  @@index([status])
+  @@index([price])
+  @@index([bedrooms, bathrooms])
+  @@index([propertyType, listingType])
+  @@index([status, listingType, city, propertyType, price])
+  @@index([status, featured, featuredUntil])
+  @@index([reviewedBy])
+  @@index([status, createdAt])
+  @@index([status, listingType, createdAt])
+  @@index([status, listingType, propertyType, createdAt])
+  @@index([status, listingType, city, createdAt])
+  @@index([status, listingType, price])
+  @@index([status, views])
+  @@index([status, city, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+// ─── Appointments / property visits ───────────────────────────────────────────
+
+model Appointment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  /** Homeowner who tracks this visit on the owner dashboard */
+  ownerId String @db.ObjectId
+  owner   User   @relation("AppointmentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /** Agent managing the listing */
+  agentId String @db.ObjectId
+  agent   User   @relation("AppointmentAgent", fields: [agentId], references: [id], onDelete: Cascade)
+
+  /** Buyer who requested the visit (optional for agent-created visits) */
+  buyerId String? @db.ObjectId
+  buyer   User?   @relation("AppointmentBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  scheduledAt DateTime
+  status      AppointmentStatus @default(PENDING)
+
+  visitorName  String?
+  visitorPhone String?
+  notes        String?
+
+  /** When a pre-visit reminder was sent to the buyer */
+  reminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([ownerId, scheduledAt])
+  @@index([agentId, scheduledAt])
+  @@index([buyerId])
+  @@index([status])
+  @@index([scheduledAt, reminderSentAt])
+}
+
+model PropertyDetail {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  propertyId String   @unique @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  description String
+  yearBuilt   Int?
+  floor       Int?
+  totalFloors Int?
+
+  amenities String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SavedProperty {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String @db.ObjectId
+  propertyId String @db.ObjectId
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@index([propertyId])
+}
+
+// ─── Chat & Messaging ─────────────────────────────────────────────────────────
+
+model Chat {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  kind ChatKind @default(DIRECT)
+
+  propertyId String?   @db.ObjectId
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  lastMessage   String?
+  lastMessageAt DateTime?
+
+  participants ChatParticipant[]
+  messages     Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([lastMessageAt])
+  @@index([kind])
+}
+
+model ChatParticipant {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  chatId String @db.ObjectId
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@index([chatId])
+}
+
+model Message {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  chatId String @db.ObjectId
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  senderId String @db.ObjectId
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  text  String?
+  /** Legacy image URL (kept for older clients) */
+  image String?
+
+  /** Secure uploaded media served from /uploads/chat/... */
+  mediaUrl  String?
+  mediaKind String? // image | voice | file
+  mediaName String?
+  mediaMime String?
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  hiddenForIds        String[] @default([])
+  deletedForEveryone  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([chatId, isRead])
+}
+
+// ─── Contact ──────────────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String? @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  senderName  String?
+  senderEmail String?
+
+  type   ContactMessageType   @default(MESSAGE)
+  status ContactMessageStatus @default(OPEN)
+
+  subject String?
+  message String
+
+  adminReply     String?
+  adminRepliedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ─── Subscription & Payment ───────────────────────────────────────────────────
+
+model Subscription {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  plan   SubscriptionPlan   @default(PREMIUM)
+  status SubscriptionStatus @default(EXPIRED)
+
+  /** True when this period is the post-verification 30-day Premium trial */
+  isTrial Boolean @default(false)
+
+  trialStart DateTime?
+  trialEnd   DateTime?
+
+  startDate   DateTime?
+  endDate     DateTime?
+  graceEndsAt DateTime?
+  inactiveAt  DateTime?
+
+  autoRenew Boolean @default(false)
+  isCurrent Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([userId, isCurrent])
+  @@index([status, endDate])
+}
+
+model Payment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subscriptionId String?       @db.ObjectId
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  amount   Float
+  currency String @default("USD")
+
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+
+  transactionId String?
+  proofUrl      String?
+  adminNotes    String?
+
+  reviewedBy String?   @db.ObjectId
+  reviewer   User?     @relation("PaymentReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([reviewedBy])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType @default(GENERAL)
+  title   String
+  message String
+  link    String?
+
+  // e.g. { propertyId, subscriptionId, paymentId }
+  metadata Json?
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, type])
+}
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+model PropertyReview {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  reviewerId String @db.ObjectId
+  reviewer   User   @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([propertyId, reviewerId])
+  @@index([propertyId])
+  @@index([reviewerId])
+}
+
+model AgentReview {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentProfileId String       @db.ObjectId
+  agentProfile   AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  reviewerId String @db.ObjectId
+  reviewer   User   @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([agentProfileId, reviewerId])
+  @@index([agentProfileId])
+  @@index([reviewerId])
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+model PropertyReport {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  reporterId String @db.ObjectId
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reason     String
+  status     ReportStatus @default(PENDING)
+  adminNotes String?
+
+  reviewedBy String?   @db.ObjectId
+  reviewer   User?     @relation("ReportReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([reviewedBy])
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model VerificationCode {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     VerificationCodeType
+  codeHash String
+
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, type, used])
 }

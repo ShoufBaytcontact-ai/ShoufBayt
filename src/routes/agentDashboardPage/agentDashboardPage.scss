@@ -1,0 +1,1049 @@
+.agentOffice {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  margin: 0;
+  padding: 28px clamp(16px, 3vw, 40px) 80px;
+  box-sizing: border-box;
+  color: var(--text-main);
+}
+
+.agentOffice *,
+.agentOffice *::before,
+.agentOffice *::after {
+  box-sizing: border-box;
+}
+
+.agentOffice a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.agentOffice button,
+.agentOffice input,
+.agentOffice textarea,
+.agentOffice select {
+  font: inherit;
+}
+
+.agentOffice button {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.agentOffice .hubEyebrow {
+  margin: 0 0 8px;
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.agentOffice .hubToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.agentOffice .hubToolbar h1 {
+  margin: 0;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.agentOffice .hubHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) auto;
+  gap: 28px;
+  align-items: end;
+  padding: 36px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(ellipse at 12% 18%, var(--glow-gold), transparent 42%),
+    radial-gradient(ellipse at 88% 12%, var(--glow-teal), transparent 46%),
+    var(--bg-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.agentOffice .hubHero h1 {
+  margin: 0;
+  max-width: 14ch;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.agentOffice .hubHero span {
+  display: block;
+  max-width: 46ch;
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.agentOffice .hubHeroActions,
+.agentOffice .hubLeadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.agentOffice .hubPrimaryBtn,
+.agentOffice .hubGhostBtn {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease-out), background 0.2s ease,
+    border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s var(--ease-out);
+}
+
+.agentOffice .hubPrimaryBtn {
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: var(--accent-ink);
+  box-shadow: 0 12px 28px var(--glow-gold);
+}
+
+.agentOffice .hubPrimaryBtn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.agentOffice .hubGhostBtn {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-main);
+}
+
+.agentOffice .hubGhostBtn:hover {
+  border-color: var(--accent-2);
+  background: var(--accent-2-soft);
+  color: var(--accent-2);
+}
+
+.agentOffice .hubPrimaryBtn:disabled,
+.agentOffice .hubGhostBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.agentOffice .hubStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.agentOffice .hubStats button {
+  padding: 18px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  text-align: start;
+  cursor: pointer;
+  color: inherit;
+  transition: border-color 0.2s ease, transform 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+.agentOffice .hubStats button:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.agentOffice .hubStats span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.agentOffice .hubStats strong {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--text-main);
+}
+
+.agentOffice .hubSubBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(90deg, var(--accent-3-soft), var(--accent-6-soft) 55%, var(--accent-soft));
+}
+
+.agentOffice .hubSubBar h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--text-main);
+}
+
+.agentOffice .hubSubBar p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.agentOffice .hubSubBar a {
+  color: var(--accent-3);
+  font-weight: 800;
+}
+
+.agentOffice .hubTabs,
+.agentOffice .hubSubTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agentOffice .hubTabs {
+  margin-bottom: 22px;
+}
+
+.agentOffice .hubTabs button,
+.agentOffice .hubSubTabs button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.agentOffice .hubSubTabs button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.agentOffice .hubTabs button[class*="Active"],
+.agentOffice .hubSubTabs button[class*="Active"] {
+  background: var(--text-main);
+  color: var(--bg-card);
+  border-color: var(--text-main);
+}
+
+.agentOffice .hubSubTabs button[class*="Active"] {
+  background: var(--accent-2);
+  color: #fff;
+  border-color: var(--accent-2);
+}
+
+.agentOffice .hubAlert {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.agentOffice .hubAlert.isError {
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-card));
+  color: var(--danger);
+}
+
+.agentOffice .hubAlert.isSuccess {
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-card));
+  color: var(--success);
+}
+
+.agentOffice .hubEmpty {
+  padding: 42px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.agentOffice .hubEmpty h3 {
+  margin: 0 0 8px;
+  color: var(--text-main);
+  font-family: var(--font-display);
+}
+
+.agentOffice .hubEmpty p {
+  margin: 0 0 18px;
+}
+
+.agentOffice .hubPipeline {
+  padding: 22px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.agentOffice .hubPipelineRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agentOffice .hubPipelineRow button {
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  text-align: start;
+  cursor: pointer;
+}
+
+.agentOffice .hubPipelineRow button:nth-child(1) {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.agentOffice .hubPipelineRow button:nth-child(2) {
+  box-shadow: inset 0 3px 0 var(--accent-2);
+}
+
+.agentOffice .hubPipelineRow button:nth-child(3) {
+  box-shadow: inset 0 3px 0 var(--accent-3);
+}
+
+.agentOffice .hubPipelineRow button:nth-child(4) {
+  box-shadow: inset 0 3px 0 var(--accent-6);
+}
+
+.agentOffice .hubPipelineRow strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-main);
+}
+
+.agentOffice .hubPipelineRow span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.agentOffice .hubDeskGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.agentOffice .hubDeskCard {
+  min-height: 210px;
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agentOffice .hubDeskCard:nth-child(1) {
+  background:
+    linear-gradient(180deg, var(--accent-2-soft), transparent 55%),
+    var(--bg-elevated);
+}
+
+.agentOffice .hubDeskCard:nth-child(2) {
+  background:
+    linear-gradient(180deg, var(--accent-soft), transparent 55%),
+    var(--bg-elevated);
+}
+
+.agentOffice .hubDeskCard:nth-child(3) {
+  background:
+    linear-gradient(180deg, var(--accent-3-soft), transparent 55%),
+    var(--bg-elevated);
+}
+
+.agentOffice .hubDeskCard h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  color: var(--text-main);
+}
+
+.agentOffice .hubDeskCard p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.agentOffice .hubDeskCard .hubPrimaryBtn,
+.agentOffice .hubDeskCard .hubGhostBtn {
+  margin-top: auto;
+  width: fit-content;
+}
+
+.agentOffice .hubLeads,
+.agentOffice .officeListings,
+.agentOffice .hubCardEditor {
+  display: grid;
+  gap: 16px;
+}
+
+.agentOffice .hubLeads {
+  width: min(100%, 520px);
+  gap: 16px;
+}
+
+.agentOffice .leadBrief {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: var(--bg-card);
+}
+
+.agentOffice .leadBrief:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-color));
+}
+
+.agentOffice .leadBriefMedia {
+  position: relative;
+  display: block;
+  height: 188px;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.agentOffice .leadBriefMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.agentOffice .leadBrief:hover .leadBriefMedia img {
+  transform: scale(1.04);
+}
+
+.agentOffice .leadBriefMedia span {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  inset-inline-start: 12px;
+  min-height: 26px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.agentOffice .leadBriefBody {
+  display: grid;
+  gap: 8px;
+  padding: 16px 16px 14px;
+}
+
+.agentOffice .leadBriefKicker {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.agentOffice .leadBriefTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.agentOffice .leadBriefTitle:hover {
+  color: var(--accent);
+}
+
+.agentOffice .leadBriefPrice {
+  display: block;
+  color: var(--text-main);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.agentOffice .leadBriefPlace {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.agentOffice .leadBriefFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agentOffice .leadBriefFacts li {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agentOffice .leadBriefOffer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.agentOffice .leadBriefOffer.isForm {
+  display: grid;
+  gap: 10px;
+}
+
+.agentOffice .leadBriefOffer > div span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.agentOffice .leadBriefOffer > div b {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.agentOffice .leadBriefOffer > p {
+  flex: 1 1 200px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.agentOffice .leadBriefOffer em {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.agentOffice .leadBriefOffer em[data-status="ACCEPTED"] {
+  background: color-mix(in srgb, var(--success) 14%, var(--bg-card));
+  color: var(--success);
+}
+
+.agentOffice .leadBriefOffer label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agentOffice .leadBriefFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.agentOffice .leadBriefOffer input,
+.agentOffice .leadBriefOffer textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--text-main);
+}
+
+.agentOffice .leadBriefOffer textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.agentOffice .leadBriefActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agentOffice .leadBriefBtn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agentOffice .leadBriefBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.agentOffice .leadBriefBtn.isQuiet {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.agentOffice .leadBriefBtn.isQuiet:hover:not(:disabled) {
+  border-color: var(--text-main);
+  color: var(--text-main);
+}
+
+.agentOffice .leadBriefBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .agentOffice .leadBriefFields {
+    grid-template-columns: 1fr;
+  }
+
+  .agentOffice .leadBriefMedia {
+    height: 168px;
+  }
+}
+
+.agentOffice .officeListingsHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.agentOffice .officeListingsHead h2,
+.agentOffice .hubCardIntro h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-main);
+}
+
+.agentOffice .officeListingsHead p,
+.agentOffice .hubCardIntro p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.agentOffice .officeListingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.agentOffice .officeListing,
+.agentOffice .hubLeadCard {
+  display: grid;
+  overflow: hidden;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.agentOffice .officeListing {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.agentOffice .officeListingMedia,
+.agentOffice .hubLeadMedia {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.agentOffice .officeListingMedia {
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
+.agentOffice .hubLeadMedia {
+  min-height: 220px;
+}
+
+.agentOffice .officeListingMedia::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(12, 18, 26, 0.78) 0%,
+    rgba(12, 18, 26, 0.08) 48%,
+    rgba(12, 18, 26, 0.18) 100%
+  );
+  pointer-events: none;
+}
+
+.agentOffice .officeListingMedia img,
+.agentOffice .hubLeadMedia img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.agentOffice .officeListing:hover .officeListingMedia img,
+.agentOffice .hubLeadCard:hover .hubLeadMedia img {
+  transform: scale(1.04);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.agentOffice .officeListingMedia span,
+.agentOffice .officeListingMedia b {
+  position: absolute;
+  z-index: 2;
+}
+
+.agentOffice .officeListingMedia span {
+  top: 12px;
+  inset-inline-start: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agentOffice .officeListingMedia b {
+  inset-inline: 12px 12px;
+  bottom: 12px;
+  color: #fffaf3;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+  text-shadow: 0 8px 22px rgba(8, 12, 18, 0.45);
+}
+
+.agentOffice .officeListingBody,
+.agentOffice .hubLeadBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px;
+}
+
+.agentOffice .officeListingTop,
+.agentOffice .hubLeadTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+}
+
+.agentOffice .officeListingTop small {
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.agentOffice .officeListingTop h3,
+.agentOffice .hubLeadTop h3 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+}
+
+.agentOffice .officeListingTop p,
+.agentOffice .hubLeadTop p,
+.agentOffice .hubLeadDesc {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.agentOffice .hubLeadDesc {
+  margin: 0;
+}
+
+.agentOffice .officeListingMeta,
+.agentOffice .hubMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agentOffice .officeListingMeta span,
+.agentOffice .hubMeta span {
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.agentOffice .officeListingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.agentOffice .officeOwnerTag {
+  align-self: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent-3-soft);
+  color: var(--accent-3);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.agentOffice .hubProposalStatus,
+.agentOffice .hubProposalForm {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.agentOffice .hubProposalGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.agentOffice .hubCardForm,
+.agentOffice .hubProposalForm,
+.agentOffice .hubVisitForm,
+.agentOffice .hubLeadCard {
+  color: var(--text-main);
+}
+
+.agentOffice .hubCardForm,
+.agentOffice .hubProposalForm label,
+.agentOffice .hubLeadCard label,
+.agentOffice .hubVisitForm label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agentOffice .hubCardForm input,
+.agentOffice .hubCardForm textarea,
+.agentOffice .hubProposalForm input,
+.agentOffice .hubProposalForm textarea,
+.agentOffice .hubLeadCard input,
+.agentOffice .hubLeadCard textarea,
+.agentOffice .hubLeadCard select,
+.agentOffice .hubVisitForm input,
+.agentOffice .hubVisitForm textarea,
+.agentOffice .hubVisitForm select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-main);
+}
+
+.agentOffice .hubCardForm textarea,
+.agentOffice .hubProposalForm textarea,
+.agentOffice .hubLeadCard textarea,
+.agentOffice .hubVisitForm textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.agentOffice .hubCardForm {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.agentOffice .hubCardPreview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.agentOffice .hubCardPreview img {
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg-soft);
+}
+
+.agentOffice .hubCardForm .wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 980px) {
+  .agentOffice .hubHero,
+  .agentOffice .hubStats,
+  .agentOffice .hubPipelineRow,
+  .agentOffice .hubDeskGrid,
+  .agentOffice .hubLeadCard,
+  .agentOffice .hubProposalGrid,
+  .agentOffice .hubCardPreview {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .agentOffice .officeListingGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .agentOffice {
+    width: 100%;
+    min-height: calc(100vh - 72px);
+    padding: 16px 14px 64px;
+  }
+
+  .agentOffice .hubHero,
+  .agentOffice .hubStats,
+  .agentOffice .hubPipelineRow,
+  .agentOffice .hubDeskGrid,
+  .agentOffice .hubSubBar,
+  .agentOffice .hubLeadCard,
+  .agentOffice .officeListingsHead,
+  .agentOffice .officeListingGrid,
+  .agentOffice .hubProposalGrid,
+  .agentOffice .hubCardPreview {
+    grid-template-columns: 1fr;
+  }
+
+  .agentOffice .hubToolbar,
+  .agentOffice .hubHeroActions,
+  .agentOffice .hubSubBar,
+  .agentOffice .officeListingsHead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agentOffice .officeListingMedia,
+  .agentOffice .hubLeadMedia,
+  .agentOffice .leadBriefMedia {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+  }
+
+  .agentOffice .hubHero {
+    padding: 20px 16px;
+  }
+
+  .agentOffice .hubHero h1 {
+    max-width: none;
+    font-size: clamp(1.8rem, 9vw, 2.4rem);
+  }
+
+  .agentOffice .hubPrimaryBtn,
+  .agentOffice .hubGhostBtn,
+  .agentOffice .proposalBtn,
+  .agentOffice .leadBriefBtn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+html[dir="rtl"] .agentOffice .hubHero,
+html[dir="rtl"] .agentOffice .hubStats button,
+html[dir="rtl"] .agentOffice .hubPipelineRow button,
+html[dir="rtl"] .agentOffice .hubDeskCard {
+  text-align: start;
+}

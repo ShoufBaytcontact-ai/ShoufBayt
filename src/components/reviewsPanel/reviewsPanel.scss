@@ -1,0 +1,274 @@
+.reviewsPanel {
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: grid;
+  gap: 12px;
+}
+
+.reviewsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.reviewsSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reviewStars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--border-strong);
+  line-height: 0;
+
+  span,
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    line-height: 0;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+
+  .isOn {
+    color: var(--accent);
+  }
+
+  &.isPicker {
+    gap: 4px;
+
+    button {
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    button:hover,
+    button:focus-visible {
+      color: var(--accent);
+      background: transparent;
+    }
+  }
+}
+
+.reviewForm {
+  display: grid;
+  gap: 10px;
+}
+
+.reviewForm textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+}
+
+.reviewForm textarea:focus {
+  border-color: var(--accent);
+}
+
+.reviewFormActions {
+  display: flex;
+  gap: 8px;
+}
+
+.reviewSubmit,
+.reviewCancel {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reviewSubmit {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.reviewSubmit:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.reviewSubmit:disabled,
+.reviewCancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reviewCancel {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-strong);
+}
+
+.reviewsList {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.reviewCard {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.reviewCard.isMine {
+  padding-top: 14px;
+}
+
+.reviewTop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+
+  strong {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  small {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+}
+
+.reviewOwnActions {
+  display: flex;
+  gap: 10px;
+
+  button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:hover {
+    color: var(--accent);
+  }
+
+  button:last-child:hover {
+    color: var(--danger);
+  }
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reviewAlert {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.reviewAlert.error {
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-card));
+  color: var(--danger);
+}
+
+.reviewAlert.success {
+  background: color-mix(in srgb, var(--success) 10%, var(--bg-card));
+  color: var(--success);
+}
+
+.reviewsPanel.isEmbedded {
+  padding: 0;
+  border: none;
+  background: transparent;
+  gap: 16px;
+
+  .reviewSubmit {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .reviewsHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reviewFormActions {
+    flex-direction: column;
+  }
+
+  .reviewSubmit,
+  .reviewCancel {
+    width: 100%;
+  }
+}
+
+[dir="rtl"] .reviewTop small {
+  margin-left: 0;
+  margin-right: auto;
+}

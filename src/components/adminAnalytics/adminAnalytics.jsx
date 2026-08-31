@@ -1,5 +1,30 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import "./adminAnalytics.scss";
+
+const PROPERTY_TYPES = [
+  "APARTMENT",
+  "HOUSE",
+  "LAND",
+  "VILLA",
+  "OFFICE",
+  "SHOP",
+  "WAREHOUSE",
+];
+
+function listingKind(post) {
+  const value = String(post?.listingType || post?.type || "").toUpperCase();
+  if (value === "BUY") return "SALE";
+  return value;
+}
+
+function propertyKind(post) {
+  return String(post?.propertyType || post?.property || "").toUpperCase();
+}
+
+function countFromLists(items, predicate) {
+  return items.filter(predicate).length;
+}
 
 function AdminAnalytics({
   users = [],
@@ -8,73 +33,84 @@ function AdminAnalytics({
   contactMessages = [],
   stats = {},
 }) {
+  const { t, i18n } = useTranslation();
+
   const analytics = useMemo(() => {
     const safeUsers = Array.isArray(users) ? users : [];
     const safePosts = Array.isArray(posts) ? posts : [];
+    const safeAgents = Array.isArray(agents) ? agents : [];
     const safeMessages = Array.isArray(contactMessages)
       ? contactMessages
       : [];
+    const typeCounts = stats?.propertyTypeCounts || {};
 
     const usersByRole = [
       {
-        label: "Admins",
-        value: safeUsers.filter((user) => user.role === "ADMIN").length,
+        label: t("adminAnalytics.roles.admins"),
+        value: countFromLists(safeUsers, (user) => user.role === "ADMIN"),
       },
       {
-        label: "Agents",
-        value: safeUsers.filter((user) => user.role === "AGENT").length,
+        label: t("adminAnalytics.roles.agents"),
+        value: countFromLists(safeUsers, (user) => user.role === "AGENT"),
       },
       {
-        label: "Users",
-        value: safeUsers.filter((user) => user.role === "USER").length,
+        label: t("adminAnalytics.roles.users"),
+        value: countFromLists(safeUsers, (user) => user.role === "USER"),
       },
     ];
 
     const postsByType = [
       {
-        label: "Buy",
-        value: safePosts.filter((post) => post.type === "buy").length,
+        label: t("adminAnalytics.values.buy"),
+        value: Number(
+          stats?.saleListingsCount ??
+            countFromLists(safePosts, (post) => listingKind(post) === "SALE")
+        ),
       },
       {
-        label: "Rent",
-        value: safePosts.filter((post) => post.type === "rent").length,
+        label: t("adminAnalytics.values.rent"),
+        value: Number(
+          stats?.rentListingsCount ??
+            countFromLists(safePosts, (post) => listingKind(post) === "RENT")
+        ),
       },
     ];
 
-    const postsByProperty = [
-      {
-        label: "Apartment",
-        value: safePosts.filter((post) => post.property === "apartment")
-          .length,
-      },
-      {
-        label: "House",
-        value: safePosts.filter((post) => post.property === "house").length,
-      },
-      {
-        label: "Land",
-        value: safePosts.filter((post) => post.property === "land").length,
-      },
-    ];
+    const postsByProperty = PROPERTY_TYPES.map((type) => ({
+      key: type,
+      label: t(`adminAnalytics.values.${type.toLowerCase()}`),
+      value: Number(
+        typeCounts[type] ??
+          countFromLists(safePosts, (post) => propertyKind(post) === type)
+      ),
+    })).filter(
+      (item) =>
+        item.value > 0 ||
+        item.key === "APARTMENT" ||
+        item.key === "HOUSE" ||
+        item.key === "LAND"
+    );
 
     const messagesByStatus = [
       {
-        label: "Open",
-        value: safeMessages.filter((item) => item.status === "OPEN").length,
+        label: t("adminAnalytics.status.open"),
+        value: countFromLists(safeMessages, (item) => item.status === "OPEN"),
       },
       {
-        label: "Read",
-        value: safeMessages.filter((item) => item.status === "READ").length,
+        label: t("adminAnalytics.status.read"),
+        value: countFromLists(safeMessages, (item) => item.status === "READ"),
       },
       {
-        label: "Resolved",
-        value: safeMessages.filter((item) => item.status === "RESOLVED")
-          .length,
+        label: t("adminAnalytics.status.resolved"),
+        value: countFromLists(
+          safeMessages,
+          (item) => item.status === "RESOLVED"
+        ),
       },
     ];
 
     const cityCounts = safePosts.reduce((acc, post) => {
-      const city = post.city || "Unknown";
+      const city = post.city || t("adminAnalytics.fallback.unknown");
       acc[city] = (acc[city] || 0) + 1;
       return acc;
     }, {});
@@ -92,15 +128,31 @@ function AdminAnalytics({
     const averagePrice = prices.length > 0 ? totalPrice / prices.length : 0;
     const highestPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
-    const reportsCount = safeMessages.filter(
-      (item) => item.type === "REPORT"
-    ).length;
+    const reportsCount = Number(
+      stats?.reportsCount ??
+        stats?.contactReportsCount ??
+        countFromLists(safeMessages, (item) => item.type === "REPORT")
+    );
 
-    const openReportsCount = safeMessages.filter(
-      (item) => item.type === "REPORT" && item.status === "OPEN"
-    ).length;
+    const openReportsCount = Number(
+      stats?.pendingReportsCount ??
+        stats?.openReportsCount ??
+        countFromLists(
+          safeMessages,
+          (item) => item.type === "REPORT" && item.status === "OPEN"
+        )
+    );
 
-    const monthlyActivity = buildMonthlyActivity(safeUsers, safePosts);
+    const verifiedAgentsCount = Number(
+      stats?.verifiedAgentsCount ??
+        countFromLists(safeAgents, (agent) => Boolean(agent.isVerified))
+    );
+
+    const monthlyActivity = buildMonthlyActivity(
+      safeUsers,
+      safePosts,
+      i18n.language
+    );
 
     return {
       usersByRole,
@@ -112,52 +164,62 @@ function AdminAnalytics({
       highestPrice,
       reportsCount,
       openReportsCount,
+      verifiedAgentsCount,
       monthlyActivity,
     };
-  }, [users, posts, contactMessages]);
+  }, [users, posts, agents, contactMessages, stats, t, i18n.language]);
 
   return (
     <section className="adminAnalytics">
       <div className="analyticsHeader">
         <div>
-          <span>Analytics</span>
-          <h2>Platform Insights</h2>
-          <p>
-            Review SmartEstate performance, activity, property distribution, and
-            support status in one professional analytics panel.
-          </p>
+          <span>{t("adminAnalytics.header.badge")}</span>
+          <h2>{t("adminAnalytics.header.title")}</h2>
+          <p>{t("adminAnalytics.header.description")}</p>
         </div>
       </div>
 
       <div className="analyticsMiniGrid">
         <MiniMetric
-          label="Average Property Price"
+          label={t("adminAnalytics.metrics.averagePrice")}
           value={formatMoney(analytics.averagePrice)}
         />
 
         <MiniMetric
-          label="Highest Property Price"
+          label={t("adminAnalytics.metrics.highestPrice")}
           value={formatMoney(analytics.highestPrice)}
         />
 
-        <MiniMetric label="Verified Agents" value={agents.length} />
+        <MiniMetric
+          label={t("adminAnalytics.metrics.verifiedAgents")}
+          value={analytics.verifiedAgentsCount}
+        />
 
         <MiniMetric
-          label="Open Reports"
-          value={stats?.openContactMessagesCount ?? analytics.openReportsCount}
+          label={t("adminAnalytics.metrics.openReports")}
+          value={analytics.openReportsCount}
           danger={analytics.openReportsCount > 0}
         />
       </div>
 
       <div className="analyticsGrid">
-        <AnalyticsCard title="Users by Role" data={analytics.usersByRole} />
-        <AnalyticsCard title="Posts by Type" data={analytics.postsByType} />
         <AnalyticsCard
-          title="Properties by Category"
+          title={t("adminAnalytics.cards.usersByRole")}
+          data={analytics.usersByRole}
+        />
+
+        <AnalyticsCard
+          title={t("adminAnalytics.cards.postsByType")}
+          data={analytics.postsByType}
+        />
+
+        <AnalyticsCard
+          title={t("adminAnalytics.cards.propertiesByCategory")}
           data={analytics.postsByProperty}
         />
+
         <AnalyticsCard
-          title="Messages by Status"
+          title={t("adminAnalytics.cards.messagesByStatus")}
           data={analytics.messagesByStatus}
         />
       </div>
@@ -165,8 +227,8 @@ function AdminAnalytics({
       <div className="analyticsBottomGrid">
         <div className="analyticsPanel">
           <div className="panelHeader">
-            <span>Locations</span>
-            <h3>Top Property Cities</h3>
+            <span>{t("adminAnalytics.locations.badge")}</span>
+            <h3>{t("adminAnalytics.locations.title")}</h3>
           </div>
 
           {analytics.topCities.length > 0 ? (
@@ -177,20 +239,26 @@ function AdminAnalytics({
 
                   <div>
                     <span>{city.label}</span>
-                    <small>{city.value} listing(s)</small>
+                    <small>
+                      {t("adminAnalytics.locations.listings", {
+                        count: city.value,
+                      })}
+                    </small>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="analyticsEmpty">No city data available.</div>
+            <div className="analyticsEmpty">
+              {t("adminAnalytics.locations.empty")}
+            </div>
           )}
         </div>
 
         <div className="analyticsPanel">
           <div className="panelHeader">
-            <span>Growth</span>
-            <h3>Monthly Activity</h3>
+            <span>{t("adminAnalytics.growth.badge")}</span>
+            <h3>{t("adminAnalytics.growth.title")}</h3>
           </div>
 
           <div className="monthlyChart">
@@ -220,12 +288,12 @@ function AdminAnalytics({
           <div className="chartLegend">
             <span>
               <b className="userDot"></b>
-              Users
+              {t("adminAnalytics.growth.users")}
             </span>
 
             <span>
               <b className="postDot"></b>
-              Posts
+              {t("adminAnalytics.growth.posts")}
             </span>
           </div>
         </div>
@@ -281,15 +349,16 @@ function AnalyticsCard({ title, data }) {
   );
 }
 
-function buildMonthlyActivity(users, posts) {
+function buildMonthlyActivity(users, posts, language) {
   const months = [];
 
   const now = new Date();
+  const locale = language === "ar" ? "ar-LB" : "en-US";
 
   for (let i = 5; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
 
-    const label = date.toLocaleDateString("en-US", {
+    const label = date.toLocaleDateString(locale, {
       month: "short",
     });
 
@@ -324,8 +393,10 @@ function buildMonthlyActivity(users, posts) {
 
   return months.map((item) => ({
     ...item,
-    userPercent: Math.max((item.userCount / maxUsers) * 100, 8),
-    postPercent: Math.max((item.postCount / maxPosts) * 100, 8),
+    userPercent:
+      item.userCount > 0 ? (item.userCount / maxUsers) * 100 : 0,
+    postPercent:
+      item.postCount > 0 ? (item.postCount / maxPosts) * 100 : 0,
   }));
 }
 

@@ -1,637 +1,538 @@
-@import "../../responsive.scss";
-
-.profileUpdatePage,
-.profileUpdateLoading {
-  min-height: calc(100vh - 100px);
-  background:
-    radial-gradient(circle at top left, rgba(254, 206, 81, 0.12), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(254, 206, 81, 0.06), transparent 32%),
-    var(--bg-main);
+.profileUpdatePage {
+  width: 100%;
+  padding: 28px 0 72px;
   color: var(--text-main);
-  box-sizing: border-box;
 }
 
-.profileUpdatePage {
-  padding: 45px 40px 70px;
+.profileUpdatePage a {
+  text-decoration: none;
+}
 
-  @include md {
-    padding: 35px 24px 55px;
+.profileUpdatePage button,
+.profileUpdatePage input {
+  font-family: inherit;
+}
+
+.profileUpdateWrapper {
+  width: 100%;
+}
+
+.profileUpdateHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profileUpdateBadge,
+.profileFormHeader span,
+.avatarCardHeader span {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.profileUpdateHeader h1 {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.profileUpdateHeader p {
+  max-width: 54ch;
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.backBtn,
+.cancelBtn,
+.resetImageBtn {
+  min-height: 46px;
+  padding: 0 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.backBtn:hover,
+.cancelBtn:hover,
+.resetImageBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.profileUpdateLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: 1px;
+  margin: 22px 0 0;
+  border: 1px solid var(--border-color);
+  background: var(--border-color);
+  align-items: start;
+}
+
+.profileUpdateForm,
+.profileAvatarCard {
+  background: var(--bg-card);
+}
+
+.profileUpdateForm {
+  min-width: 0;
+  padding: 24px 26px;
+}
+
+.profileFormHeader,
+.avatarCardHeader {
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: inset 3px 0 0 var(--accent);
+  padding-inline-start: 16px;
+}
+
+.profileFormHeader h2,
+.avatarCardHeader h2,
+.accountBox h3,
+.profileUpdateLoading h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.profileFormHeader h2,
+.avatarCardHeader h2 {
+  font-size: 1.5rem;
+}
+
+.profileFormHeader p,
+.avatarCardHeader p {
+  max-width: 54ch;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.inputGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.inputGroup {
+  min-width: 0;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.inputGroup label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.inputGroup input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--border-color);
+  outline: none;
+  background: var(--bg-main);
+  color: var(--text-main);
+  padding: 0 15px;
+  font-size: 14px;
+}
+
+.inputGroup input::placeholder {
+  color: var(--text-muted);
+}
+
+.inputGroup input:focus {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border-color));
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.inputGroup input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.inputGroup small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.phoneValue {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.changePhoneLink {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.passwordBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 10px;
+}
+
+.passwordBox button {
+  height: 46px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.passwordBox button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.passwordBox button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.passwordHint {
+  width: fit-content;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.passwordHint.valid {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border-color));
+  color: var(--success);
+}
+
+.passwordHint.invalid {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border-color));
+  color: var(--danger);
+}
+
+.passwordRequirements {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.passwordRequirements p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.passwordRequirements .requirementsTitle {
+  grid-column: 1 / -1;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.passwordRequirements .valid {
+  color: var(--success);
+}
+
+.passwordRequirements .invalid {
+  color: var(--text-muted);
+}
+
+.updateMessage {
+  padding: 13px 16px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.errorMessage {
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border-color));
+  color: var(--danger);
+}
+
+.successMessage {
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border-color));
+  color: var(--success);
+}
+
+.formActions {
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.formActions button {
+  flex: 1;
+  min-height: 46px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.formActions button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.formActions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.profileAvatarCard {
+  position: sticky;
+  top: 94px;
+  padding: 22px 20px;
+}
+
+.avatarPreviewBox {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+}
+
+.avatarPreviewBox img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  background: var(--bg-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border-color));
+}
+
+.avatarPreviewBox span {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.avatarActions {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.uploadBtn,
+.resetImageBtn {
+  flex: 1;
+  min-height: 46px;
+}
+
+.uploadBtn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.uploadBtn:hover {
+  background: var(--accent-hover);
+}
+
+.resetImageBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.profileAvatarCard input[type="file"] {
+  display: none;
+}
+
+.avatarInfo {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.avatarInfo span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.accountBox {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.accountBox h3 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+}
+
+.accountBox div {
+  padding: 13px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.accountBox div:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.accountBox div:last-child {
+  padding-bottom: 0;
+}
+
+.accountBox span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.accountBox strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.profileUpdateLoading {
+  width: min(520px, calc(100% - 40px));
+  min-height: 280px;
+  margin: 80px auto;
+  padding: 34px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.profileUpdateLoading span {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--accent);
+  animation: updateSpin 0.9s linear infinite;
+}
+
+@keyframes updateSpin {
+  to {
+    transform: rotate(360deg);
   }
+}
 
-  @include sm {
-    padding: 25px 14px 45px;
-  }
+.profileUpdateLoading h2 {
+  margin: 20px 0 0;
+  font-size: 1.6rem;
+}
 
-  a {
-    text-decoration: none;
-  }
+.profileUpdateLoading p {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
 
-  .profileUpdateWrapper {
-    max-width: 1250px;
-    margin: 0 auto;
-  }
-
-  .profileUpdateHeader {
-    margin-bottom: 28px;
-    padding: 38px;
-    border-radius: 32px;
-    background:
-      linear-gradient(135deg, rgba(254, 206, 81, 0.13), transparent 48%),
-      linear-gradient(180deg, var(--bg-card), var(--bg-card-dark));
-    border: 1px solid var(--border-color);
-    box-shadow: 0 22px 60px var(--shadow-color);
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    position: relative;
-    overflow: hidden;
-
-    @include md {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    @include sm {
-      padding: 28px 20px;
-      border-radius: 24px;
-    }
-
-    &::before {
-      content: "";
-      position: absolute;
-      width: 260px;
-      height: 260px;
-      top: -130px;
-      right: -100px;
-      border-radius: 50%;
-      background: rgba(254, 206, 81, 0.15);
-      filter: blur(8px);
-      pointer-events: none;
-    }
-
-    > div,
-    .backBtn {
-      position: relative;
-      z-index: 2;
-    }
-
-    .smallTitle {
-      width: fit-content;
-      min-height: 34px;
-      padding: 0 14px;
-      border-radius: 999px;
-      background: rgba(254, 206, 81, 0.12);
-      color: var(--accent);
-      border: 1px solid rgba(254, 206, 81, 0.25);
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 950;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      color: var(--text-main);
-      font-size: 48px;
-      line-height: 1.08;
-      font-weight: 950;
-      letter-spacing: -1.2px;
-
-      @include sm {
-        font-size: 34px;
-      }
-    }
-
-    p {
-      max-width: 760px;
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: 16px;
-      line-height: 1.75;
-    }
-
-    .backBtn {
-      min-height: 48px;
-      padding: 0 20px;
-      border-radius: 15px;
-      background: var(--accent);
-      color: #111111;
-      font-size: 14px;
-      font-weight: 950;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 12px 28px rgba(254, 206, 81, 0.18);
-      transition: 0.25s ease;
-      white-space: nowrap;
-
-      &:hover {
-        background: var(--accent-hover);
-        transform: translateY(-2px);
-      }
-    }
-  }
-
-  .profileUpdateContent {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 390px;
-    gap: 26px;
-    align-items: start;
-
-    @include lg {
-      grid-template-columns: 1fr;
-    }
-
-    .profileUpdateForm,
-    .profileAvatarCard {
-      border-radius: 30px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 18px 45px var(--shadow-color);
-
-      @include sm {
-        border-radius: 24px;
-      }
-    }
-  }
-
-  .profileUpdateForm {
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-
-    @include sm {
-      padding: 22px 18px;
-    }
-
-    .formTop {
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-
-      span {
-        width: fit-content;
-        min-height: 32px;
-        padding: 0 13px;
-        border-radius: 999px;
-        background: rgba(254, 206, 81, 0.12);
-        color: var(--accent);
-        border: 1px solid rgba(254, 206, 81, 0.25);
-        display: inline-flex;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 950;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 13px;
-      }
-
-      h2 {
-        margin: 0 0 8px;
-        color: var(--text-main);
-        font-size: 31px;
-        font-weight: 950;
-        letter-spacing: -0.5px;
-
-        @include sm {
-          font-size: 25px;
-        }
-      }
-
-      p {
-        margin: 0;
-        color: var(--text-secondary);
-        line-height: 1.7;
-        font-size: 15px;
-      }
-    }
-
-    .inputGrid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-
-      @include sm {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .inputGroup {
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-
-      label {
-        color: var(--text-secondary);
-        font-size: 14px;
-        font-weight: 850;
-      }
-
-      input {
-        width: 100%;
-        min-height: 52px;
-        padding: 0 16px;
-        border-radius: 15px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-main);
-        color: var(--text-main);
-        outline: none;
-        font-size: 15px;
-        box-sizing: border-box;
-        transition: 0.25s ease;
-
-        &::placeholder {
-          color: var(--text-secondary);
-          opacity: 0.75;
-        }
-
-        &:focus {
-          border-color: var(--accent);
-          box-shadow: 0 0 0 3px rgba(254, 206, 81, 0.12);
-        }
-
-        &:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-      }
-
-      small {
-        color: var(--text-secondary);
-        font-size: 13px;
-        line-height: 1.6;
-      }
-
-      .passwordBox {
-        display: flex;
-        gap: 10px;
-
-        @include sm {
-          flex-direction: column;
-        }
-
-        input {
-          flex: 1;
-        }
-
-        button {
-          min-width: 86px;
-          min-height: 52px;
-          border-radius: 15px;
-          border: 1px solid var(--border-color);
-          background: var(--bg-main);
-          color: var(--text-main);
-          font-size: 14px;
-          font-weight: 950;
-          cursor: pointer;
-          transition: 0.25s ease;
-
-          &:hover:not(:disabled) {
-            color: var(--accent);
-            border-color: var(--accent);
-          }
-
-          &:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-          }
-        }
-      }
-
-      .passwordHint {
-        width: fit-content;
-        margin-top: 4px;
-        padding: 9px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 850;
-
-        &.valid {
-          color: #56f28f;
-          background: rgba(86, 242, 143, 0.1);
-          border: 1px solid rgba(86, 242, 143, 0.25);
-        }
-
-        &.invalid {
-          color: #ff7676;
-          background: rgba(255, 118, 118, 0.1);
-          border: 1px solid rgba(255, 118, 118, 0.25);
-        }
-      }
-    }
-
-    .message {
-      padding: 14px 16px;
-      border-radius: 15px;
-      font-size: 14px;
-      font-weight: 850;
-      line-height: 1.6;
-
-      &.errorMessage {
-        color: #ff7676;
-        background: rgba(255, 118, 118, 0.1);
-        border: 1px solid rgba(255, 118, 118, 0.25);
-      }
-
-      &.successMessage {
-        color: #56f28f;
-        background: rgba(86, 242, 143, 0.1);
-        border: 1px solid rgba(86, 242, 143, 0.25);
-      }
-    }
-
-    .formActions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-
-      button,
-      .cancelBtn {
-        min-height: 50px;
-        padding: 0 22px;
-        border-radius: 15px;
-        border: none;
-        font-size: 14px;
-        font-weight: 950;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: 0.25s ease;
-
-        @include sm {
-          width: 100%;
-        }
-      }
-
-      button {
-        background: var(--accent);
-        color: #111111;
-        box-shadow: 0 12px 28px rgba(254, 206, 81, 0.16);
-
-        &:hover:not(:disabled) {
-          background: var(--accent-hover);
-          transform: translateY(-2px);
-        }
-
-        &:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-      }
-
-      .cancelBtn {
-        background: var(--bg-main);
-        color: var(--text-main);
-        border: 1px solid var(--border-color);
-
-        &:hover {
-          color: var(--accent);
-          border-color: var(--accent);
-          transform: translateY(-2px);
-        }
-      }
-    }
+@media (max-width: 1100px) {
+  .profileUpdateLayout {
+    grid-template-columns: 1fr;
   }
 
   .profileAvatarCard {
-    padding: 28px;
-    position: sticky;
-    top: 100px;
-
-    @include lg {
-      position: relative;
-      top: 0;
-    }
-
-    @include sm {
-      padding: 22px 18px;
-    }
-
-    .avatarCardHeader {
-      margin-bottom: 22px;
-
-      span {
-        width: fit-content;
-        min-height: 32px;
-        padding: 0 13px;
-        border-radius: 999px;
-        background: rgba(254, 206, 81, 0.12);
-        color: var(--accent);
-        border: 1px solid rgba(254, 206, 81, 0.25);
-        display: inline-flex;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 950;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 13px;
-      }
-
-      h2 {
-        margin: 0 0 8px;
-        color: var(--text-main);
-        font-size: 28px;
-        font-weight: 950;
-      }
-
-      p {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 14px;
-        line-height: 1.7;
-      }
-    }
-
-    .avatarPreviewBox {
-      width: 190px;
-      height: 190px;
-      margin: 0 auto 20px;
-      border-radius: 42px;
-      overflow: hidden;
-      border: 4px solid rgba(254, 206, 81, 0.25);
-      background: var(--bg-main);
-      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
-      position: relative;
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      .avatarRole {
-        position: absolute;
-        left: 12px;
-        bottom: 12px;
-        min-height: 30px;
-        padding: 0 11px;
-        border-radius: 999px;
-        background: var(--accent);
-        color: #111111;
-        font-size: 11px;
-        font-weight: 950;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-    }
-
-    .avatarActions {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 15px;
-
-      label,
-      button {
-        min-height: 44px;
-        padding: 0 16px;
-        border-radius: 14px;
-        font-size: 14px;
-        font-weight: 950;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: 0.25s ease;
-      }
-
-      .uploadBtn {
-        background: var(--accent);
-        color: #111111;
-
-        &:hover {
-          background: var(--accent-hover);
-          transform: translateY(-2px);
-        }
-      }
-
-      .resetImageBtn {
-        border: 1px solid rgba(255, 118, 118, 0.25);
-        background: rgba(255, 118, 118, 0.1);
-        color: #ff7676;
-
-        &:hover:not(:disabled) {
-          transform: translateY(-2px);
-        }
-
-        &:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-      }
-    }
-
-    > input[type="file"] {
-      display: none;
-    }
-
-    .avatarInfo {
-      margin-bottom: 22px;
-      padding: 15px;
-      border-radius: 16px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-
-      span {
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 800;
-      }
-    }
-
-    .accountBox {
-      padding: 18px;
-      border-radius: 20px;
-      background:
-        linear-gradient(135deg, rgba(254, 206, 81, 0.08), transparent 55%),
-        var(--bg-main);
-      border: 1px solid var(--border-color);
-
-      h3 {
-        margin: 0 0 15px;
-        color: var(--text-main);
-        font-size: 20px;
-        font-weight: 950;
-      }
-
-      div {
-        padding: 13px 0;
-        border-top: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        gap: 14px;
-
-        span {
-          color: var(--text-secondary);
-          font-size: 13px;
-          font-weight: 850;
-        }
-
-        strong {
-          color: var(--text-main);
-          font-size: 13px;
-          font-weight: 950;
-          text-align: right;
-          word-break: break-word;
-        }
-      }
-    }
+    position: static;
   }
 }
 
-.profileUpdateLoading {
-  padding: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .loadingCard {
-    width: min(460px, 100%);
-    padding: 34px;
-    border-radius: 28px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 18px 45px var(--shadow-color);
-    text-align: center;
-
-    span {
-      width: 62px;
-      height: 62px;
-      margin: 0 auto 18px;
-      border-radius: 50%;
-      border: 4px solid rgba(254, 206, 81, 0.18);
-      border-top-color: var(--accent);
-      display: block;
-      animation: profileUpdateSpin 0.9s linear infinite;
-    }
-
-    h2 {
-      margin: 0 0 8px;
-      color: var(--text-main);
-      font-size: 25px;
-      font-weight: 950;
-    }
-
-    p {
-      margin: 0;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
+@media (max-width: 760px) {
+  .profileUpdateHeader {
+    align-items: flex-start;
+    flex-direction: column;
   }
-}
 
-@keyframes profileUpdateSpin {
-  to {
-    transform: rotate(360deg);
+  .backBtn,
+  .formActions button,
+  .cancelBtn,
+  .uploadBtn,
+  .resetImageBtn {
+    width: 100%;
+  }
+
+  .inputGrid,
+  .passwordBox,
+  .formActions,
+  .avatarActions,
+  .passwordRequirements {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .avatarPreviewBox,
+  .avatarPreviewBox img {
+    width: 140px;
+    height: 140px;
   }
 }

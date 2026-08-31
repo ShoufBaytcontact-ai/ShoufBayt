@@ -2,9 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
+import "./i18n";
 import "./theme.scss";
+import "./style.scss";
 
-import { AuthProvider } from "./context/AuthContext.jsx";
+import { AuthContextProvider } from "./context/AuthContext.jsx";
 import { ThemeContextProvider } from "./context/ThemeContext.jsx";
 import { SocketContextProvider } from "./context/SocketContext.jsx";
 
@@ -12,12 +14,12 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <AuthProvider>
+    <AuthContextProvider>
       <ThemeContextProvider>
         <SocketContextProvider>
           <App />
         </SocketContextProvider>
       </ThemeContextProvider>
-    </AuthProvider>
+    </AuthContextProvider>
   </React.StrictMode>
 );

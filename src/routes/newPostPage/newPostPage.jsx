@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./newPostPage.scss";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+import { useTranslation } from "react-i18next";
+import { AuthContext } from "../../context/AuthContext.jsx";
 import apiRequest from "../../lib/apiRequest";
+import { subscriptionApi } from "../../lib/services";
+import "../requestListingPage/requestListingPage.scss";
+import "../../components/map/map.scss";
 
 import {
   MapContainer,
@@ -12,49 +14,71 @@ import {
   TileLayer,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { MAP_TILES, SATELLITE_LABELS, SATELLITE_TILES } from "../../lib/mapTiles";
 
-const markerIcon = L.icon({
-  iconUrl: "/pin.png",
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
+const locationIcon = L.divIcon({
+  className: "propertyMarker",
+  html: `
+    <svg class="mapPinSvg" viewBox="0 0 32 42" aria-hidden="true">
+      <path d="M16 1.5C8.5 1.5 2.5 7.6 2.5 15.3c0 8.9 9.4 18.6 13.5 24.4a1.2 1.2 0 0 0 1.9 0c4.1-5.8 13.6-15.5 13.6-24.4C29.5 7.6 23.5 1.5 16 1.5Z"/>
+      <circle cx="16" cy="15.2" r="5.2"/>
+    </svg>
+  `,
+  iconSize: [32, 42],
+  iconAnchor: [16, 42],
+  popupAnchor: [0, -38],
 });
 
 const defaultMapCenter = [33.8938, 35.5018];
-const MAX_PROPERTY_IMAGES = 20;
-const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
+
+const PROPERTY_OPTIONS = [
+  "apartment",
+  "house",
+  "villa",
+  "land",
+  "office",
+  "shop",
+];
 
 const initialForm = {
   title: "",
   price: "",
   address: "",
   city: "",
-  bedroom: "",
-  bathroom: "",
+  bedroom: "1",
+  bathroom: "1",
   size: "",
-  type: "rent",
+  type: "sale",
   property: "apartment",
+  description: "",
 };
 
-function ChangeMapCenter({ position }) {
+function ChangeMapCenter({ position, mapType }) {
   const map = useMap();
+  const isSatellite = mapType === "satellite";
 
   useEffect(() => {
-    if (!position) {
-      return;
+    map.setMaxZoom(isSatellite ? 19 : MAP_TILES.maxZoom);
+
+    if (isSatellite && map.getZoom() < 16) {
+      map.setZoom(Math.min(18, map.getZoom() + 3));
     }
+  }, [map, isSatellite]);
 
-    map.setView([position.latitude, position.longitude], 15);
+  useEffect(() => {
+    if (!position) return;
 
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-
+    map.setView(
+      [position.latitude, position.longitude],
+      isSatellite ? 17 : 16
+    );
+    const timeout = setTimeout(() => map.invalidateSize(), 100);
     return () => clearTimeout(timeout);
-  }, [map, position]);
+  }, [map, position, isSatellite]);
 
   return null;
 }
@@ -63,10 +87,7 @@ function FixMapSize() {
   const map = useMap();
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-
+    const timeout = setTimeout(() => map.invalidateSize(), 250);
     return () => clearTimeout(timeout);
   }, [map]);
 
@@ -74,6 +95,8 @@ function FixMapSize() {
 }
 
 function LocationPicker({ location, onSelectLocation }) {
+  const { t } = useTranslation();
+
   useMapEvents({
     click(e) {
       onSelectLocation({
@@ -83,330 +106,236 @@ function LocationPicker({ location, onSelectLocation }) {
     },
   });
 
-  if (!location) {
-    return null;
-  }
+  if (!location) return null;
 
   return (
-    <Marker position={[location.latitude, location.longitude]} icon={markerIcon}>
-      <Popup>Selected property location</Popup>
+    <Marker
+      position={[location.latitude, location.longitude]}
+      icon={locationIcon}
+    >
+      <Popup>{t("newPost.location.popup")}</Popup>
     </Marker>
   );
 }
 
-function getPlainText(html) {
-  return String(html || "")
-    .replace(/<(.|\n)*?>/g, "")
-    .trim();
-}
-
-function isValidImageType(file) {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-  return allowedTypes.includes(file.type);
-}
-
 function NewPostPage() {
   const navigate = useNavigate();
-  const previewUrlsRef = useRef([]);
+  const { currentUser } = useContext(AuthContext);
+  const { t } = useTranslation();
 
+  const role = String(currentUser?.role || "").toUpperCase();
+  const isSelfList = role === "USER";
+
+  const [step, setStep] = useState("details");
   const [form, setForm] = useState(initialForm);
-  const [description, setDescription] = useState("");
-  const [descriptionMode, setDescriptionMode] = useState("manual");
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [mainImage, setMainImage] = useState("");
-
+  const [images, setImages] = useState([]);
   const [location, setLocation] = useState(null);
   const [locating, setLocating] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [newPostId, setNewPostId] = useState("");
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [mapType, setMapType] = useState("map");
+  const [quota, setQuota] = useState(null);
 
-  const uploadedCount = imageFiles.length;
-
-  const plainDescription = useMemo(() => {
-    return getPlainText(description);
-  }, [description]);
-
-  useEffect(() => {
-    return () => {
-      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      previewUrlsRef.current = [];
-    };
-  }, []);
+  const isLandProperty = form.property === "land";
 
   useEffect(() => {
-    if (!mainImage && imagePreviews.length > 0) {
-      setMainImage(imagePreviews[0]);
+    if (!currentUser) {
+      navigate("/login", { replace: true });
       return;
     }
+  }, [currentUser, navigate]);
 
-    if (mainImage && !imagePreviews.includes(mainImage)) {
-      setMainImage(imagePreviews[0] || "");
+  useEffect(() => {
+    if (!isSelfList) {
+      setQuota(null);
+      return undefined;
     }
-  }, [imagePreviews, mainImage]);
 
-  const clearMessages = () => {
-    setError("");
-    setSuccess("");
-  };
+    let cancelled = false;
+    subscriptionApi
+      .me()
+      .then((res) => {
+        if (!cancelled) {
+          setQuota(res.data?.listingQuota || null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQuota(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSelfList]);
+
+  useEffect(() => {
+    const urls = images.map((file) => URL.createObjectURL(file));
+    setImagePreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [images]);
+
+  const summary = useMemo(
+    () => ({
+      title: form.title.trim(),
+      city: form.city.trim(),
+      type: form.type,
+      property: form.property,
+      price: form.price,
+      photos: images.length,
+      address: form.address.trim(),
+      size: form.size,
+      bedroom: form.bedroom,
+      bathroom: form.bathroom,
+    }),
+    [form, images]
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => {
+      if (name === "property" && value === "land") {
+        return {
+          ...prev,
+          property: value,
+          bedroom: "0",
+          bathroom: "0",
+        };
+      }
 
-    clearMessages();
+      if (name === "property" && prev.property === "land") {
+        return {
+          ...prev,
+          property: value,
+          bedroom: prev.bedroom === "0" ? "1" : prev.bedroom,
+          bathroom: prev.bathroom === "0" ? "1" : prev.bathroom,
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
+
+    setError("");
   };
 
-  const handleSelectLocation = (selectedLocation) => {
-    setLocation(selectedLocation);
-    clearMessages();
+  const handleImages = (e) => {
+    const files = Array.from(e.target.files || []).filter((file) =>
+      String(file.type || "").startsWith("image/")
+    );
+    setImages((prev) => [...prev, ...files].slice(0, 20));
+    e.target.value = "";
   };
 
-  const handleUseCurrentLocation = () => {
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSelectLocation = (nextLocation) => {
+    setLocation(nextLocation);
+    setError("");
+  };
+
+  const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setError("Your browser does not support location access.");
+      setError(t("newPost.validation.locationNotSupported"));
       return;
     }
 
     setLocating(true);
-    setError("");
-
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        handleSelectLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+      (pos) => {
+        setLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
         });
-
+        setError("");
         setLocating(false);
       },
       () => {
-        setError(
-          "Failed to get your location. Please select it manually on the map."
-        );
+        setError(t("newPost.validation.locationFailed"));
         setLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
       }
     );
   };
 
-  const validateImages = (files) => {
-    if (imageFiles.length + files.length > MAX_PROPERTY_IMAGES) {
-      return `You can upload a maximum of ${MAX_PROPERTY_IMAGES} images.`;
+  const validateDetails = () => {
+    if (!form.title.trim() || !form.address.trim() || !form.city.trim()) {
+      return t("newPost.validation.requiredFields");
     }
-
-    const invalidType = files.find((file) => !isValidImageType(file));
-
-    if (invalidType) {
-      return "Only image files are allowed: JPG, PNG, JPEG, or WEBP.";
+    if (!form.price || Number(form.price) <= 0) {
+      return t("newPost.validation.price");
     }
-
-    const largeFile = files.find((file) => file.size > MAX_IMAGE_SIZE);
-
-    if (largeFile) {
-      return "Each image must be less than 8MB.";
+    if (!isLandProperty) {
+      if (form.bedroom === "" || Number(form.bedroom) < 0) {
+        return t("newPost.validation.bedrooms");
+      }
+      if (form.bathroom === "" || Number(form.bathroom) < 0) {
+        return t("newPost.validation.bathrooms");
+      }
     }
-
+    if (!form.description.trim() || form.description.trim().length < 20) {
+      return t("newPost.validation.description");
+    }
+    if (!location) {
+      return t("newPost.validation.location");
+    }
+    if (images.length === 0) {
+      return t("newPost.validation.images");
+    }
     return "";
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files || []);
+  const listingBlocked = Boolean(isSelfList && quota && !quota.allowed);
 
-    if (files.length === 0) {
+  const goToConfirm = (e) => {
+    e.preventDefault();
+    if (listingBlocked) {
+      setError(t("listingPlan.limitError"));
       return;
     }
-
-    const imageError = validateImages(files);
-
-    if (imageError) {
-      setError(imageError);
-      e.target.value = "";
+    const validationError = validateDetails();
+    if (validationError) {
+      setError(validationError);
       return;
     }
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-
-    previewUrlsRef.current = [...previewUrlsRef.current, ...newPreviews];
-
-    setImageFiles((prev) => [...prev, ...files]);
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
-
-    if (!mainImage && newPreviews.length > 0) {
-      setMainImage(newPreviews[0]);
-    }
-
-    clearMessages();
-    e.target.value = "";
-  };
-
-  const handleRemoveImage = (index) => {
-    const removedPreview = imagePreviews[index];
-
-    if (removedPreview) {
-      URL.revokeObjectURL(removedPreview);
-      previewUrlsRef.current = previewUrlsRef.current.filter(
-        (url) => url !== removedPreview
-      );
-    }
-
-    const updatedFiles = imageFiles.filter((_, i) => i !== index);
-    const updatedPreviews = imagePreviews.filter((_, i) => i !== index);
-
-    setImageFiles(updatedFiles);
-    setImagePreviews(updatedPreviews);
-
-    if (mainImage === removedPreview) {
-      setMainImage(updatedPreviews[0] || "");
-    }
-
-    clearMessages();
-  };
-
-  const handleGenerateDescription = async () => {
-    if (aiLoading) {
-      return;
-    }
-
-    if (!form.title.trim()) {
-      setError("Please write the property title first.");
-      return;
-    }
-
-    if (!form.city.trim()) {
-      setError("Please write the city first.");
-      return;
-    }
-
-    if (!form.price || Number(form.price) <= 0) {
-      setError("Please write a valid price first.");
-      return;
-    }
-
-    try {
-      setAiLoading(true);
-      setError("");
-      setSuccess("");
-
-      const res = await apiRequest.post("/ai/property-description", {
-        title: form.title,
-        price: form.price,
-        address: form.address,
-        city: form.city,
-        bedroom: form.bedroom,
-        bathroom: form.bathroom,
-        size: form.size,
-        type: form.type,
-        property: form.property,
-      });
-
-      setDescription(res.data.description || "");
-      setSuccess(
-        "AI description generated successfully. You can edit it before submitting."
-      );
-    } catch (err) {
-      console.log("AI DESCRIPTION ERROR:", err);
-      setError(err.response?.data?.message || "Failed to generate description.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const validateForm = () => {
-    if (!form.title.trim()) {
-      return "Title is required.";
-    }
-
-    if (!form.price || Number(form.price) <= 0) {
-      return "Price must be greater than 0.";
-    }
-
-    if (!form.address.trim()) {
-      return "Address is required.";
-    }
-
-    if (!form.city.trim()) {
-      return "City is required.";
-    }
-
-    if (form.bedroom === "" || Number(form.bedroom) < 0) {
-      return "Bedroom number is required.";
-    }
-
-    if (form.bathroom === "" || Number(form.bathroom) < 0) {
-      return "Bathroom number is required.";
-    }
-
-    if (form.size && Number(form.size) < 0) {
-      return "Size cannot be negative.";
-    }
-
-    if (!plainDescription) {
-      return "Description is required.";
-    }
-
-    if (location?.latitude == null || location?.longitude == null) {
-      return "Please select the property location using the map.";
-    }
-
-    if (imageFiles.length === 0) {
-      return "Please upload at least one property image.";
-    }
-
-    return "";
-  };
-
-  const resetForm = () => {
-    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-    previewUrlsRef.current = [];
-
-    setForm(initialForm);
-    setDescription("");
-    setDescriptionMode("manual");
-    setImageFiles([]);
-    setImagePreviews([]);
-    setMainImage("");
-    setLocation(null);
+    setError("");
+    setStep("confirm");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (loading || aiLoading) {
+    if (listingBlocked) {
+      setError(t("listingPlan.limitError"));
+      setStep("details");
       return;
     }
 
-    setError("");
-    setSuccess("");
-
-    const validationError = validateForm();
-
+    const validationError = validateDetails();
     if (validationError) {
       setError(validationError);
+      setStep("details");
       return;
     }
 
     try {
       setLoading(true);
+      setError("");
+      setSuccess("");
 
       const postData = {
         title: form.title.trim(),
         price: Number(form.price),
         address: form.address.trim(),
         city: form.city.trim(),
-        bedroom: Number(form.bedroom),
-        bathroom: Number(form.bathroom),
+        bedroom: isLandProperty ? 0 : Number(form.bedroom),
+        bathroom: isLandProperty ? 0 : Number(form.bathroom),
         latitude: String(location.latitude),
         longitude: String(location.longitude),
         type: form.type,
@@ -414,456 +343,624 @@ function NewPostPage() {
       };
 
       const postDetail = {
-        desc: description,
+        desc: form.description.trim(),
+        description: form.description.trim(),
         size: form.size ? Number(form.size) : null,
       };
 
       const data = new FormData();
-
       data.append("postData", JSON.stringify(postData));
       data.append("postDetail", JSON.stringify(postDetail));
-
-      imageFiles.forEach((image) => {
-        data.append("images", image);
-      });
+      images.forEach((file) => data.append("images", file));
 
       const res = await apiRequest.post("/posts", data, {
         withCredentials: true,
       });
 
-      setSuccess("Property added successfully.");
-
-      const newPostId = res.data?.id || res.data?.post?.id;
-
-      resetForm();
-
-      if (newPostId) {
-        navigate(`/properties/${newPostId}`);
-      } else {
-        navigate("/profile");
-      }
+      const createdId = res.data?.id || res.data?.post?.id || "";
+      setNewPostId(createdId);
+      setSuccess(
+        t(isSelfList ? "newPost.moderation.success" : "newPost.success.added")
+      );
+      setStep("done");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      console.log("ADD POST ERROR:", err);
-      console.log("BACKEND ERROR:", err.response?.data);
-      setError(err.response?.data?.message || "Failed to add property.");
+      setError(err.response?.data?.message || t("newPost.errors.addFailed"));
     } finally {
       setLoading(false);
     }
   };
 
+  if (!currentUser) {
+    return null;
+  }
+
   return (
-    <div className="newPostPage pageFade">
-      <div className="newPostWrapper">
-        <div className="newPostHeader">
-          <div>
-            <span>Create Listing</span>
-
-            <h1>Add New Property</h1>
-
-            <p>
-              Add complete property details, upload high-quality images, choose
-              the exact location, and create a professional description manually
-              or with SmartEstate AI.
-            </p>
-          </div>
-
-          <Link to="/profile" className="backBtn">
-            Back to Profile
-          </Link>
+    <main className="requestListingPage pageFade">
+      <section className="requestHero">
+        <div>
+          <p className="requestEyebrow">
+            {t(isSelfList ? "newPost.moderation.badge" : "newPost.hero.badge")}
+          </p>
+          <h1>
+            {t(isSelfList ? "newPost.moderation.title" : "newPost.hero.title")}
+          </h1>
+          <span>
+            {t(
+              isSelfList
+                ? "newPost.moderation.description"
+                : "newPost.hero.description"
+            )}
+          </span>
         </div>
 
-        <div className="newPostLayout">
-          <form className="propertyForm" onSubmit={handleSubmit}>
-            <div className="formSection">
-              <div className="sectionHeader">
-                <span>Basic Details</span>
+        <div className="requestHeroActions">
+          {isSelfList && (
+            <Link to="/request-listing" className="requestGhostBtn">
+              {t("newPost.moderation.switchPath")}
+            </Link>
+          )}
+          <Link to="/my-homes" className="requestGhostBtn">
+            {t("newPost.hero.myListings")}
+          </Link>
+        </div>
+      </section>
 
-                <h2>Property Information</h2>
+      <section className="requestStats">
+        <div>
+          <span>{t("newPost.stats.brief")}</span>
+          <strong>{t("newPost.stats.briefValue")}</strong>
+        </div>
+        <div>
+          <span>
+            {t(isSelfList ? "newPost.moderation.review" : "newPost.stats.review")}
+          </span>
+          <strong>
+            {t(
+              isSelfList
+                ? "newPost.moderation.reviewValue"
+                : "newPost.stats.reviewValue"
+            )}
+          </strong>
+        </div>
+        <div>
+          <span>
+            {t(isSelfList ? "newPost.moderation.live" : "newPost.stats.live")}
+          </span>
+          <strong>
+            {t(
+              isSelfList
+                ? "newPost.moderation.liveValue"
+                : "newPost.stats.liveValue"
+            )}
+          </strong>
+        </div>
+      </section>
 
-                <p>Fill in the main information users will see on the listing.</p>
-              </div>
+      {isSelfList && quota && (
+        <div className={`requestAlert ${listingBlocked ? "error" : ""}`}>
+          {quota.launchPremiumFree
+            ? t("listingPlan.launchNotice", {
+                date: new Date(quota.launchFreeUntil).toLocaleDateString(
+                  undefined,
+                  { year: "numeric", month: "short", day: "numeric" }
+                ),
+                price: quota.priceMonthly,
+              })
+            : quota.unlimited
+              ? t("listingPlan.premiumActive")
+              : t("listingPlan.remaining", {
+                  remaining: quota.remaining,
+                  limit: quota.freeLimit,
+                  used: quota.used,
+                  price: quota.priceMonthly,
+                })}
+        </div>
+      )}
 
-              <div className="formGrid">
-                <div className="inputGroup wide">
-                  <label htmlFor="title">Property Title</label>
+      <nav
+        className="requestTabs"
+        aria-label={t(isSelfList ? "newPost.moderation.badge" : "newPost.hero.badge")}
+      >
+        <button type="button" className={step === "details" ? "isActive" : ""}>
+          {t("newPost.steps.details")}
+        </button>
+        <button
+          type="button"
+          className={step === "confirm" || step === "done" ? "isActive" : ""}
+        >
+          {t(
+            isSelfList ? "newPost.moderation.confirmStep" : "newPost.steps.confirm"
+          )}
+        </button>
+      </nav>
 
-                  <input
-                    id="title"
-                    name="title"
-                    type="text"
-                    value={form.title}
-                    onChange={handleChange}
-                    placeholder="Example: Modern apartment in Beirut"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
+      {listingBlocked && (
+        <section className="requestCard">
+          <header className="requestCardHeader">
+            <p className="requestEyebrow">{t("listingPlan.limitBadge")}</p>
+            <h2>{t("listingPlan.limitTitle")}</h2>
+            <p>
+              {t("listingPlan.limitText", {
+                price: quota?.priceMonthly ?? 20,
+                limit: quota?.freeLimit ?? 1,
+              })}
+            </p>
+          </header>
+          <div className="requestActions">
+            <Link to="/billing" className="requestPrimaryBtn">
+              {t("listingPlan.upgrade")}
+            </Link>
+            <Link to="/request-listing" className="requestTextLink">
+              {t("listingPlan.useAgent")}
+            </Link>
+          </div>
+        </section>
+      )}
 
-                <div className="inputGroup">
-                  <label htmlFor="price">Price</label>
+      {step === "details" && !listingBlocked && (
+        <form className="requestForm" onSubmit={goToConfirm}>
+          <section className="requestCard">
+            <header className="requestCardHeader">
+              <p className="requestEyebrow">{t("newPost.details.badge")}</p>
+              <h2>{t("newPost.details.title")}</h2>
+              <p>{t("newPost.details.description")}</p>
+            </header>
 
-                  <input
-                    id="price"
-                    name="price"
-                    type="number"
-                    min="1"
-                    value={form.price}
-                    onChange={handleChange}
-                    placeholder="120000"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="city">City</label>
-
-                  <input
-                    id="city"
-                    name="city"
-                    type="text"
-                    value={form.city}
-                    onChange={handleChange}
-                    placeholder="Beirut"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-
-                <div className="inputGroup wide">
-                  <label htmlFor="address">Address</label>
-
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Street, building, area..."
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="type">Listing Type</label>
-
-                  <select
-                    id="type"
-                    name="type"
-                    value={form.type}
-                    onChange={handleChange}
-                    disabled={loading || aiLoading}
-                  >
-                    <option value="rent">Rent</option>
-                    <option value="buy">Buy</option>
-                  </select>
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="property">Property Category</label>
-
-                  <select
-                    id="property"
-                    name="property"
-                    value={form.property}
-                    onChange={handleChange}
-                    disabled={loading || aiLoading}
-                  >
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                    <option value="land">Land</option>
-                  </select>
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="bedroom">Bedrooms</label>
-
-                  <input
-                    id="bedroom"
-                    name="bedroom"
-                    type="number"
-                    min="0"
-                    value={form.bedroom}
-                    onChange={handleChange}
-                    placeholder="2"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="bathroom">Bathrooms</label>
-
-                  <input
-                    id="bathroom"
-                    name="bathroom"
-                    type="number"
-                    min="0"
-                    value={form.bathroom}
-                    onChange={handleChange}
-                    placeholder="1"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label htmlFor="size">Total Size m²</label>
-
-                  <input
-                    id="size"
-                    name="size"
-                    type="number"
-                    min="0"
-                    value={form.size}
-                    onChange={handleChange}
-                    placeholder="120"
-                    disabled={loading || aiLoading}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="formSection">
-              <div className="sectionHeader">
-                <span>Description</span>
-
-                <h2>Property Overview</h2>
-
-                <p>
-                  Write the description manually or generate a professional one
-                  using SmartEstate AI.
-                </p>
-              </div>
-
-              <div className="descriptionModeTabs">
-                <button
-                  type="button"
-                  className={descriptionMode === "manual" ? "active" : ""}
-                  onClick={() => setDescriptionMode("manual")}
-                  disabled={loading || aiLoading}
-                >
-                  Manual Description
-                </button>
-
-                <button
-                  type="button"
-                  className={descriptionMode === "ai" ? "active" : ""}
-                  onClick={() => setDescriptionMode("ai")}
-                  disabled={loading || aiLoading}
-                >
-                  SmartEstate AI
-                </button>
-              </div>
-
-              {descriptionMode === "ai" && (
-                <div className="aiDescriptionBox">
-                  <div>
-                    <span>AI Assistant</span>
-
-                    <h3>Generate with SmartEstate AI</h3>
-
-                    <p>
-                      SmartEstate AI will use the property details above to write
-                      a clean, professional real estate description.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateDescription}
-                    disabled={loading || aiLoading}
-                  >
-                    {aiLoading ? "Generating..." : "Generate Description"}
-                  </button>
-                </div>
-              )}
-
-              <div className="descriptionEditor">
-                <ReactQuill
-                  theme="snow"
-                  onChange={setDescription}
-                  value={description}
-                  placeholder={
-                    descriptionMode === "ai"
-                      ? "Click Generate Description, then edit the result if needed..."
-                      : "Write property description manually..."
-                  }
-                  readOnly={loading || aiLoading}
+            <div className="requestGrid">
+              <label className="requestField">
+                {t("newPost.form.title")}
+                <input
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder={t("newPost.form.titlePlaceholder")}
+                  required
                 />
-              </div>
-            </div>
+              </label>
 
-            <div className="formSection">
-              <div className="sectionHeader mapHeader">
-                <div>
-                  <span>Location</span>
+              <label className="requestField">
+                {t("newPost.form.price")}
+                <input
+                  name="price"
+                  type="number"
+                  min="1"
+                  value={form.price}
+                  onChange={handleChange}
+                  placeholder="150000"
+                  required
+                />
+              </label>
 
-                  <h2>Choose Property Location</h2>
+              <label className="requestField">
+                {t("newPost.form.city")}
+                <input
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  placeholder={t("newPost.form.cityPlaceholder")}
+                  required
+                />
+              </label>
 
-                  <p>
-                    Use your current location or click on the map to choose the
-                    exact property location.
-                  </p>
-                </div>
+              <label className="requestField">
+                {t("newPost.form.address")}
+                <input
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  placeholder={t("newPost.form.addressPlaceholder")}
+                  required
+                />
+              </label>
 
-                <button
-                  type="button"
-                  className="locationButton"
-                  onClick={handleUseCurrentLocation}
-                  disabled={locating || loading || aiLoading}
+              <label className="requestField">
+                {t("newPost.form.listingType")}
+                <select name="type" value={form.type} onChange={handleChange}>
+                  <option value="sale">{t("newPost.options.sale")}</option>
+                  <option value="rent">{t("newPost.options.rent")}</option>
+                </select>
+              </label>
+
+              <label className="requestField">
+                {t("newPost.form.category")}
+                <select
+                  name="property"
+                  value={form.property}
+                  onChange={handleChange}
                 >
-                  {locating ? "Locating..." : "Use My Location"}
-                </button>
+                  {PROPERTY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {t(`newPost.options.${option}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label
+                className={
+                  isLandProperty ? "requestField isLocked" : "requestField"
+                }
+              >
+                {t("newPost.form.bedrooms")}
+                {isLandProperty && (
+                  <small>{t("newPost.form.landLocked")}</small>
+                )}
+                <input
+                  name="bedroom"
+                  type="number"
+                  min="0"
+                  value={isLandProperty ? "0" : form.bedroom}
+                  onChange={handleChange}
+                  disabled={isLandProperty}
+                  placeholder={isLandProperty ? "—" : "2"}
+                />
+              </label>
+
+              <label
+                className={
+                  isLandProperty ? "requestField isLocked" : "requestField"
+                }
+              >
+                {t("newPost.form.bathrooms")}
+                {isLandProperty && (
+                  <small>{t("newPost.form.landLocked")}</small>
+                )}
+                <input
+                  name="bathroom"
+                  type="number"
+                  min="0"
+                  value={isLandProperty ? "0" : form.bathroom}
+                  onChange={handleChange}
+                  disabled={isLandProperty}
+                  placeholder={isLandProperty ? "—" : "1"}
+                />
+              </label>
+
+              <label className="requestField">
+                {t("newPost.form.size")}
+                <input
+                  name="size"
+                  type="number"
+                  min="0"
+                  value={form.size}
+                  onChange={handleChange}
+                  placeholder="120"
+                />
+              </label>
+
+              <label className="requestField wide">
+                {t("newPost.form.description")}
+                <textarea
+                  name="description"
+                  rows={6}
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder={t("newPost.form.descriptionPlaceholder")}
+                  required
+                  minLength={20}
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="requestCard">
+            <header className="requestCardHeader mapHeader">
+              <div>
+                <p className="requestEyebrow">{t("newPost.location.badge")}</p>
+                <h2>{t("newPost.location.title")}</h2>
+                <p>{t("newPost.location.description")}</p>
               </div>
+              <button
+                type="button"
+                className="requestPrimaryBtn"
+                onClick={useMyLocation}
+                disabled={locating}
+              >
+                {locating
+                  ? t("newPost.location.locating")
+                  : t("newPost.location.useMyLocation")}
+              </button>
+            </header>
 
-              {location && (
-                <div className="locationValues">
-                  <span>Lat: {location.latitude.toFixed(6)}</span>
-                  <span>Lng: {location.longitude.toFixed(6)}</span>
-                </div>
-              )}
+            {location && (
+              <div className="requestCoords">
+                <span>
+                  {t("newPost.location.lat")}: {location.latitude.toFixed(6)}
+                </span>
+                <span>
+                  {t("newPost.location.lng")}: {location.longitude.toFixed(6)}
+                </span>
+              </div>
+            )}
 
-              <div className="mapPickerBox">
+            <div className="requestMapBox">
+              <div
+                className={
+                  mapType === "satellite" ? "mapWrapper isSatellite" : "mapWrapper"
+                }
+              >
                 <MapContainer
-                  className="locationMap"
+                  className="map"
                   center={
                     location
                       ? [location.latitude, location.longitude]
                       : defaultMapCenter
                   }
-                  zoom={location ? 15 : 12}
+                  zoom={location ? 16 : 12}
+                  minZoom={5}
+                  maxZoom={mapType === "satellite" ? 19 : MAP_TILES.maxZoom}
                   scrollWheelZoom={true}
+                  zoomControl={false}
                 >
-                  <TileLayer
-                    attribution="&copy; OpenStreetMap contributors"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-
+                  <ZoomControl position="topright" />
+                  {mapType === "satellite" ? (
+                    <>
+                      <TileLayer
+                        key="satellite"
+                        attribution={SATELLITE_TILES.attribution}
+                        url={SATELLITE_TILES.url}
+                        maxZoom={SATELLITE_TILES.maxZoom}
+                        maxNativeZoom={19}
+                      />
+                      <TileLayer
+                        key="satellite-labels"
+                        url={SATELLITE_LABELS}
+                        attribution=""
+                        maxZoom={19}
+                        pane="overlayPane"
+                      />
+                    </>
+                  ) : (
+                    <TileLayer
+                      key="street"
+                      attribution={MAP_TILES.attribution}
+                      url={MAP_TILES.url}
+                      maxZoom={MAP_TILES.maxZoom}
+                      subdomains={MAP_TILES.subdomains}
+                    />
+                  )}
                   <FixMapSize />
-
-                  <ChangeMapCenter position={location} />
-
+                  <ChangeMapCenter position={location} mapType={mapType} />
                   <LocationPicker
                     location={location}
                     onSelectLocation={handleSelectLocation}
                   />
                 </MapContainer>
+
+                <div
+                  className="mapTypeSwitch"
+                  role="group"
+                  aria-label={t("list.map.title")}
+                >
+                  <button
+                    type="button"
+                    className={mapType !== "satellite" ? "isActive" : ""}
+                    onClick={() => setMapType("map")}
+                  >
+                    {t("list.map.mapView")}
+                  </button>
+                  <button
+                    type="button"
+                    className={mapType === "satellite" ? "isActive" : ""}
+                    onClick={() => setMapType("satellite")}
+                  >
+                    {t("list.map.satellite")}
+                  </button>
+                </div>
+
+                {location && (
+                  <div className="mapInfoBadge">
+                    {t("newPost.location.pinSet")}
+                  </div>
+                )}
+
+                {!location && (
+                  <div className="mapEmptyOverlay mapEmptySoft">
+                    <div>
+                      <p>{t("newPost.location.clickHint")}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+          </section>
 
-            {error && <div className="formMessage errorMessage">{error}</div>}
+          <section className="requestCard">
+            <header className="requestCardHeader">
+              <p className="requestEyebrow">{t("newPost.media.badge")}</p>
+              <h2>{t("newPost.media.title")}</h2>
+              <p>{t("newPost.media.description")}</p>
+            </header>
 
-            {success && (
-              <div className="formMessage successMessage">{success}</div>
-            )}
-
-            <div className="submitBar">
-              <button type="submit" disabled={loading || aiLoading}>
-                {loading ? "Adding Property..." : "Add Property"}
-              </button>
-
-              <Link to="/profile">Cancel</Link>
-            </div>
-          </form>
-
-          <aside className="imagePanel">
-            <div className="imageUploadBox">
-              <div className="uploadHeader">
-                <span>Property Media</span>
-
-                <h2>Upload Images</h2>
-
-                <p>
-                  Upload up to {MAX_PROPERTY_IMAGES} property images. Choose the
-                  best image as the main preview.
-                </p>
-              </div>
-
-              <label htmlFor="images" className="uploadDropBox">
-                <div className="uploadIcon">+</div>
-
-                <strong>Choose Property Images</strong>
-
-                <small>JPG, PNG, JPEG, WEBP • Max 8MB each</small>
-              </label>
-
+            <label className="requestDrop">
               <input
-                id="images"
                 type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
+                accept="image/*"
                 multiple
-                onChange={handleImageChange}
-                className="imageInput"
-                disabled={loading || aiLoading}
+                onChange={handleImages}
               />
+              <strong>{t("newPost.media.upload")}</strong>
+              <span>{t("newPost.media.hint")}</span>
+            </label>
 
-              <div className="uploadCount">
-                <span>{uploadedCount}</span>
-
-                <p>
-                  image{uploadedCount === 1 ? "" : "s"} selected /{" "}
-                  {MAX_PROPERTY_IMAGES}
-                </p>
+            {images.length > 0 && (
+              <div className="requestThumbs">
+                {images.map((file, index) => (
+                  <figure key={`${file.name}-${index}`}>
+                    <img src={imagePreviews[index]} alt={file.name} />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      aria-label={t("newPost.media.remove")}
+                    >
+                      {t("newPost.media.remove")}
+                    </button>
+                  </figure>
+                ))}
               </div>
+            )}
+          </section>
 
-              {imagePreviews.length > 0 ? (
-                <div className="imagePreviewArea">
-                  <div className="mainPreview">
-                    <img
-                      src={mainImage}
-                      alt="Main property"
-                      onError={(e) => {
-                        e.currentTarget.src = "/no-image.png";
-                      }}
-                    />
+          {error && <div className="requestAlert error">{error}</div>}
 
-                    <div className="mainPreviewShade"></div>
-                    <div className="mainPreviewBadge">Main Preview</div>
-                  </div>
+          <div className="requestActions">
+            <button type="submit" className="requestPrimaryBtn">
+              {t("newPost.actions.continue")}
+            </button>
+            <Link to="/profile" className="requestTextLink">
+              {t("newPost.actions.cancel")}
+            </Link>
+          </div>
+        </form>
+      )}
 
-                  <div className="thumbnailGrid">
-                    {imagePreviews.map((image, index) => (
-                      <div
-                        className={
-                          mainImage === image ? "thumbnail active" : "thumbnail"
-                        }
-                        key={image}
-                      >
-                        <button
-                          type="button"
-                          className="thumbnailImageBtn"
-                          onClick={() => setMainImage(image)}
-                        >
-                          <img
-                            src={image}
-                            alt={`Property ${index + 1}`}
-                            onError={(e) => {
-                              e.currentTarget.src = "/no-image.png";
-                            }}
-                          />
-                        </button>
+      {step === "confirm" && !listingBlocked && (
+        <form className="requestForm" onSubmit={handleSubmit}>
+          <section className="requestCard">
+            <header className="requestCardHeader">
+              <p className="requestEyebrow">{t("newPost.confirm.badge")}</p>
+              <h2>
+                {t(
+                  isSelfList
+                    ? "newPost.moderation.confirmTitle"
+                    : "newPost.confirm.title"
+                )}
+              </h2>
+              <p>
+                {t(
+                  isSelfList
+                    ? "newPost.moderation.confirmDescription"
+                    : "newPost.confirm.description",
+                  {
+                    city: summary.city || t("newPost.confirm.yourArea"),
+                    property: t(`newPost.options.${summary.property}`),
+                  }
+                )}
+              </p>
+            </header>
 
-                        <span className="thumbnailNumber">{index + 1}</span>
-
-                        <button
-                          type="button"
-                          className="removeImageBtn"
-                          onClick={() => handleRemoveImage(index)}
-                          disabled={loading || aiLoading}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="emptyUpload">
-                  <strong>No images selected</strong>
-                  <p>Select multiple property images to preview them here.</p>
-                </div>
+            <ul className="requestSummary">
+              <li>
+                <span>{t("newPost.form.title")}</span>
+                <strong>{summary.title}</strong>
+              </li>
+              <li>
+                <span>{t("newPost.form.address")}</span>
+                <strong>
+                  {summary.address}, {summary.city}
+                </strong>
+              </li>
+              <li>
+                <span>{t("newPost.form.price")}</span>
+                <strong>${Number(summary.price || 0).toLocaleString()}</strong>
+              </li>
+              <li>
+                <span>{t("newPost.confirm.deal")}</span>
+                <strong>
+                  {t(`newPost.options.${summary.type}`)} ·{" "}
+                  {t(`newPost.options.${summary.property}`)}
+                </strong>
+              </li>
+              {!isLandProperty && (
+                <li>
+                  <span>{t("newPost.confirm.layout")}</span>
+                  <strong>
+                    {t("newPost.confirm.bedsBaths", {
+                      beds: summary.bedroom || 0,
+                      baths: summary.bathroom || 0,
+                    })}
+                  </strong>
+                </li>
               )}
-            </div>
-          </aside>
-        </div>
-      </div>
-    </div>
+              {summary.size && (
+                <li>
+                  <span>{t("newPost.form.size")}</span>
+                  <strong>{summary.size} m²</strong>
+                </li>
+              )}
+              <li>
+                <span>{t("newPost.media.title")}</span>
+                <strong>{summary.photos}</strong>
+              </li>
+            </ul>
+          </section>
+
+          {error && <div className="requestAlert error">{error}</div>}
+
+          <div className="requestActions">
+            <button
+              type="submit"
+              className="requestPrimaryBtn"
+              disabled={loading}
+            >
+              {loading
+                ? t(
+                    isSelfList
+                      ? "newPost.moderation.submitting"
+                      : "newPost.actions.submitting"
+                  )
+                : t(
+                    isSelfList
+                      ? "newPost.moderation.submit"
+                      : "newPost.actions.submit"
+                  )}
+            </button>
+            <button
+              type="button"
+              className="requestGhostBtn"
+              onClick={() => setStep("details")}
+            >
+              {t("newPost.actions.back")}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === "done" && (
+        <section className="requestCard requestDone">
+          <header className="requestCardHeader">
+            <p className="requestEyebrow">
+              {t(isSelfList ? "newPost.moderation.doneBadge" : "newPost.done.badge")}
+            </p>
+            <h2>
+              {t(isSelfList ? "newPost.moderation.doneTitle" : "newPost.done.title")}
+            </h2>
+            <p>
+              {t(
+                isSelfList
+                  ? "newPost.moderation.doneDescription"
+                  : "newPost.done.description"
+              )}
+            </p>
+          </header>
+
+          {success && <div className="requestAlert success">{success}</div>}
+
+          <div className="requestActions">
+            <Link
+              to={
+                newPostId && !isSelfList
+                  ? `/properties/${newPostId}`
+                  : "/my-homes"
+              }
+              className="requestPrimaryBtn"
+            >
+              {newPostId && !isSelfList
+                ? t("newPost.actions.viewListing")
+                : t("newPost.hero.myListings")}
+            </Link>
+            <button
+              type="button"
+              className="requestGhostBtn"
+              onClick={() => navigate("/")}
+            >
+              {t("newPost.actions.home")}
+            </button>
+          </div>
+        </section>
+      )}
+    </main>
   );
 }
 

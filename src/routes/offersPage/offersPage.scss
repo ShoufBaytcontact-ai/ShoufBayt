@@ -1,0 +1,40 @@
+.offersPage {
+  width: 100%;
+  min-width: 0;
+  padding: 28px 0 72px;
+  color: var(--text-main);
+}
+
+.offersPage a {
+  text-decoration: none;
+}
+
+.offersPage .listHero {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.offersPage .listHero h1 {
+  max-width: none;
+  overflow-wrap: anywhere;
+}
+
+.offersPage .ownerOffers {
+  margin-top: 24px;
+}
+
+@media (max-width: 760px) {
+  .offersPage {
+    padding: 16px 0 56px;
+  }
+
+  .offersPage .listHero {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .offersPage .createListingBtn {
+    width: 100%;
+  }
+}

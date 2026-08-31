@@ -1,350 +1,218 @@
 @import "../../responsive.scss";
 
-.slider {
+.propertySlider {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  .sliderLayout {
+.sliderStage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+
+  img {
     width: 100%;
-    height: 560px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 150px;
-    gap: 14px;
-
-    @include md {
-      height: auto;
-      grid-template-columns: 1fr;
-    }
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
   }
 
-  .mainImagePanel {
-    position: relative;
-    min-height: 560px;
-    border-radius: 26px;
-    overflow: hidden;
-    background: var(--bg-main);
+  @media (max-width: 720px) {
+    min-height: 220px;
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.sliderCount {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  min-height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.sliderArrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 14, 18, 0.78);
+  color: #fff;
+  cursor: pointer;
+  transform: translateY(-50%);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  &.isPrev {
+    left: 12px;
+  }
+
+  &.isNext {
+    right: 12px;
+  }
+}
+
+.sliderThumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--accent);
+  }
+
+  .thumbnail {
+    flex: 0 0 86px;
+    width: 86px;
+    height: 64px;
+    margin: 0;
+    padding: 0;
     border: 1px solid var(--border-color);
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
-
-    @include md {
-      min-height: 440px;
-    }
-
-    @include sm {
-      min-height: 330px;
-      border-radius: 20px;
-    }
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 35%),
-        linear-gradient(0deg, rgba(0, 0, 0, 0.35), transparent 45%);
-      z-index: 1;
-      pointer-events: none;
-    }
+    background: var(--bg-elevated);
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.55;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      cursor: zoom-in;
-      transition: 0.45s ease;
+      pointer-events: none;
     }
 
-    &:hover img {
-      transform: scale(1.04);
-    }
-
-    .galleryBadge {
-      position: absolute;
-      top: 18px;
-      left: 18px;
-      z-index: 2;
-      min-height: 38px;
-      padding: 0 15px;
-      border-radius: 999px;
-      background: rgba(15, 15, 15, 0.72);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(14px);
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 950;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .galleryCounter {
-      position: absolute;
-      top: 18px;
-      right: 18px;
-      z-index: 2;
-      min-height: 38px;
-      padding: 0 15px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #111111;
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 950;
-      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
-    }
-
-    .mainControls {
-      position: absolute;
-      left: 18px;
-      bottom: 18px;
-      z-index: 3;
-      display: flex;
-      gap: 10px;
-
-      button {
-        width: 46px;
-        height: 46px;
-        border: none;
-        border-radius: 50%;
-        background: rgba(15, 15, 15, 0.75);
-        color: white;
-        font-size: 32px;
-        line-height: 1;
-        cursor: pointer;
-        backdrop-filter: blur(14px);
-        transition: 0.25s ease;
-
-        &:hover {
-          background: var(--accent);
-          color: #111111;
-          transform: translateY(-2px);
-        }
-      }
+    &:hover,
+    &.active {
+      opacity: 1;
+      border-color: var(--accent);
     }
   }
+}
 
-  .thumbnailRail {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 4px;
+.sliderLightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 72px;
+  background: rgba(8, 10, 14, 0.94);
 
-    @include md {
-      grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
-      overflow-y: visible;
-      padding-right: 0;
-    }
-
-    @include sm {
-      grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
-      gap: 9px;
-    }
-
-    &::-webkit-scrollbar {
-      width: 7px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--bg-main);
-      border-radius: 999px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 999px;
-    }
-
-    .thumbnail {
-      height: 100px;
-      position: relative;
-      padding: 0;
-      border: 2px solid var(--border-color);
-      border-radius: 18px;
-      overflow: hidden;
-      background: var(--bg-main);
-      cursor: pointer;
-      opacity: 0.7;
-      transition: 0.25s ease;
-
-      @include md {
-        height: 90px;
-      }
-
-      @include sm {
-        height: 72px;
-        border-radius: 14px;
-      }
-
-      &:hover,
-      &.active {
-        opacity: 1;
-        border-color: var(--accent);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 26px rgba(254, 206, 81, 0.14);
-      }
-
-      &.active span {
-        background: var(--accent);
-        color: #111111;
-      }
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      span {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: rgba(15, 15, 15, 0.72);
-        color: white;
-        font-size: 11px;
-        font-weight: 950;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(10px);
-      }
-    }
+  img {
+    max-width: min(1100px, 100%);
+    max-height: 82vh;
+    object-fit: contain;
+    background: #0c0e12;
   }
 
-  .fullSlider {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background:
-      radial-gradient(circle at top left, rgba(254, 206, 81, 0.12), transparent 28%),
-      rgba(0, 0, 0, 0.92);
-    backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 90px;
-    box-sizing: border-box;
+  .lightboxClose {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 3;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(12, 14, 18, 0.85);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+  }
 
-    @include md {
-      padding: 75px 48px;
-    }
+  .lightboxClose:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+  }
 
-    @include sm {
-      padding: 70px 14px;
-    }
+  .sliderArrow {
+    position: absolute;
+  }
+}
 
-    .fullImageBox {
-      width: min(1180px, 100%);
-      height: min(760px, 80vh);
-      border-radius: 28px;
-      overflow: hidden;
-      background: #111111;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+@include md {
+  .sliderStage {
+    aspect-ratio: 16 / 11;
+  }
 
-      @include sm {
-        height: 62vh;
-        border-radius: 18px;
-      }
+  .sliderLightbox {
+    padding: 64px 16px;
+  }
+}
 
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-      }
-    }
+@include sm {
+  .sliderStage {
+    aspect-ratio: 4 / 3;
+    min-height: 220px;
+  }
 
-    .fullArrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-      width: 58px;
-      height: 58px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.13);
-      color: white;
-      font-size: 42px;
-      cursor: pointer;
-      backdrop-filter: blur(14px);
-      transition: 0.25s ease;
+  .sliderArrow {
+    width: 36px;
+    height: 36px;
+  }
 
-      @include sm {
-        width: 46px;
-        height: 46px;
-        font-size: 32px;
-      }
+  .sliderThumbs .thumbnail {
+    flex-basis: 72px;
+    width: 72px;
+    height: 54px;
+  }
+}
 
-      &:hover {
-        background: var(--accent);
-        color: #111111;
-        transform: translateY(-50%) scale(1.06);
-      }
+[dir="rtl"] {
+  .sliderCount {
+    right: auto;
+    left: 12px;
+  }
 
-      &.leftArrow {
-        left: 28px;
+  .sliderArrow.isPrev {
+    left: auto;
+    right: 12px;
+  }
 
-        @include sm {
-          left: 10px;
-        }
-      }
-
-      &.rightArrow {
-        right: 28px;
-
-        @include sm {
-          right: 10px;
-        }
-      }
-    }
-
-    .closeFullSlider {
-      position: absolute;
-      top: 24px;
-      right: 28px;
-      width: 48px;
-      height: 48px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.13);
-      color: white;
-      font-size: 22px;
-      font-weight: 950;
-      cursor: pointer;
-      backdrop-filter: blur(14px);
-      transition: 0.25s ease;
-
-      &:hover {
-        background: #ff7676;
-        transform: rotate(90deg);
-      }
-    }
-
-    .fullCounter {
-      position: absolute;
-      left: 50%;
-      bottom: 26px;
-      transform: translateX(-50%);
-      min-height: 40px;
-      padding: 0 17px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #111111;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 950;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
-    }
+  .sliderArrow.isNext {
+    right: auto;
+    left: 12px;
   }
 }

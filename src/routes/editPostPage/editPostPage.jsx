@@ -1,10 +1,11 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import "./editPostPage.scss";
-import apiRequest from "../../lib/apiRequest";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext.jsx";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+import apiRequest from "../../lib/apiRequest";
+import "../requestListingPage/requestListingPage.scss";
+import "../../components/map/map.scss";
+import "./editPostPage.scss";
 
 import {
   MapContainer,
@@ -13,52 +14,113 @@ import {
   TileLayer,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { MAP_TILES, SATELLITE_LABELS, SATELLITE_TILES } from "../../lib/mapTiles";
 
-const markerIcon = L.icon({
-  iconUrl: "/pin.png",
-  iconSize: [38, 38],
-  iconAnchor: [19, 38],
-  popupAnchor: [0, -36],
+const locationIcon = L.divIcon({
+  className: "propertyMarker",
+  html: `
+    <svg class="mapPinSvg" viewBox="0 0 32 42" aria-hidden="true">
+      <path d="M16 1.5C8.5 1.5 2.5 7.6 2.5 15.3c0 8.9 9.4 18.6 13.5 24.4a1.2 1.2 0 0 0 1.9 0c4.1-5.8 13.6-15.5 13.6-24.4C29.5 7.6 23.5 1.5 16 1.5Z"/>
+      <circle cx="16" cy="15.2" r="5.2"/>
+    </svg>
+  `,
+  iconSize: [32, 42],
+  iconAnchor: [16, 42],
+  popupAnchor: [0, -38],
 });
 
 const defaultMapCenter = [33.8938, 35.5018];
+
+const PROPERTY_OPTIONS = [
+  "apartment",
+  "house",
+  "villa",
+  "land",
+  "office",
+  "shop",
+];
+
 const MAX_TOTAL_IMAGES = 20;
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 
-const initialFormData = {
+const initialForm = {
   title: "",
   price: "",
   address: "",
   city: "",
   bedroom: "",
   bathroom: "",
-  latitude: "",
-  longitude: "",
+  size: "",
   type: "buy",
   property: "apartment",
-  size: "",
   desc: "",
 };
 
-function ChangeMapCenter({ location }) {
+function getServerUrl() {
+  return (process.env.REACT_APP_API_URL || "http://localhost:8800/api").replace(
+    "/api",
+    ""
+  );
+}
+
+function getImageUrl(image, fallback = "/no-image.png") {
+  if (!image || typeof image !== "string") return fallback;
+
+  if (
+    image.startsWith("http") ||
+    image.startsWith("data:") ||
+    image.startsWith("blob:") ||
+    image.startsWith("/no-")
+  ) {
+    return image;
+  }
+
+  const serverUrl = getServerUrl();
+  return `${serverUrl}${image.startsWith("/") ? "" : "/"}${image}`;
+}
+
+function getPlainText(html) {
+  return String(html || "")
+    .replace(/<(.|\n)*?>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeDealType(post) {
+  const value = String(post?.type || post?.listingType || "").toLowerCase();
+  return value === "rent" ? "rent" : "buy";
+}
+
+function normalizeCategory(post) {
+  const value = String(post?.property || post?.propertyType || "apartment")
+    .toLowerCase();
+  return PROPERTY_OPTIONS.includes(value) ? value : "apartment";
+}
+
+function ChangeMapCenter({ position, mapType }) {
   const map = useMap();
+  const isSatellite = mapType === "satellite";
 
   useEffect(() => {
-    if (!location) {
-      return;
+    map.setMaxZoom(isSatellite ? 19 : MAP_TILES.maxZoom);
+    if (isSatellite && map.getZoom() < 16) {
+      map.setZoom(Math.min(18, map.getZoom() + 3));
     }
+  }, [map, isSatellite]);
 
-    map.setView([location.latitude, location.longitude], 15);
-
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 150);
-
+  useEffect(() => {
+    if (!position) return;
+    map.setView(
+      [position.latitude, position.longitude],
+      isSatellite ? 17 : 16
+    );
+    const timeout = setTimeout(() => map.invalidateSize(), 100);
     return () => clearTimeout(timeout);
-  }, [map, location]);
+  }, [map, position, isSatellite]);
 
   return null;
 }
@@ -67,92 +129,65 @@ function FixMapSize() {
   const map = useMap();
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-
+    const timeout = setTimeout(() => map.invalidateSize(), 250);
     return () => clearTimeout(timeout);
   }, [map]);
 
   return null;
 }
 
-function LocationPicker({ location, onSelectLocation }) {
+function LocationPicker({ location, onSelectLocation, popupText }) {
   useMapEvents({
-    click(e) {
+    click(event) {
       onSelectLocation({
-        latitude: e.latlng.lat,
-        longitude: e.latlng.lng,
+        latitude: event.latlng.lat,
+        longitude: event.latlng.lng,
       });
     },
   });
 
-  if (!location) {
-    return null;
-  }
+  if (!location) return null;
 
   return (
-    <Marker position={[location.latitude, location.longitude]} icon={markerIcon}>
-      <Popup>Selected property location</Popup>
+    <Marker
+      position={[location.latitude, location.longitude]}
+      icon={locationIcon}
+    >
+      <Popup>{popupText}</Popup>
     </Marker>
   );
-}
-
-function getPlainText(html) {
-  return String(html || "")
-    .replace(/<(.|\n)*?>/g, "")
-    .trim();
-}
-
-function isValidImageType(file) {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-  return allowedTypes.includes(file.type);
-}
-
-function getPostOwnerId(post) {
-  return post?.userId || post?.user?.id || "";
-}
-
-function getPostImages(post) {
-  return Array.isArray(post?.images) ? post.images.filter(Boolean) : [];
 }
 
 function EditPostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const previewUrlsRef = useRef([]);
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [descriptionMode, setDescriptionMode] = useState("manual");
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const [location, setLocation] = useState(null);
-  const [locating, setLocating] = useState(false);
-
+  const [form, setForm] = useState(initialForm);
   const [postOwnerId, setPostOwnerId] = useState("");
+  const [postRequesterId, setPostRequesterId] = useState("");
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
-  const [mainPreview, setMainPreview] = useState("");
-
+  const [location, setLocation] = useState(null);
+  const [mapType, setMapType] = useState("map");
+  const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const isAdmin = currentUser?.role?.toUpperCase() === "ADMIN";
-  const isOwner = String(currentUser?.id || "") === String(postOwnerId || "");
-  const canEditPost = Boolean(currentUser && postOwnerId && (isOwner || isAdmin));
-
-  const allImages = useMemo(() => {
-    return [...existingImages, ...newImagePreviews];
-  }, [existingImages, newImagePreviews]);
-
-  const plainDescription = useMemo(() => {
-    return getPlainText(formData.desc);
-  }, [formData.desc]);
+  const currentUserId = String(currentUser?.id || currentUser?._id || "");
+  const isAdmin = String(currentUser?.role || "").toUpperCase() === "ADMIN";
+  const isOwner = currentUserId === String(postOwnerId || "");
+  const isRequester = currentUserId === String(postRequesterId || "");
+  const canEditPost = Boolean(
+    currentUser && postOwnerId && (isOwner || isRequester || isAdmin)
+  );
+  const isLand = form.property === "land";
+  const totalImages = existingImages.length + newImages.length;
 
   useEffect(() => {
     return () => {
@@ -162,71 +197,67 @@ function EditPostPage() {
   }, []);
 
   useEffect(() => {
-    if (!mainPreview && allImages.length > 0) {
-      setMainPreview(allImages[0]);
-      return;
-    }
+    let cancelled = false;
 
-    if (mainPreview && !allImages.includes(mainPreview)) {
-      setMainPreview(allImages[0] || "");
-    }
-  }, [allImages, mainPreview]);
-
-  useEffect(() => {
-    const fetchPost = async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setError("");
-        setSuccess("");
 
         const res = await apiRequest.get(`/posts/${id}`);
-        const post = res.data;
+        const post = res.data?.data || res.data?.post || res.data;
 
-        const postLatitude = Number(post.latitude);
-        const postLongitude = Number(post.longitude);
-
-        if (Number.isFinite(postLatitude) && Number.isFinite(postLongitude)) {
-          setLocation({
-            latitude: postLatitude,
-            longitude: postLongitude,
-          });
+        if (!post) {
+          setError(t("editPost.errors.notFound"));
+          return;
         }
 
-        const images = getPostImages(post);
+        if (cancelled) return;
 
-        setPostOwnerId(getPostOwnerId(post));
+        const latitude = Number(post.latitude);
+        const longitude = Number(post.longitude);
+        const images = Array.isArray(post.images)
+          ? post.images.filter(Boolean)
+          : [];
+
+        setPostOwnerId(post.userId || post.user?.id || post.user?._id || "");
+        setPostRequesterId(post.requestedByUserId || "");
         setExistingImages(images);
-        setMainPreview(images[0] || "");
 
-        setFormData({
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          setLocation({ latitude, longitude });
+        }
+
+        setForm({
           title: post.title || "",
           price: post.price || "",
           address: post.address || "",
           city: post.city || "",
-          bedroom: post.bedroom ?? "",
-          bathroom: post.bathroom ?? "",
-          latitude: post.latitude || "",
-          longitude: post.longitude || "",
-          type: post.type || "buy",
-          property: post.property || "apartment",
-          size: post.postDetail?.size || "",
-          desc: post.postDetail?.desc || "",
+          bedroom: post.bedroom ?? post.bedrooms ?? "",
+          bathroom: post.bathroom ?? post.bathrooms ?? "",
+          size: post.postDetail?.size || post.area || "",
+          type: normalizeDealType(post),
+          property: normalizeCategory(post),
+          desc: getPlainText(post.postDetail?.desc || post.postDetail?.description),
         });
       } catch (err) {
-        console.log("LOAD EDIT POST ERROR:", err);
-        setError(err.response?.data?.message || "Failed to load property.");
+        if (!cancelled) {
+          setError(err.response?.data?.message || t("editPost.errors.loadFailed"));
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchPost();
-  }, [id]);
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, t]);
 
   useEffect(() => {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
     if (!currentUser) {
       navigate("/login");
@@ -234,266 +265,134 @@ function EditPostPage() {
     }
 
     if (postOwnerId && !canEditPost) {
-      alert("You are not allowed to edit this property.");
-      navigate("/profile");
+      alert(t("editPost.alerts.notAllowedEdit"));
+      navigate("/my-homes");
     }
-  }, [loading, currentUser, postOwnerId, canEditPost, navigate]);
+  }, [loading, currentUser, postOwnerId, canEditPost, navigate, t]);
 
-  const clearMessages = () => {
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((prev) => {
+      if (name === "property" && value === "land") {
+        return { ...prev, property: value, bedroom: "0", bathroom: "0" };
+      }
+
+      if (name === "property" && prev.property === "land") {
+        return {
+          ...prev,
+          property: value,
+          bedroom: prev.bedroom === "0" ? "1" : prev.bedroom,
+          bathroom: prev.bathroom === "0" ? "1" : prev.bathroom,
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
+
     setError("");
-    setSuccess("");
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    clearMessages();
+  const handleSelectLocation = (nextLocation) => {
+    setLocation(nextLocation);
+    setError("");
   };
 
-  const handleDescriptionChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      desc: value,
-    }));
-
-    clearMessages();
-  };
-
-  const handleSelectLocation = (selectedLocation) => {
-    setLocation(selectedLocation);
-
-    setFormData((prev) => ({
-      ...prev,
-      latitude: String(selectedLocation.latitude),
-      longitude: String(selectedLocation.longitude),
-    }));
-
-    clearMessages();
-  };
-
-  const handleUseCurrentLocation = () => {
+  const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setError("Your browser does not support location access.");
+      setError(t("editPost.validation.locationNotSupported"));
       return;
     }
 
     setLocating(true);
-    setError("");
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         handleSelectLocation({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
-
         setLocating(false);
       },
       () => {
-        setError(
-          "Failed to get your location. Please select it manually on the map."
-        );
+        setError(t("editPost.validation.locationFailed"));
         setLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
       }
     );
   };
 
-  const handleGenerateDescription = async () => {
-    if (aiLoading) {
+  const handleNewImages = (event) => {
+    const files = Array.from(event.target.files || []).filter((file) =>
+      String(file.type || "").startsWith("image/")
+    );
+
+    if (!files.length) return;
+
+    if (totalImages + files.length > MAX_TOTAL_IMAGES) {
+      setError(t("editPost.validation.maxImages", { max: MAX_TOTAL_IMAGES }));
+      event.target.value = "";
       return;
     }
 
-    if (!formData.title.trim()) {
-      setError("Please write the property title first.");
+    if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
+      setError(t("editPost.validation.imageSize"));
+      event.target.value = "";
       return;
     }
 
-    if (!formData.city.trim()) {
-      setError("Please write the city first.");
-      return;
-    }
-
-    if (!formData.price || Number(formData.price) <= 0) {
-      setError("Please write a valid price first.");
-      return;
-    }
-
-    try {
-      setAiLoading(true);
-      setError("");
-      setSuccess("");
-
-      const res = await apiRequest.post("/ai/property-description", {
-        title: formData.title,
-        price: formData.price,
-        address: formData.address,
-        city: formData.city,
-        bedroom: formData.bedroom,
-        bathroom: formData.bathroom,
-        size: formData.size,
-        type: formData.type,
-        property: formData.property,
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        desc: res.data.description || "",
-      }));
-
-      setSuccess(
-        "AI description generated successfully. You can edit it before saving."
-      );
-    } catch (err) {
-      console.log("AI DESCRIPTION ERROR:", err);
-      setError(err.response?.data?.message || "Failed to generate description.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const validateNewImages = (selectedFiles) => {
-    const currentTotal = existingImages.length + newImages.length;
-
-    if (currentTotal + selectedFiles.length > MAX_TOTAL_IMAGES) {
-      return `You can keep/upload a maximum of ${MAX_TOTAL_IMAGES} images.`;
-    }
-
-    const invalidFile = selectedFiles.find((file) => !isValidImageType(file));
-
-    if (invalidFile) {
-      return "Only image files are allowed: JPG, PNG, JPEG, or WEBP.";
-    }
-
-    const largeFile = selectedFiles.find((file) => file.size > MAX_IMAGE_SIZE);
-
-    if (largeFile) {
-      return "Each image must be less than 8MB.";
-    }
-
-    return "";
-  };
-
-  const handleNewImagesChange = (e) => {
-    const selectedFiles = Array.from(e.target.files || []);
-
-    if (selectedFiles.length === 0) {
-      return;
-    }
-
-    const imageError = validateNewImages(selectedFiles);
-
-    if (imageError) {
-      setError(imageError);
-      e.target.value = "";
-      return;
-    }
-
-    const previews = selectedFiles.map((file) => URL.createObjectURL(file));
-
+    const previews = files.map((file) => URL.createObjectURL(file));
     previewUrlsRef.current = [...previewUrlsRef.current, ...previews];
-
-    setNewImages((prev) => [...prev, ...selectedFiles]);
+    setNewImages((prev) => [...prev, ...files]);
     setNewImagePreviews((prev) => [...prev, ...previews]);
-
-    if (!mainPreview && previews.length > 0) {
-      setMainPreview(previews[0]);
-    }
-
-    clearMessages();
-    e.target.value = "";
+    setError("");
+    event.target.value = "";
   };
 
-  const handleRemoveExistingImage = (imageUrl) => {
+  const removeExistingImage = (imageUrl) => {
     setExistingImages((prev) => prev.filter((image) => image !== imageUrl));
-    clearMessages();
   };
 
-  const handleRemoveNewImage = (index) => {
-    const previewToRemove = newImagePreviews[index];
-
-    if (previewToRemove) {
-      URL.revokeObjectURL(previewToRemove);
+  const removeNewImage = (index) => {
+    const preview = newImagePreviews[index];
+    if (preview) {
+      URL.revokeObjectURL(preview);
       previewUrlsRef.current = previewUrlsRef.current.filter(
-        (url) => url !== previewToRemove
+        (url) => url !== preview
       );
     }
-
-    setNewImages((prev) => prev.filter((_, i) => i !== index));
-    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
-
-    clearMessages();
+    setNewImages((prev) => prev.filter((_, item) => item !== index));
+    setNewImagePreviews((prev) => prev.filter((_, item) => item !== index));
   };
 
-  const validateForm = () => {
-    const totalImages = existingImages.length + newImages.length;
-
-    if (!formData.title.trim()) {
-      return "Title is required.";
+  const validate = () => {
+    if (!form.title.trim() || !form.city.trim() || !form.address.trim()) {
+      return t("editPost.validation.titleRequired");
     }
-
-    if (!formData.price || Number(formData.price) <= 0) {
-      return "Price must be greater than 0.";
+    if (!form.price || Number(form.price) <= 0) {
+      return t("editPost.validation.priceRequired");
     }
-
-    if (!formData.city.trim()) {
-      return "City is required.";
+    if (!isLand && (form.bedroom === "" || Number(form.bedroom) < 0)) {
+      return t("editPost.validation.bedroomRequired");
     }
-
-    if (!formData.address.trim()) {
-      return "Address is required.";
+    if (!isLand && (form.bathroom === "" || Number(form.bathroom) < 0)) {
+      return t("editPost.validation.bathroomRequired");
     }
-
-    if (formData.bedroom === "" || Number(formData.bedroom) < 0) {
-      return "Bedroom number is required.";
+    if (!form.desc.trim()) {
+      return t("editPost.validation.descriptionRequired");
     }
-
-    if (formData.bathroom === "" || Number(formData.bathroom) < 0) {
-      return "Bathroom number is required.";
-    }
-
-    if (formData.size && Number(formData.size) < 0) {
-      return "Size cannot be negative.";
-    }
-
-    if (!plainDescription) {
-      return "Description is required.";
-    }
-
     if (totalImages === 0) {
-      return "Please keep or upload at least one image.";
+      return t("editPost.validation.imageRequired");
     }
-
-    if (location?.latitude == null || location?.longitude == null) {
-      return "Please select the property location on the map.";
+    if (!location) {
+      return t("editPost.validation.locationRequired");
     }
-
     return "";
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (saving || !canEditPost) return;
 
-    if (saving || aiLoading) {
-      return;
-    }
-
-    if (!canEditPost) {
-      alert("You are not allowed to edit this property.");
-      navigate("/profile");
-      return;
-    }
-
-    const validationError = validateForm();
-
+    const validationError = validate();
     if (validationError) {
       setError(validationError);
       return;
@@ -502,19 +401,19 @@ function EditPostPage() {
     try {
       setSaving(true);
       setError("");
-      setSuccess("");
 
       const data = new FormData();
-
       const payload = {
-        ...formData,
-        title: formData.title.trim(),
-        price: Number(formData.price),
-        address: formData.address.trim(),
-        city: formData.city.trim(),
-        bedroom: Number(formData.bedroom),
-        bathroom: Number(formData.bathroom),
-        size: formData.size ? Number(formData.size) : "",
+        title: form.title.trim(),
+        price: Number(form.price),
+        address: form.address.trim(),
+        city: form.city.trim(),
+        bedroom: isLand ? 0 : Number(form.bedroom),
+        bathroom: isLand ? 0 : Number(form.bathroom),
+        size: form.size ? Number(form.size) : "",
+        type: form.type,
+        property: form.property,
+        desc: form.desc.trim(),
         latitude: String(location.latitude),
         longitude: String(location.longitude),
       };
@@ -524,508 +423,405 @@ function EditPostPage() {
       });
 
       data.append("existingImages", JSON.stringify(existingImages));
+      newImages.forEach((image) => data.append("images", image));
 
-      newImages.forEach((image) => {
-        data.append("images", image);
-      });
-
-      await apiRequest.put(`/posts/${id}`, data);
-
+      await apiRequest.put(`/posts/${id}`, data, { withCredentials: true });
       navigate(`/properties/${id}`);
     } catch (err) {
-      console.log("UPDATE POST ERROR:", err);
-      setError(err.response?.data?.message || "Failed to update property.");
+      setError(err.response?.data?.message || t("editPost.errors.updateFailed"));
     } finally {
       setSaving(false);
     }
   };
 
+  const summary = useMemo(
+    () => ({
+      photos: totalImages,
+      city: form.city.trim() || "—",
+      deal: form.type === "rent" ? t("editPost.options.rent") : t("editPost.options.buy"),
+    }),
+    [totalImages, form.city, form.type, t]
+  );
+
   if (loading) {
     return (
-      <div className="editPostPage pageFade">
-        <div className="editStateBox">
-          <span></span>
-          <h2>Loading Property</h2>
-          <p>Please wait while we load the property information.</p>
-        </div>
-      </div>
+      <main className="requestListingPage editPostPage pageFade">
+        <div className="requestAlert">{t("editPost.loading.message")}</div>
+      </main>
     );
   }
 
-  if (error && !formData.title) {
+  if (error && !form.title) {
     return (
-      <div className="editPostPage pageFade">
-        <div className="editStateBox errorState">
-          <h2>Could Not Load Property</h2>
-          <p>{error}</p>
-          <Link to="/profile">Back to Profile</Link>
-        </div>
-      </div>
+      <main className="requestListingPage editPostPage pageFade">
+        <section className="requestHero">
+          <div>
+            <p className="requestEyebrow">{t("editPost.header.badge")}</p>
+            <h1>{t("editPost.loadError.title")}</h1>
+            <span>{error}</span>
+          </div>
+          <Link to="/my-homes" className="requestGhostBtn">
+            {t("editPost.loadError.backToProfile")}
+          </Link>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="editPostPage pageFade">
-      <div className="editPostWrapper">
-        <div className="editHeader">
-          <div>
-            <span>Edit Property</span>
-
-            <h1>Update Property Details</h1>
-
-            <p>
-              Update property information, images, description, and map location.
-              You can write the description manually or generate it with
-              SmartEstate AI.
-            </p>
-          </div>
-
-          <Link to={`/properties/${id}`} className="backBtn">
-            View Property
+    <main className="requestListingPage editPostPage pageFade">
+      <section className="requestHero">
+        <div>
+          <p className="requestEyebrow">{t("editPost.header.badge")}</p>
+          <h1>{t("editPost.header.title")}</h1>
+          <span>{t("editPost.header.description")}</span>
+        </div>
+        <div className="requestHeroActions">
+          <Link to={`/properties/${id}`} className="requestGhostBtn">
+            {t("editPost.header.viewProperty")}
           </Link>
         </div>
+      </section>
 
-        <form className="editForm" onSubmit={handleSubmit}>
-          <div className="editMain">
-            <div className="formSection">
-              <div className="sectionHeader">
-                <span>Main Information</span>
+      <section className="requestStats">
+        <div>
+          <span>{t("editPost.gallery.totalImages")}</span>
+          <strong>{summary.photos}</strong>
+        </div>
+        <div>
+          <span>{t("editPost.form.city")}</span>
+          <strong>{summary.city}</strong>
+        </div>
+        <div>
+          <span>{t("editPost.form.type")}</span>
+          <strong>{summary.deal}</strong>
+        </div>
+      </section>
 
-                <h2>Property Details</h2>
+      <form className="requestForm" onSubmit={handleSubmit}>
+        <section className="requestCard">
+          <header className="requestCardHeader">
+            <p className="requestEyebrow">{t("editPost.main.badge")}</p>
+            <h2>{t("editPost.main.title")}</h2>
+            <p>{t("editPost.main.description")}</p>
+          </header>
 
-                <p>Update the main information users see on your listing.</p>
-              </div>
+          <div className="requestGrid">
+            <label className="requestField wide">
+              {t("editPost.form.title")}
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                disabled={saving}
+                required
+              />
+            </label>
 
-              <div className="formGrid">
-                <div className="formGroup wide">
-                  <label htmlFor="title">Title</label>
+            <label className="requestField">
+              {t("editPost.form.price")}
+              <input
+                name="price"
+                type="number"
+                min="1"
+                value={form.price}
+                onChange={handleChange}
+                disabled={saving}
+                required
+              />
+            </label>
 
-                  <input
-                    id="title"
-                    name="title"
-                    type="text"
-                    value={formData.title}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
+            <label className="requestField">
+              {t("editPost.form.city")}
+              <input
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                disabled={saving}
+                required
+              />
+            </label>
 
-                <div className="formGroup">
-                  <label htmlFor="price">Price</label>
+            <label className="requestField wide">
+              {t("editPost.form.address")}
+              <input
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+                disabled={saving}
+                required
+              />
+            </label>
 
-                  <input
-                    id="price"
-                    name="price"
-                    type="number"
-                    min="1"
-                    value={formData.price}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
+            <label className="requestField">
+              {t("editPost.form.type")}
+              <select
+                name="type"
+                value={form.type}
+                onChange={handleChange}
+                disabled={saving}
+              >
+                <option value="buy">{t("editPost.options.buy")}</option>
+                <option value="rent">{t("editPost.options.rent")}</option>
+              </select>
+            </label>
 
-                <div className="formGroup">
-                  <label htmlFor="city">City</label>
+            <label className="requestField">
+              {t("editPost.form.property")}
+              <select
+                name="property"
+                value={form.property}
+                onChange={handleChange}
+                disabled={saving}
+              >
+                {PROPERTY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {t(`newPost.options.${option}`, {
+                      defaultValue: option,
+                    })}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-                  <input
-                    id="city"
-                    name="city"
-                    type="text"
-                    value={formData.city}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
+            <label className={isLand ? "requestField isLocked" : "requestField"}>
+              {t("editPost.form.bedrooms")}
+              <input
+                name="bedroom"
+                type="number"
+                min="0"
+                value={isLand ? "0" : form.bedroom}
+                onChange={handleChange}
+                disabled={saving || isLand}
+              />
+            </label>
 
-                <div className="formGroup wide">
-                  <label htmlFor="address">Address</label>
+            <label className={isLand ? "requestField isLocked" : "requestField"}>
+              {t("editPost.form.bathrooms")}
+              <input
+                name="bathroom"
+                type="number"
+                min="0"
+                value={isLand ? "0" : form.bathroom}
+                onChange={handleChange}
+                disabled={saving || isLand}
+              />
+            </label>
 
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    value={formData.address}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
+            <label className="requestField">
+              {t("editPost.form.size")}
+              <input
+                name="size"
+                type="number"
+                min="0"
+                value={form.size}
+                onChange={handleChange}
+                disabled={saving}
+              />
+            </label>
+          </div>
+        </section>
 
-                <div className="formGroup">
-                  <label htmlFor="bedroom">Bedrooms</label>
+        <section className="requestCard">
+          <header className="requestCardHeader">
+            <p className="requestEyebrow">{t("editPost.description.badge")}</p>
+            <h2>{t("editPost.description.title")}</h2>
+            <p>{t("editPost.description.description")}</p>
+          </header>
 
-                  <input
-                    id="bedroom"
-                    name="bedroom"
-                    type="number"
-                    min="0"
-                    value={formData.bedroom}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
+          <label className="requestField wide">
+            {t("newPost.form.description")}
+            <textarea
+              name="desc"
+              rows={7}
+              value={form.desc}
+              onChange={handleChange}
+              placeholder={t("editPost.description.manualPlaceholder")}
+              disabled={saving}
+            />
+          </label>
+        </section>
 
-                <div className="formGroup">
-                  <label htmlFor="bathroom">Bathrooms</label>
-
-                  <input
-                    id="bathroom"
-                    name="bathroom"
-                    type="number"
-                    min="0"
-                    value={formData.bathroom}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
-
-                <div className="formGroup">
-                  <label htmlFor="size">Size m²</label>
-
-                  <input
-                    id="size"
-                    name="size"
-                    type="number"
-                    min="0"
-                    value={formData.size}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  />
-                </div>
-
-                <div className="formGroup">
-                  <label htmlFor="type">Type</label>
-
-                  <select
-                    id="type"
-                    name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  >
-                    <option value="buy">Buy</option>
-                    <option value="rent">Rent</option>
-                  </select>
-                </div>
-
-                <div className="formGroup">
-                  <label htmlFor="property">Property</label>
-
-                  <select
-                    id="property"
-                    name="property"
-                    value={formData.property}
-                    onChange={handleChange}
-                    disabled={saving || aiLoading}
-                  >
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                    <option value="land">Land</option>
-                  </select>
-                </div>
-              </div>
+        <section className="requestCard">
+          <header className="requestCardHeader mapHeader">
+            <div>
+              <p className="requestEyebrow">{t("editPost.location.badge")}</p>
+              <h2>{t("editPost.location.title")}</h2>
+              <p>{t("editPost.location.description")}</p>
             </div>
+            <button
+              type="button"
+              className="requestPrimaryBtn"
+              onClick={useMyLocation}
+              disabled={locating || saving}
+            >
+              {locating
+                ? t("editPost.location.locating")
+                : t("editPost.location.useMyLocation")}
+            </button>
+          </header>
 
-            <div className="formSection">
-              <div className="sectionHeader">
-                <span>Description</span>
-
-                <h2>Property Overview</h2>
-
-                <p>
-                  Edit the description manually or regenerate it with SmartEstate
-                  AI using the updated property details.
-                </p>
-              </div>
-
-              <div className="descriptionModeTabs">
-                <button
-                  type="button"
-                  className={descriptionMode === "manual" ? "active" : ""}
-                  onClick={() => setDescriptionMode("manual")}
-                  disabled={saving || aiLoading}
-                >
-                  Manual Description
-                </button>
-
-                <button
-                  type="button"
-                  className={descriptionMode === "ai" ? "active" : ""}
-                  onClick={() => setDescriptionMode("ai")}
-                  disabled={saving || aiLoading}
-                >
-                  SmartEstate AI
-                </button>
-              </div>
-
-              {descriptionMode === "ai" && (
-                <div className="aiDescriptionBox">
-                  <div>
-                    <span>AI Assistant</span>
-
-                    <h3>Regenerate Description</h3>
-
-                    <p>
-                      SmartEstate AI will use the updated title, price, city,
-                      type, bedrooms, bathrooms, and size to generate a polished
-                      description.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateDescription}
-                    disabled={saving || aiLoading}
-                  >
-                    {aiLoading ? "Generating..." : "Generate Description"}
-                  </button>
-                </div>
-              )}
-
-              <div className="descriptionEditor">
-                <ReactQuill
-                  theme="snow"
-                  value={formData.desc}
-                  onChange={handleDescriptionChange}
-                  placeholder={
-                    descriptionMode === "ai"
-                      ? "Click Generate Description, then edit the result if needed..."
-                      : "Write property description manually..."
-                  }
-                  readOnly={saving || aiLoading}
-                />
-              </div>
+          {location && (
+            <div className="requestCoords">
+              <span>
+                {t("editPost.location.latitude")}: {location.latitude.toFixed(6)}
+              </span>
+              <span>
+                {t("editPost.location.longitude")}: {location.longitude.toFixed(6)}
+              </span>
             </div>
+          )}
 
-            <div className="formSection">
-              <div className="sectionHeader mapHeader">
-                <div>
-                  <span>Location</span>
-
-                  <h2>Update Location</h2>
-
-                  <p>
-                    Use your current location or click on the map to update the
-                    exact property location.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  className="locationButton"
-                  onClick={handleUseCurrentLocation}
-                  disabled={locating || saving || aiLoading}
-                >
-                  {locating ? "Locating..." : "Use My Location"}
-                </button>
-              </div>
-
-              {location && (
-                <div className="locationValues">
-                  <span>Lat: {location.latitude.toFixed(6)}</span>
-                  <span>Lng: {location.longitude.toFixed(6)}</span>
-                </div>
-              )}
-
-              <div className="mapPickerBox">
-                <MapContainer
-                  className="locationMap"
-                  center={
-                    location
-                      ? [location.latitude, location.longitude]
-                      : defaultMapCenter
-                  }
-                  zoom={location ? 15 : 12}
-                  scrollWheelZoom={true}
-                >
+          <div className="requestMapBox">
+            <div
+              className={
+                mapType === "satellite" ? "mapWrapper isSatellite" : "mapWrapper"
+              }
+            >
+              <MapContainer
+                className="map"
+                center={
+                  location
+                    ? [location.latitude, location.longitude]
+                    : defaultMapCenter
+                }
+                zoom={location ? 16 : 12}
+                minZoom={5}
+                maxZoom={mapType === "satellite" ? 19 : MAP_TILES.maxZoom}
+                scrollWheelZoom={true}
+                zoomControl={false}
+              >
+                <ZoomControl position="topright" />
+                {mapType === "satellite" ? (
+                  <>
+                    <TileLayer
+                      key="satellite"
+                      attribution={SATELLITE_TILES.attribution}
+                      url={SATELLITE_TILES.url}
+                      maxZoom={SATELLITE_TILES.maxZoom}
+                      maxNativeZoom={19}
+                    />
+                    <TileLayer
+                      key="satellite-labels"
+                      url={SATELLITE_LABELS}
+                      attribution=""
+                      maxZoom={19}
+                      pane="overlayPane"
+                    />
+                  </>
+                ) : (
                   <TileLayer
-                    attribution="&copy; OpenStreetMap contributors"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    key="street"
+                    attribution={MAP_TILES.attribution}
+                    url={MAP_TILES.url}
+                    maxZoom={MAP_TILES.maxZoom}
+                    subdomains={MAP_TILES.subdomains}
                   />
+                )}
+                <FixMapSize />
+                <ChangeMapCenter position={location} mapType={mapType} />
+                <LocationPicker
+                  location={location}
+                  onSelectLocation={handleSelectLocation}
+                  popupText={t("editPost.location.popup")}
+                />
+              </MapContainer>
 
-                  <FixMapSize />
-
-                  <ChangeMapCenter location={location} />
-
-                  <LocationPicker
-                    location={location}
-                    onSelectLocation={handleSelectLocation}
-                  />
-                </MapContainer>
+              <div className="mapTypeSwitch" role="group">
+                <button
+                  type="button"
+                  className={mapType !== "satellite" ? "isActive" : ""}
+                  onClick={() => setMapType("map")}
+                >
+                  {t("list.map.mapView")}
+                </button>
+                <button
+                  type="button"
+                  className={mapType === "satellite" ? "isActive" : ""}
+                  onClick={() => setMapType("satellite")}
+                >
+                  {t("list.map.satellite")}
+                </button>
               </div>
             </div>
           </div>
+        </section>
 
-          <aside className="editSide">
-            <div className="imageSection">
-              <div className="sectionHeader">
-                <span>Gallery</span>
+        <section className="requestCard">
+          <header className="requestCardHeader">
+            <p className="requestEyebrow">{t("editPost.gallery.badge")}</p>
+            <h2>{t("editPost.gallery.title")}</h2>
+            <p>{t("editPost.gallery.description")}</p>
+          </header>
 
-                <h2>Property Images</h2>
+          <label className="requestDrop">
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              multiple
+              onChange={handleNewImages}
+              disabled={saving}
+            />
+            <strong>{t("editPost.gallery.uploadNewImages")}</strong>
+            <span>{t("editPost.gallery.accepted")}</span>
+          </label>
 
-                <p>
-                  Keep old images, remove unwanted ones, upload new photos, and
-                  choose the main preview.
-                </p>
-              </div>
-
-              <div className="gallerySummary">
-                <div>
-                  <strong>{allImages.length}</strong>
-                  <span>Total Images</span>
-                </div>
-
-                <div>
-                  <strong>{newImagePreviews.length}</strong>
-                  <span>New Images</span>
-                </div>
-              </div>
-
-              <div className="galleryPreview">
-                {mainPreview ? (
-                  <>
-                    <img
-                      src={mainPreview}
-                      alt="Main property preview"
-                      onError={(e) => {
-                        e.currentTarget.src = "/no-image.png";
-                      }}
-                    />
-
-                    <div className="previewOverlay">
-                      <span>Main Preview</span>
-
-                      <b>
-                        {allImages.findIndex((image) => image === mainPreview) +
-                          1}{" "}
-                        / {allImages.length}
-                      </b>
-                    </div>
-                  </>
-                ) : (
-                  <div className="emptyGalleryPreview">
-                    <strong>No Image</strong>
-                    <p>Upload or keep at least one image.</p>
-                  </div>
-                )}
-              </div>
-
-              <label className="uploadImagesBox">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  multiple
-                  onChange={handleNewImagesChange}
-                  disabled={saving || aiLoading}
-                />
-
-                <span>+</span>
-
-                <strong>Upload New Images</strong>
-
-                <small>JPG, PNG, JPEG, WEBP • Max 8MB each</small>
-              </label>
-
-              {allImages.length > 0 ? (
-                <div className="galleryThumbs">
-                  {existingImages.map((image) => (
-                    <div
-                      className={
-                        mainPreview === image
-                          ? "galleryThumb active"
-                          : "galleryThumb"
-                      }
-                      key={image}
-                    >
-                      <button
-                        type="button"
-                        className="thumbImage"
-                        onClick={() => setMainPreview(image)}
-                      >
-                        <img
-                          src={image}
-                          alt="Property"
-                          onError={(e) => {
-                            e.currentTarget.src = "/no-image.png";
-                          }}
-                        />
-                      </button>
-
-                      <span className="thumbLabel">Old</span>
-
-                      <button
-                        type="button"
-                        className="thumbRemove"
-                        onClick={() => handleRemoveExistingImage(image)}
-                        disabled={saving || aiLoading}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-
-                  {newImagePreviews.map((image, index) => (
-                    <div
-                      className={
-                        mainPreview === image
-                          ? "galleryThumb active"
-                          : "galleryThumb"
-                      }
-                      key={image}
-                    >
-                      <button
-                        type="button"
-                        className="thumbImage"
-                        onClick={() => setMainPreview(image)}
-                      >
-                        <img
-                          src={image}
-                          alt="New property"
-                          onError={(e) => {
-                            e.currentTarget.src = "/no-image.png";
-                          }}
-                        />
-                      </button>
-
-                      <span className="thumbLabel new">New</span>
-
-                      <button
-                        type="button"
-                        className="thumbRemove"
-                        onClick={() => handleRemoveNewImage(index)}
-                        disabled={saving || aiLoading}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="emptyImagesBox">
-                  <strong>No Images Left</strong>
-                  <p>Please keep or upload at least one image.</p>
-                </div>
-              )}
+          {totalImages > 0 ? (
+            <div className="requestThumbs">
+              {existingImages.map((image) => (
+                <figure key={image}>
+                  <img
+                    src={getImageUrl(image)}
+                    alt={t("editPost.gallery.propertyAlt")}
+                    onError={(event) => {
+                      event.currentTarget.src = "/no-image.png";
+                    }}
+                  />
+                  <em className="editThumbTag">{t("editPost.gallery.old")}</em>
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(image)}
+                    disabled={saving}
+                  >
+                    {t("newPost.media.remove")}
+                  </button>
+                </figure>
+              ))}
+              {newImagePreviews.map((image, index) => (
+                <figure key={image}>
+                  <img src={image} alt={t("editPost.gallery.newPropertyAlt")} />
+                  <em className="editThumbTag isNew">{t("editPost.gallery.new")}</em>
+                  <button
+                    type="button"
+                    onClick={() => removeNewImage(index)}
+                    disabled={saving}
+                  >
+                    {t("newPost.media.remove")}
+                  </button>
+                </figure>
+              ))}
             </div>
+          ) : (
+            <p className="editEmptyNote">{t("editPost.gallery.noImagesLeftText")}</p>
+          )}
+        </section>
 
-            {error && <div className="formError">{error}</div>}
-            {success && <div className="formSuccess">{success}</div>}
+        {error && <div className="requestAlert error">{error}</div>}
 
-            <div className="formActions">
-              <button type="button" onClick={() => navigate(-1)}>
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={saving || aiLoading || !canEditPost}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          </aside>
-        </form>
-      </div>
-    </div>
+        <div className="requestActions">
+          <button
+            type="submit"
+            className="requestPrimaryBtn"
+            disabled={saving || !canEditPost}
+          >
+            {saving ? t("editPost.actions.saving") : t("editPost.actions.saveChanges")}
+          </button>
+          <Link to={`/properties/${id}`} className="requestTextLink">
+            {t("editPost.actions.cancel")}
+          </Link>
+        </div>
+      </form>
+    </main>
   );
 }
 

@@ -1,0 +1,130 @@
+.adminBillingPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adminBillingAlert {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.adminBillingAlert.error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border-color));
+  color: var(--danger);
+}
+
+.adminBillingAlert.success {
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color));
+  color: var(--accent);
+}
+
+.adminBillingEmpty {
+  padding: 28px;
+  border-radius: 16px;
+  border: 1px dashed var(--border-color);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.adminBillingList {
+  display: grid;
+  gap: 14px;
+}
+
+.adminBillingCard {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  a {
+    color: var(--accent);
+    width: fit-content;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 72px;
+    resize: vertical;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card-dark);
+    color: var(--text-main);
+    padding: 10px 12px;
+    font: inherit;
+  }
+}
+
+.adminBillingMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  strong {
+    color: var(--text-main);
+  }
+}
+
+.statusChip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.statusChip.pending,
+.statusChip.trial {
+  color: #fece51;
+}
+
+.statusChip.success,
+.statusChip.active,
+.statusChip.resolved {
+  color: #7ddea0;
+}
+
+.statusChip.failed,
+.statusChip.expired,
+.statusChip.dismissed,
+.statusChip.cancelled {
+  color: #ff9b9b;
+}
+
+.adminBillingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--accent);
+    color: #111;
+  }
+
+  button.danger {
+    background: transparent;
+    color: #ff9b9b;
+    border: 1px solid rgba(255, 155, 155, 0.35);
+  }
+}

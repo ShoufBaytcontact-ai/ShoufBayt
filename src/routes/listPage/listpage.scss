@@ -1,484 +1,428 @@
-@import "../../responsive.scss";
-
 .listPage {
-  min-height: calc(100vh - 100px);
-  display: flex;
-  gap: 26px;
-  padding: 34px 34px 44px;
-  background:
-    radial-gradient(circle at top left, rgba(254, 206, 81, 0.11), transparent 34%),
-    var(--bg-main);
+  width: 100%;
+  padding: 28px 0 72px;
   color: var(--text-main);
-  box-sizing: border-box;
+  overflow: visible;
+}
 
-  @include lg {
-    gap: 20px;
-    padding: 28px 22px;
+.listPage a {
+  text-decoration: none;
+}
+
+.listHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.listEyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.listHero h1 {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.listHero span {
+  display: block;
+  max-width: 54ch;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.createListingBtn {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.createListingBtn:hover {
+  background: var(--accent-hover);
+}
+
+.listTabs {
+  display: flex;
+  gap: 0;
+  margin-top: 22px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.listTabs button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.listTabs button:hover,
+.listTabs .isActive {
+  color: var(--text-main);
+}
+
+.listTabs .isActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.filterSection {
+  padding: 22px 0 0;
+  overflow: visible;
+  position: relative;
+  z-index: 4;
+}
+
+.listStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 22px 0 28px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.listStats div {
+  padding: 18px 20px;
+  border-right: 1px solid var(--border-color);
+}
+
+.listStats div:last-child {
+  border-right: none;
+}
+
+.listStats span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.listStats strong {
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.listContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 28px;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.resultsHeader h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+}
+
+.resultsHeader p {
+  margin: 0;
+  max-width: 36ch;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: end;
+}
+
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.listPage .propertyCard {
+  width: 100%;
+  max-width: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.listPage .propertyCard:hover {
+  transform: none;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-color));
+}
+
+.listPage .propertyMedia {
+  height: auto;
+  aspect-ratio: 3 / 2;
+  min-height: 0;
+}
+
+.listPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.listPagination button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.listPagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.listPagination button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mapPanel {
+  position: sticky;
+  top: 96px;
+}
+
+.mapCard {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.mapHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mapHeader h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+.mapHeader p {
+  margin: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mapBox {
+  height: min(70vh, 620px);
+}
+
+.mapBox .mapWrapper,
+.mapBox .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+[dir="rtl"] .listStats div {
+  border-right: none;
+  border-left: 1px solid var(--border-color);
+}
+
+[dir="rtl"] .listStats div:last-child {
+  border-left: none;
+}
+
+[dir="rtl"] .resultsHeader p {
+  text-align: start;
+}
+
+[dir="rtl"] .listPage .mediaTop {
+  left: 14px;
+  right: 14px;
+}
+
+@media (max-width: 1150px) {
+  .listContent {
+    grid-template-columns: 1fr;
   }
 
-  @include md {
+  .mapPanel {
+    position: relative;
+    top: 0;
+  }
+
+  .mapBox {
+    height: 380px;
+  }
+
+  .cardsContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .listHero {
     flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
   }
 
-  @include sm {
-    padding: 22px 14px;
+  .listHero h1 {
+    max-width: none;
   }
 
-  svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .createListingBtn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .listPage {
+    padding: 16px 0 56px;
   }
 
-  .listContainer {
-    flex: 3;
-    min-width: 0;
-
-    .listHero {
-      padding: 32px;
-      border-radius: 28px;
-      background:
-        linear-gradient(135deg, rgba(254, 206, 81, 0.12), transparent 48%),
-        var(--bg-card);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 18px 45px var(--shadow-color);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 22px;
-
-      @include sm {
-        padding: 24px 18px;
-        flex-direction: column;
-        align-items: flex-start;
-        border-radius: 22px;
-      }
-
-      .heroContent {
-        max-width: 760px;
-
-        .heroBadge {
-          width: fit-content;
-          min-height: 34px;
-          padding: 0 14px;
-          display: inline-flex;
-          align-items: center;
-          border-radius: 999px;
-          color: var(--accent);
-          background: rgba(254, 206, 81, 0.12);
-          border: 1px solid rgba(254, 206, 81, 0.25);
-          font-size: 12px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 16px;
-        }
-
-        h1 {
-          margin: 0 0 12px;
-          color: var(--text-main);
-          font-size: 42px;
-          line-height: 1.08;
-          font-weight: 950;
-          letter-spacing: -1px;
-
-          @include sm {
-            font-size: 30px;
-          }
-        }
-
-        p {
-          margin: 0;
-          max-width: 680px;
-          color: var(--text-secondary);
-          font-size: 16px;
-          line-height: 1.75;
-
-          @include sm {
-            font-size: 14px;
-          }
-        }
-      }
-
-      .heroAction {
-        flex-shrink: 0;
-
-        a {
-          min-height: 48px;
-          padding: 0 20px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 15px;
-          background: var(--accent);
-          color: #111111;
-          font-size: 14px;
-          font-weight: 950;
-          text-decoration: none;
-          transition: 0.25s ease;
-          box-shadow: 0 12px 28px rgba(254, 206, 81, 0.16);
-
-          &:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-          }
-        }
-      }
-    }
-
-    .statsGrid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 22px;
-
-      @include lg {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      @include sm {
-        grid-template-columns: 1fr;
-      }
-
-      .statCard {
-        padding: 18px;
-        border-radius: 20px;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 12px 30px var(--shadow-color);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        transition: 0.25s ease;
-
-        &:hover {
-          transform: translateY(-3px);
-          border-color: rgba(254, 206, 81, 0.45);
-        }
-
-        .statIcon {
-          width: 46px;
-          height: 46px;
-          min-width: 46px;
-          border-radius: 16px;
-          background: rgba(254, 206, 81, 0.12);
-          color: var(--accent);
-          border: 1px solid rgba(254, 206, 81, 0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        strong {
-          display: block;
-          color: var(--text-main);
-          font-size: 25px;
-          line-height: 1;
-          font-weight: 950;
-          margin-bottom: 6px;
-        }
-
-        p {
-          margin: 0;
-          color: var(--text-secondary);
-          font-size: 13px;
-          font-weight: 850;
-        }
-      }
-    }
-
-    .wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-
-      .filterBox {
-        padding: 20px;
-        border-radius: 24px;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 14px 34px var(--shadow-color);
-      }
-
-      .resultInfo {
-        padding: 22px 24px;
-        border-radius: 22px;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 14px 34px var(--shadow-color);
-
-        span {
-          color: var(--accent);
-          font-size: 12px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        h2 {
-          margin: 8px 0 8px;
-          color: var(--text-main);
-          font-size: 25px;
-          font-weight: 950;
-        }
-
-        p {
-          margin: 0;
-          color: var(--text-secondary);
-          line-height: 1.6;
-          font-size: 14px;
-        }
-      }
-
-      .cardsContainer {
-        display: flex;
-        flex-direction: column;
-        gap: 22px;
-
-        .noResult {
-          min-height: 340px;
-          padding: 34px;
-          border-radius: 24px;
-          background:
-            linear-gradient(135deg, rgba(254, 206, 81, 0.1), transparent 48%),
-            var(--bg-card);
-          border: 1px solid var(--border-color);
-          box-shadow: 0 14px 34px var(--shadow-color);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-
-          .emptyIcon {
-            width: 64px;
-            height: 64px;
-            border-radius: 20px;
-            background: rgba(254, 206, 81, 0.12);
-            color: var(--accent);
-            border: 1px solid rgba(254, 206, 81, 0.24);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 18px;
-
-            svg {
-              width: 30px;
-              height: 30px;
-            }
-          }
-
-          h2 {
-            margin: 0 0 10px;
-            color: var(--text-main);
-            font-size: 26px;
-            font-weight: 950;
-          }
-
-          p {
-            max-width: 520px;
-            margin: 0 0 22px;
-            color: var(--text-secondary);
-            line-height: 1.7;
-          }
-
-          a {
-            min-height: 46px;
-            padding: 0 20px;
-            border-radius: 14px;
-            background: var(--accent);
-            color: #111111;
-            font-size: 14px;
-            font-weight: 950;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
-        }
-      }
-    }
+  .listHero {
+    padding-bottom: 18px;
   }
 
-  .mapContainer {
-    flex: 2;
-    min-width: 430px;
-
-    @include lg {
-      min-width: 380px;
-    }
-
-    @include md {
-      min-width: 0;
-      width: 100%;
-    }
-
-    .mapSticky {
-      position: sticky;
-      top: 96px;
-
-      @include md {
-        position: relative;
-        top: 0;
-      }
-    }
-
-    .mapPanel {
-      height: calc(100vh - 138px);
-      min-height: 760px;
-      padding: 22px;
-      border-radius: 30px;
-      background:
-        linear-gradient(135deg, rgba(254, 206, 81, 0.1), transparent 45%),
-        var(--bg-card);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 22px 60px var(--shadow-color);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      box-sizing: border-box;
-
-      @include md {
-        height: 720px;
-        min-height: 720px;
-      }
-
-      @include sm {
-        height: 620px;
-        min-height: 620px;
-        padding: 16px;
-        border-radius: 24px;
-      }
-
-      .mapHeader {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        align-items: flex-start;
-
-        .mapTitle {
-          .mapBadge {
-            width: fit-content;
-            min-height: 30px;
-            padding: 0 12px;
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            background: rgba(254, 206, 81, 0.12);
-            border: 1px solid rgba(254, 206, 81, 0.24);
-            color: var(--accent);
-            font-size: 11px;
-            font-weight: 950;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-bottom: 12px;
-          }
-
-          h2 {
-            margin: 0 0 8px;
-            color: var(--text-main);
-            font-size: 26px;
-            font-weight: 950;
-          }
-
-          p {
-            margin: 0;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            font-size: 14px;
-          }
-        }
-
-        .mapIcon {
-          width: 52px;
-          height: 52px;
-          min-width: 52px;
-          border-radius: 18px;
-          background: var(--accent);
-          color: #111111;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 12px 28px rgba(254, 206, 81, 0.18);
-
-          svg {
-            width: 25px;
-            height: 25px;
-          }
-        }
-      }
-
-      .mapStats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-
-        div {
-          padding: 16px;
-          border-radius: 18px;
-          background: var(--bg-main);
-          border: 1px solid var(--border-color);
-
-          strong {
-            display: block;
-            color: var(--accent);
-            font-size: 25px;
-            font-weight: 950;
-            line-height: 1;
-            margin-bottom: 6px;
-          }
-
-          span {
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 850;
-          }
-        }
-      }
-
-      .mapBox {
-        flex: 1;
-        min-height: 0;
-        position: relative;
-        border-radius: 24px;
-        overflow: hidden;
-        background: var(--bg-main);
-        border: 1px solid var(--border-color);
-
-        .mapOverlayTop {
-          position: absolute;
-          top: 16px;
-          left: 16px;
-          z-index: 700;
-
-          span {
-            min-height: 34px;
-            padding: 0 13px;
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            color: #111111;
-            background: var(--accent);
-            font-size: 12px;
-            font-weight: 950;
-            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
-          }
-        }
-
-        .map,
-        .leaflet-container {
-          width: 100%;
-          height: 100%;
-          min-height: 100%;
-          border-radius: 24px;
-          z-index: 1;
-        }
-      }
-    }
+  .listHero h1 {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
   }
+
+  .listHero span {
+    font-size: 15px;
+  }
+
+  .createListingBtn {
+    min-height: 46px;
+  }
+
+  .listTabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .listTabs button {
+    flex: 1 0 auto;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .listStats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cardsContainer {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .resultsHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .resultsHeader p {
+    text-align: start;
+  }
+
+  .mapBox {
+    height: 260px;
+  }
+
+  .mapPanel {
+    position: relative;
+    top: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .listStats {
+    grid-template-columns: 1fr;
+  }
+
+  .cardsContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .listStats div,
+  [dir="rtl"] .listStats div {
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .listStats div:last-child {
+    border-bottom: none;
+  }
+}
+
+body.light .listHero {
+  background:
+    radial-gradient(ellipse at 0% 0%, var(--glow-gold), transparent 48%),
+    radial-gradient(ellipse at 100% 0%, var(--glow-sky), transparent 42%);
+}
+
+body.light .listStats div:nth-child(1) strong {
+  color: var(--accent);
+}
+
+body.light .listStats div:nth-child(2) strong {
+  color: var(--accent-2);
+}
+
+body.light .listStats div:nth-child(3) strong {
+  color: var(--accent-3);
+}
+
+body.light .listStats div:nth-child(4) strong {
+  color: var(--accent-4);
+}
+
+body.light .listPage .propertyCard {
+  box-shadow: var(--shadow-soft);
 }

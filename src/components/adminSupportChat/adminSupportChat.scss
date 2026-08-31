@@ -1,0 +1,131 @@
+.adminLiveGrid {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  min-height: 420px;
+  border: 1px solid var(--border-color);
+}
+
+.adminLiveList {
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  max-height: 520px;
+}
+
+.adminLiveList p {
+  padding: 16px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.adminLiveList button {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-main);
+  text-align: start;
+  cursor: pointer;
+}
+
+.adminLiveList button strong,
+.adminLiveList button small {
+  display: block;
+}
+
+.adminLiveList button small {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adminLiveList button.isActive,
+.adminLiveList button:hover {
+  background: var(--bg-soft);
+}
+
+.adminLiveThread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.adminLiveThread header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.adminLiveHint,
+.adminLiveError {
+  margin: 0;
+  padding: 24px 16px;
+  color: var(--text-secondary);
+}
+
+.adminLiveMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 260px;
+}
+
+.adminLiveBubble {
+  max-width: 78%;
+  padding: 8px 10px;
+  align-self: flex-start;
+  background: var(--bg-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.adminLiveBubble.own {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.adminLiveThread form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.adminLiveThread input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.adminLiveThread button[type="submit"] {
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 800px) {
+  .adminLiveGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .adminLiveList {
+    max-height: 180px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+}

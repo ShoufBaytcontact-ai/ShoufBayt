@@ -1,10 +1,17 @@
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./register.scss";
 import apiRequest from "../../lib/apiRequest";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { afterAuthPath } from "../../lib/phoneGate";
+import AuthVisual from "../../components/authVisual/AuthVisual";
+import GoogleAuthButton from "../../components/googleAuthButton/GoogleAuthButton";
 
 function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { updateUser } = useContext(AuthContext);
 
   const [form, setForm] = useState({
     username: "",
@@ -38,7 +45,11 @@ function Register() {
   }, [passwordChecks]);
 
   const strengthText =
-    passwordScore <= 2 ? "Weak" : passwordScore <= 4 ? "Medium" : "Strong";
+    passwordScore <= 2
+      ? t("register.strength.weak")
+      : passwordScore <= 4
+      ? t("register.strength.medium")
+      : t("register.strength.strong");
 
   const strengthClass =
     passwordScore <= 2 ? "weak" : passwordScore <= 4 ? "medium" : "strong";
@@ -67,23 +78,27 @@ function Register() {
     const email = form.email.trim().toLowerCase();
 
     if (!username) {
-      return "Username is required.";
+      return t("register.validation.usernameRequired");
+    }
+
+    if (username.length < 3) {
+      return t("register.validation.usernameLength");
     }
 
     if (!email) {
-      return "Email address is required.";
+      return t("register.validation.emailRequired");
     }
 
     if (!email.includes("@") || !email.includes(".")) {
-      return "Please enter a valid email address.";
+      return t("register.validation.emailInvalid");
     }
 
     if (!form.password || !form.confirmPassword) {
-      return "Please fill both password fields.";
+      return t("register.validation.passwordFieldsRequired");
     }
 
     if (!isPasswordValid) {
-      return "Please complete all password requirements.";
+      return t("register.validation.passwordRequirements");
     }
 
     return "";
@@ -107,199 +122,256 @@ function Register() {
       setIsLoading(true);
       setError("");
 
-      await apiRequest.post("/auth/register", {
+      const res = await apiRequest.post("/auth/register", {
         username: form.username.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
 
-      navigate("/login");
+      if (res.data?.requiresVerification) {
+        navigate("/login", {
+          replace: true,
+          state: {
+            pendingEmail: form.email.trim().toLowerCase(),
+            verifyAfterRegister: true,
+          },
+        });
+        return;
+      }
+
+      updateUser(res.data);
+      navigate(afterAuthPath(res.data, "/verify-phone"));
     } catch (err) {
       console.log("REGISTER ERROR:", err);
-      setError(err.response?.data?.message || "Registration failed.");
+      setError(err.response?.data?.message || t("register.errors.failed"));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="register pageFade">
-      <div className="registerCard">
-        <div className="formContainer">
-          <form onSubmit={handleSubmit} className="registerForm">
-            <span className="registerBadge">Create Account</span>
+    <main className="register pageFade">
+      <section className="registerWrapper">
+        <div className="registerCard">
+          <div className="registerFormSide">
+            <form onSubmit={handleSubmit} className="registerForm">
+              <span className="registerBadge">
+                {t("register.header.badge")}
+              </span>
 
-            <div className="registerHeader">
-              <h1>Join SmartEstate</h1>
+              <div className="registerHeader">
+                <h1>{t("register.header.title")}</h1>
 
-              <p>
-                Create your account to post properties, save favorites, and
-                manage your real estate activity.
-              </p>
-            </div>
+                <p>{t("register.header.description")}</p>
+              </div>
 
-            <div className="formGroup">
-              <label htmlFor="username">Username</label>
-
-              <input
-                id="username"
-                type="text"
-                name="username"
-                placeholder="Enter your username"
-                required
-                autoComplete="username"
-                value={form.username}
-                onChange={handleChange}
+              <GoogleAuthButton
                 disabled={isLoading}
+                onSuccess={(user) => {
+                  updateUser(user);
+                  navigate(afterAuthPath(user));
+                }}
+                onError={(message) => setError(message)}
               />
-            </div>
 
-            <div className="formGroup">
-              <label htmlFor="email">Email Address</label>
+              <div className="authDivider">{t("auth.google.orEmail")}</div>
 
-              <input
-                id="email"
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                required
-                autoComplete="email"
-                value={form.email}
-                onChange={handleChange}
-                disabled={isLoading}
-              />
-            </div>
+              <div className="formGroup">
+                <label htmlFor="username">{t("register.form.username")}</label>
 
-            <div className="formGroup">
-              <label htmlFor="password">Password</label>
-
-              <div className="passwordBox">
                 <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  placeholder="Create a password"
+                  id="username"
+                  type="text"
+                  name="username"
+                  placeholder={t("register.form.usernamePlaceholder")}
                   required
-                  value={form.password}
+                  autoComplete="username"
+                  value={form.username}
                   onChange={handleChange}
-                  autoComplete="new-password"
                   disabled={isLoading}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
               </div>
-            </div>
 
-            <div className="formGroup">
-              <label htmlFor="confirmPassword">Confirm Password</label>
+              <div className="formGroup">
+                <label htmlFor="email">{t("register.form.email")}</label>
 
-              <div className="passwordBox">
                 <input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  placeholder="Confirm your password"
+                  id="email"
+                  type="email"
+                  name="email"
+                  placeholder={t("register.form.emailPlaceholder")}
                   required
-                  value={form.confirmPassword}
+                  autoComplete="email"
+                  value={form.email}
                   onChange={handleChange}
-                  autoComplete="new-password"
                   disabled={isLoading}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  disabled={isLoading}
-                >
-                  {showConfirmPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
-
-            <div className="passwordStrength">
-              <div className="strengthTop">
-                <span>Password Strength</span>
-                <b className={strengthClass}>{strengthText}</b>
               </div>
 
-              <div className="strengthBar">
-                <div
-                  className={`strengthFill ${strengthClass}`}
-                  style={{
-                    width: `${(passwordScore / 6) * 100}%`,
-                  }}
-                ></div>
+              <div className="formGroup">
+                <label htmlFor="password">{t("register.form.password")}</label>
+
+                <div className="passwordBox">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder={t("register.form.passwordPlaceholder")}
+                    required
+                    value={form.password}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    disabled={isLoading}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={isLoading}
+                  >
+                    {showPassword
+                      ? t("register.form.hide")
+                      : t("register.form.show")}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="passwordRequirements">
-              <p className="requirementsTitle">Password Requirements</p>
+              <div className="formGroup">
+                <label htmlFor="confirmPassword">
+                  {t("register.form.confirmPassword")}
+                </label>
 
-              <p className={passwordChecks.length ? "valid" : "invalid"}>
-                {passwordChecks.length ? "✓" : "•"} At least 6 characters
-              </p>
+                <div className="passwordBox">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder={t("register.form.confirmPasswordPlaceholder")}
+                    required
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    disabled={isLoading}
+                  />
 
-              <p className={passwordChecks.uppercase ? "valid" : "invalid"}>
-                {passwordChecks.uppercase ? "✓" : "•"} At least 1 uppercase
-                letter
-              </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword
+                      ? t("register.form.hide")
+                      : t("register.form.show")}
+                  </button>
+                </div>
+              </div>
 
-              <p className={passwordChecks.lowercase ? "valid" : "invalid"}>
-                {passwordChecks.lowercase ? "✓" : "•"} At least 1 lowercase
-                letter
-              </p>
+              <div className="passwordStrength">
+                <div className="strengthTop">
+                  <span>{t("register.passwordStrength.title")}</span>
+                  <b className={strengthClass}>{strengthText}</b>
+                </div>
 
-              <p className={passwordChecks.number ? "valid" : "invalid"}>
-                {passwordChecks.number ? "✓" : "•"} At least 1 number
-              </p>
+                <div className="strengthBar">
+                  <div
+                    className={`strengthFill ${strengthClass}`}
+                    style={{
+                      width: `${(passwordScore / 6) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
 
-              <p className={passwordChecks.special ? "valid" : "invalid"}>
-                {passwordChecks.special ? "✓" : "•"} At least 1 special
-                character
-              </p>
+              <div className="passwordRequirements">
+                <p className="requirementsTitle">
+                  {t("register.requirements.title")}
+                </p>
 
-              <p className={passwordChecks.match ? "valid" : "invalid"}>
-                {passwordChecks.match ? "✓" : "•"} Passwords match
-              </p>
-            </div>
+                <p className={passwordChecks.length ? "valid" : "invalid"}>
+                  {passwordChecks.length ? "✓" : "•"}{" "}
+                  {t("register.requirements.length")}
+                </p>
 
-            {error && <span className="registerError">{error}</span>}
+                <p className={passwordChecks.uppercase ? "valid" : "invalid"}>
+                  {passwordChecks.uppercase ? "✓" : "•"}{" "}
+                  {t("register.requirements.uppercase")}
+                </p>
 
-            <button
-              type="submit"
-              className="registerBtn"
-              disabled={isLoading || !isPasswordValid}
-            >
-              {isLoading ? "Creating Account..." : "Create Account"}
-            </button>
+                <p className={passwordChecks.lowercase ? "valid" : "invalid"}>
+                  {passwordChecks.lowercase ? "✓" : "•"}{" "}
+                  {t("register.requirements.lowercase")}
+                </p>
 
-            <div className="registerFooter">
-              <span>Already have an account?</span>
-              <Link to="/login">Sign In</Link>
-            </div>
-          </form>
-        </div>
+                <p className={passwordChecks.number ? "valid" : "invalid"}>
+                  {passwordChecks.number ? "✓" : "•"}{" "}
+                  {t("register.requirements.number")}
+                </p>
 
-        <div className="imgContainer">
-          <div className="imageContent">
-            <span>SmartEstate</span>
+                <p className={passwordChecks.special ? "valid" : "invalid"}>
+                  {passwordChecks.special ? "✓" : "•"}{" "}
+                  {t("register.requirements.special")}
+                </p>
 
-            <h2>Start managing your properties professionally.</h2>
+                <p className={passwordChecks.match ? "valid" : "invalid"}>
+                  {passwordChecks.match ? "✓" : "•"}{" "}
+                  {t("register.requirements.match")}
+                </p>
+              </div>
 
-            <p>
-              Create an account and get access to property posting, saved homes,
-              messages, and profile management.
-            </p>
+              {error && <div className="registerError">{error}</div>}
+
+              <button
+                type="submit"
+                className="registerBtn"
+                disabled={isLoading || !isPasswordValid}
+              >
+                {isLoading
+                  ? t("register.buttons.creating")
+                  : t("register.buttons.createAccount")}
+              </button>
+
+              <div className="registerFooter">
+                <span>{t("register.footer.alreadyHaveAccount")}</span>
+                <Link to="/login">{t("register.footer.signIn")}</Link>
+              </div>
+            </form>
           </div>
+
+          <AuthVisual
+            title={t("register.visual.title")}
+            description={t("register.visual.description")}
+            journey={[
+              t("register.visual.journeyCreate"),
+              t("register.visual.journeyList"),
+              t("register.visual.journeyGrow"),
+            ]}
+            showcase={[
+              {
+                icon: "home",
+                title: t("register.visual.showcasePostTitle"),
+                text: t("register.visual.showcasePostText"),
+              },
+              {
+                icon: "heart",
+                title: t("register.visual.showcaseSaveTitle"),
+                text: t("register.visual.showcaseSaveText"),
+              },
+              {
+                icon: "chat",
+                title: t("register.visual.showcaseMessageTitle"),
+                text: t("register.visual.showcaseMessageText"),
+              },
+            ]}
+            chips={[
+              t("register.visual.chipOwners"),
+              t("register.visual.chipBuyers"),
+              t("register.visual.chipRenters"),
+              t("register.visual.chipAgents"),
+            ]}
+          />
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 

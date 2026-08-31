@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import HouseLoader from "../houseLoader/houseLoader";
+import HouseMark from "../houseMark/houseMark";
 import "./pageState.scss";
 
 function PageState({
@@ -9,9 +12,23 @@ function PageState({
   buttonLink,
   onClick,
 }) {
+  const { t } = useTranslation();
+
   const isLoading = type === "loading";
   const isError = type === "error";
   const isEmpty = type === "empty";
+
+  const defaultTitle = isLoading
+    ? t("pageState.loading.title")
+    : isError
+    ? t("pageState.error.title")
+    : t("pageState.empty.title");
+
+  const defaultMessage = isLoading
+    ? t("pageState.loading.message")
+    : isError
+    ? t("pageState.error.message")
+    : t("pageState.empty.message");
 
   return (
     <div
@@ -24,26 +41,18 @@ function PageState({
       }
     >
       <div className="stateIcon">
-        {isLoading ? <span className="loader"></span> : isError ? "!" : "⌂"}
+        {isLoading ? (
+          <HouseLoader variant="inline" size="sm" />
+        ) : isError ? (
+          "!"
+        ) : (
+          <HouseMark size="sm" />
+        )}
       </div>
 
-      <h2>
-        {title ||
-          (isLoading
-            ? "Loading..."
-            : isError
-            ? "Something went wrong"
-            : "No data found")}
-      </h2>
+      <h2>{title || defaultTitle}</h2>
 
-      <p>
-        {message ||
-          (isLoading
-            ? "Please wait while SmartEstate prepares your data."
-            : isError
-            ? "We could not complete this request. Please try again."
-            : "There is nothing to show right now.")}
-      </p>
+      <p>{message || defaultMessage}</p>
 
       {buttonText && buttonLink && (
         <Link to={buttonLink} className="stateButton">

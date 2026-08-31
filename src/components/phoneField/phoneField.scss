@@ -1,0 +1,147 @@
+.phoneField {
+  width: 100%;
+}
+
+.phoneFieldRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(118px, 148px) minmax(0, 1fr);
+  gap: 10px;
+  position: relative;
+}
+
+.phoneFieldCountry {
+  position: relative;
+}
+
+.phoneFieldCountryBtn,
+.phoneFieldRow > input {
+  width: 100%;
+  min-height: 52px;
+  height: 52px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.phoneFieldCountryBtn {
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.phoneFieldCountryBtn:hover:not(:disabled),
+.phoneFieldCountryBtn:focus-visible,
+.phoneFieldRow > input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.phoneFieldCountryBtn:disabled,
+.phoneFieldRow > input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.phoneFieldCountryBtn img,
+.phoneFieldOption img {
+  width: 22px;
+  height: 16px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.phoneFieldRow > input {
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.phoneFieldMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 80;
+  width: min(320px, 72vw);
+  padding: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+}
+
+.phoneFieldMenu input {
+  width: 100%;
+  height: 40px;
+  margin-bottom: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-main);
+}
+
+.phoneFieldOptions {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.phoneFieldOption {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.phoneFieldOption:hover,
+.phoneFieldOption.isActive {
+  background: var(--accent-soft);
+}
+
+.phoneFieldName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.phoneFieldCode {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.phoneFieldHint {
+  margin: 8px 0 0;
+  color: var(--text-muted, var(--text-secondary));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .phoneFieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .phoneFieldMenu {
+    width: 100%;
+  }
+}

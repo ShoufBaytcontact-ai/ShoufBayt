@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./contact.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
@@ -16,6 +17,7 @@ const getInitialFormData = (user) => ({
 function ContactPage() {
   const { currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState(getInitialFormData(currentUser));
   const [loading, setLoading] = useState(false);
@@ -49,23 +51,23 @@ function ContactPage() {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      return "Full name is required.";
+      return t("contact.validation.nameRequired");
     }
 
     if (!formData.email.trim()) {
-      return "Email address is required.";
+      return t("contact.validation.emailRequired");
     }
 
     if (!formData.subject.trim()) {
-      return "Subject is required.";
+      return t("contact.validation.subjectRequired");
     }
 
     if (!formData.message.trim()) {
-      return "Message is required.";
+      return t("contact.validation.messageRequired");
     }
 
     if (!["MESSAGE", "REPORT"].includes(formData.type)) {
-      return "Invalid message type.";
+      return t("contact.validation.invalidType");
     }
 
     return "";
@@ -101,89 +103,88 @@ function ContactPage() {
 
       setSuccess(
         formData.type === "REPORT"
-          ? "Your report has been sent successfully. You can track its status below."
-          : "Your message has been sent successfully. You can track the admin reply below."
+          ? t("contact.success.report")
+          : t("contact.success.message")
       );
 
       setFormData(getInitialFormData(currentUser));
       setRefreshMessages((prev) => prev + 1);
     } catch (err) {
       console.log("SEND CONTACT MESSAGE ERROR:", err);
-      setError(err.response?.data?.message || "Failed to send message.");
+      setError(err.response?.data?.message || t("contact.errors.failed"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="contactPage pageFade">
-      <div className="contactHeader">
-        <span>SmartEstate Support</span>
+    <main className="contactPage pageFade">
+      <section className="contactHero">
+        <div>
+          <p className="contactEyebrow">{t("contact.hero.badge")}</p>
+          <h1>{t("contact.hero.title")}</h1>
+          <span>{t("contact.hero.description")}</span>
 
-        <h1>Contact Us</h1>
-
-        <p>
-          Have a question, need help, or want to report a problem? Contact the
-          SmartEstate team and track the status of your message from one place.
-        </p>
-
-        {!currentUser && (
-          <div className="loginNotice">
-            You can view this page, but you must{" "}
-            <Link to="/login">sign in</Link> before sending or tracking
-            messages.
-          </div>
-        )}
-      </div>
-
-      <div className="contactContainer">
-        <div className="contactInfo">
-          <span className="sectionBadge">Get in Touch</span>
-
-          <h2>We Are Ready to Help</h2>
-
-          <p>
-            SmartEstate makes it easy to connect with support. Send a message,
-            report a problem, and review admin responses directly from this
-            page.
-          </p>
-
-          <div className="infoBox">
-            <h3>Email</h3>
-            <span>support@smartestate.com</span>
-          </div>
-
-          <div className="infoBox">
-            <h3>Phone</h3>
-            <span>+961 70 123 456</span>
-          </div>
-
-          <div className="infoBox">
-            <h3>Location</h3>
-            <span>Beirut, Lebanon</span>
-          </div>
-
-          <div className="infoBox">
-            <h3>Working Hours</h3>
-            <span>Monday - Friday, 9:00 AM - 6:00 PM</span>
-          </div>
+          {!currentUser && (
+            <div className="contactLoginNotice">
+              {t("contact.hero.loginNoticeBefore")}{" "}
+              <Link to="/login">{t("contact.hero.signIn")}</Link>{" "}
+              {t("contact.hero.loginNoticeAfter")}
+            </div>
+          )}
         </div>
+      </section>
 
-        <div className="contactForm">
-          <span className="sectionBadge">Send Request</span>
+      <section className="contactMain">
+        <aside className="contactInfoPanel">
+          <p className="contactEyebrow">{t("contact.info.badge")}</p>
 
-          <h2>Send a Message</h2>
+          <h2>{t("contact.info.title")}</h2>
 
-          <form onSubmit={handleSubmit}>
-            <div className="formRow">
-              <div className="formGroup">
-                <label htmlFor="name">Full Name</label>
+          <p>{t("contact.info.description")}</p>
+
+          <div className="contactInfoGrid">
+            <div className="contactInfoBox">
+              <span>{t("contact.info.email")}</span>
+              <b>farhathamza633@gmail.com</b>
+            </div>
+
+            <div className="contactInfoBox">
+              <span>{t("contact.info.phone")}</span>
+              <b>+961 71 582 487</b>
+            </div>
+
+            <div className="contactInfoBox">
+              <span>{t("contact.info.location")}</span>
+              <b>{t("contact.info.locationValue")}</b>
+            </div>
+
+            <div className="contactInfoBox">
+              <span>{t("contact.info.workingHours")}</span>
+              <b>{t("contact.info.workingHoursValue")}</b>
+            </div>
+          </div>
+        </aside>
+
+        <section className="contactFormPanel">
+          <div className="contactFormHeader">
+            <p className="contactEyebrow">{t("contact.form.badge")}</p>
+
+            <h2>{t("contact.form.title")}</h2>
+
+            <p>{t("contact.form.description")}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="contactForm">
+            <div className="contactFormRow">
+              <div className="contactFormGroup">
+                <label htmlFor="name">{t("contact.form.fullName")}</label>
 
                 <input
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder={t("contact.form.namePlaceholder")}
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -191,14 +192,14 @@ function ContactPage() {
                 />
               </div>
 
-              <div className="formGroup">
-                <label htmlFor="email">Email Address</label>
+              <div className="contactFormGroup">
+                <label htmlFor="email">{t("contact.form.emailAddress")}</label>
 
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("contact.form.emailPlaceholder")}
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -207,9 +208,9 @@ function ContactPage() {
               </div>
             </div>
 
-            <div className="formRow">
-              <div className="formGroup">
-                <label htmlFor="type">Request Type</label>
+            <div className="contactFormRow">
+              <div className="contactFormGroup">
+                <label htmlFor="type">{t("contact.form.requestType")}</label>
 
                 <select
                   id="type"
@@ -218,19 +219,19 @@ function ContactPage() {
                   onChange={handleChange}
                   disabled={!currentUser || loading}
                 >
-                  <option value="MESSAGE">General Message</option>
-                  <option value="REPORT">Report a Problem</option>
+                  <option value="MESSAGE">{t("contact.form.generalMessage")}</option>
+                  <option value="REPORT">{t("contact.form.reportProblem")}</option>
                 </select>
               </div>
 
-              <div className="formGroup">
-                <label htmlFor="subject">Subject</label>
+              <div className="contactFormGroup">
+                <label htmlFor="subject">{t("contact.form.subject")}</label>
 
                 <input
                   id="subject"
                   name="subject"
                   type="text"
-                  placeholder="Enter subject"
+                  placeholder={t("contact.form.subjectPlaceholder")}
                   value={formData.subject}
                   onChange={handleChange}
                   required
@@ -239,16 +240,16 @@ function ContactPage() {
               </div>
             </div>
 
-            <div className="formGroup full">
-              <label htmlFor="message">Message</label>
+            <div className="contactFormGroup">
+              <label htmlFor="message">{t("contact.form.message")}</label>
 
               <textarea
                 id="message"
                 name="message"
                 placeholder={
                   currentUser
-                    ? "Write your message..."
-                    : "Please sign in to send a message"
+                    ? t("contact.form.messagePlaceholder")
+                    : t("contact.form.signInPlaceholder")
                 }
                 value={formData.message}
                 onChange={handleChange}
@@ -257,36 +258,38 @@ function ContactPage() {
               ></textarea>
             </div>
 
-            {success && <span className="successMessage">{success}</span>}
-            {error && <span className="errorMessage">{error}</span>}
+            {success && <div className="contactSuccess">{success}</div>}
+            {error && <div className="contactError">{error}</div>}
 
             <button type="submit" disabled={loading}>
               {!currentUser
-                ? "Sign in to Send"
+                ? t("contact.form.signInToSend")
                 : loading
-                ? "Sending..."
+                ? t("contact.form.sending")
                 : formData.type === "REPORT"
-                ? "Send Report"
-                : "Send Message"}
+                ? t("contact.form.sendReport")
+                : t("contact.form.sendMessage")}
             </button>
           </form>
-        </div>
-      </div>
+        </section>
+      </section>
 
       {currentUser ? (
-        <ContactStatusBox refreshKey={refreshMessages} />
+        <section className="contactStatusSection">
+          <ContactStatusBox refreshKey={refreshMessages} />
+        </section>
       ) : (
-        <div className="contactLoginBox">
-          <h2>Track Your Messages</h2>
-          <p>
-            Sign in to review your sent messages, reports, admin replies, and
-            request status.
-          </p>
+        <section className="contactLoginBox">
+          <div>
+            <p className="contactEyebrow">{t("contact.track.badge")}</p>
+            <h2>{t("contact.track.title")}</h2>
+            <p>{t("contact.track.description")}</p>
+          </div>
 
-          <Link to="/login">Login to Track Messages</Link>
-        </div>
+          <Link to="/login">{t("contact.track.loginButton")}</Link>
+        </section>
       )}
-    </div>
+    </main>
   );
 }
 

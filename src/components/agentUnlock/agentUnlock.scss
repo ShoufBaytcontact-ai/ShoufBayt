@@ -1,0 +1,305 @@
+@import "../../responsive.scss";
+
+.agentUnlockPath {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unlockStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.unlockStep::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 36px;
+  right: -8px;
+  height: 2px;
+  background: var(--border-color);
+}
+
+.unlockStep:last-child::after {
+  display: none;
+}
+
+.unlockStep.is-done::after {
+  background: var(--accent-2);
+}
+
+.unlockStep.is-current::after {
+  background: var(--accent);
+}
+
+.unlockIndex {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.unlockLabel {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.unlockStep.is-current .unlockIndex {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.unlockStep.is-current .unlockLabel {
+  color: var(--text-main);
+}
+
+.unlockStep.is-done .unlockIndex {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: #fff;
+}
+
+.unlockStep.is-done .unlockLabel {
+  color: var(--accent-2);
+}
+
+.agentPreviewCard {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.previewBadge {
+  grid-column: 1 / -1;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.agentPreviewCard img {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  object-position: top center;
+  background: var(--bg-soft);
+  border: 1px solid var(--accent);
+}
+
+.agentPreviewCard small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.agentPreviewCard h3 {
+  margin: 4px 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.previewPlace,
+.previewBio {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.previewBio {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.agentHandoff {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg-main) 72%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.agentHandoffPanel {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+
+.handoffCard,
+.handoffCopy {
+  padding: 28px;
+}
+
+.handoffCard {
+  background: var(--bg-soft);
+}
+
+.handoffPath {
+  margin-bottom: 16px;
+}
+
+.handoffCopy .eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.handoffCopy h2 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  line-height: 1.12;
+}
+
+.handoffCopy p {
+  margin: 0 0 22px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.handoffCopy p strong {
+  color: var(--accent);
+}
+
+.handoffActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.handoffPrimary,
+.handoffGhost {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.handoffPrimary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.handoffPrimary:hover {
+  background: var(--accent-hover);
+}
+
+.handoffGhost {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+.applySplit {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 0;
+  margin-top: 22px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.applySplit .agentPreviewCard {
+  border: none;
+  box-shadow: none;
+  background: var(--bg-soft);
+}
+
+.applySplitCopy {
+  padding: 22px 24px;
+}
+
+.applySplitCopy .planTag {
+  margin-bottom: 12px;
+}
+
+.applySplitCopy h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+}
+
+.applySplitCopy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.agentJourney {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@include md {
+  .agentUnlockPath {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 12px;
+  }
+
+  .unlockStep::after {
+    display: none;
+  }
+
+  .agentHandoffPanel,
+  .applySplit {
+    grid-template-columns: 1fr;
+  }
+}
+
+@include sm {
+  .agentPreviewCard {
+    grid-template-columns: 72px minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  .handoffCard,
+  .handoffCopy,
+  .applySplitCopy {
+    padding: 18px;
+  }
+}

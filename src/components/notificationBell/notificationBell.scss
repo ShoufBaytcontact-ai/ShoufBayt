@@ -1,0 +1,196 @@
+.notificationBell {
+  position: relative;
+}
+
+.nbTrigger {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-color);
+  border-radius: 13px;
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: 0.22s ease;
+}
+
+.nbTrigger svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.nbTrigger:hover,
+.nbTrigger.isOpen {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nbTrigger em {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nbPanel {
+  position: fixed;
+  z-index: 1400;
+  width: min(360px, calc(100vw - 32px));
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+}
+
+.nbPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 6px 12px;
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+  }
+
+  button {
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.nbEmpty {
+  padding: 24px 8px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.nbRow {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  p {
+    margin: 0 0 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  span {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.nbRow.unread {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.nbFooter {
+  display: block;
+  padding: 10px 6px 4px;
+  text-align: center;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nbToastStack {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 1500;
+  width: min(340px, calc(100% - 40px));
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.nbToast {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: inset 3px 0 0 var(--accent);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  pointer-events: auto;
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+html[dir="rtl"] .nbTrigger em {
+  right: auto;
+  left: -5px;
+}
+
+html[dir="rtl"] .nbToastStack {
+  right: auto;
+  left: 24px;
+}
+
+html[dir="rtl"] .nbRow.unread,
+html[dir="rtl"] .nbToast {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
+@media (max-width: 760px) {
+  .nbToastStack {
+    top: auto;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}

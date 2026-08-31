@@ -12,7 +12,9 @@ export const singlePageLoader = async ({ params }) => {
     const res = await apiRequest.get(`/posts/${id}`);
     return res.data;
   } catch (err) {
-    console.log("Single page loader error:", err);
+    if (err.response?.status === 404) {
+      return null;
+    }
 
     throw new Response(err.response?.data?.message || "Failed to load post", {
       status: err.response?.status || 500,
@@ -23,33 +25,51 @@ export const singlePageLoader = async ({ params }) => {
 export const listPageLoader = async ({ request }) => {
   try {
     const url = new URL(request.url);
-    const query = url.searchParams.toString();
+    const params = new URLSearchParams(url.searchParams);
 
-    const res = await apiRequest.get(query ? `/posts?${query}` : "/posts");
+    params.set("limit", "10");
 
-    return Array.isArray(res.data) ? res.data : [];
+    if (!params.get("page")) {
+      params.set("page", "1");
+    }
+
+    const res = await apiRequest.get(`/posts?${params.toString()}`);
+    const payload = res.data;
+    const items = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.properties)
+            ? payload.properties
+            : [];
+
+    return {
+      items,
+      pagination: payload?.pagination || {
+        page: Number(params.get("page")) || 1,
+        limit: Number(params.get("limit")) || 10,
+        total: items.length,
+        totalPages: 1,
+      },
+    };
   } catch (err) {
-    console.log("List page loader error:", err);
-
-    return [];
+    throw new Response(
+      err.response?.data?.message || "Failed to load properties",
+      {
+        status: err.response?.status || 500,
+      }
+    );
   }
 };
 
-export const profilePageLoader = () => {
-  const postResponse = apiRequest.get("/users/profile/posts").catch((err) => {
-    console.log("PROFILE POSTS ERROR STATUS:", err.response?.status);
-    console.log("PROFILE POSTS ERROR DATA:", err.response?.data);
-    return { data: [] };
-  });
-
-  const chatResponse = apiRequest.get("/chats").catch((err) => {
-    console.log("CHAT ERROR STATUS:", err.response?.status);
-    console.log("CHAT ERROR DATA:", err.response?.data);
-    return { data: [] };
+export const accountListingsLoader = () => {
+  const postResponse = apiRequest.get("/users/profile/posts").catch(() => {
+    return { data: { userPosts: [], savedPosts: [] } };
   });
 
   return defer({
     postResponse,
-    chatResponse,
   });
 };

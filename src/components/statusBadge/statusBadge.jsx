@@ -1,17 +1,22 @@
+import { useTranslation } from "react-i18next";
+import { toUiPropertyStatus } from "../../lib/propertyStatus";
 import "./statusBadge.scss";
 
 function StatusBadge({ status }) {
-  const value = status || "available";
+  const { t } = useTranslation();
+  const value = toUiPropertyStatus(status);
 
   const statusText = {
-    available: "Available",
-    sold: "Sold",
-    rented: "Rented",
+    available: t("statusBadge.available"),
+    sold: t("statusBadge.sold"),
+    rented: t("statusBadge.rented"),
+    pending: t("statusBadge.pending"),
+    rejected: t("statusBadge.rejected"),
   };
 
   return (
     <span className={`statusBadge ${value}`}>
-      {statusText[value] || "Available"}
+      {statusText[value] || t("statusBadge.available")}
     </span>
   );
 }

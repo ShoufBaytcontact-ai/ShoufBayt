@@ -1,47 +1,35 @@
 @import "../../responsive.scss";
 
 .adminAnalytics {
-  max-width: 1280px;
-  margin: 0 auto 26px;
-  padding: 30px;
-  border-radius: 30px;
-  background:
-    linear-gradient(135deg, rgba(254, 206, 81, 0.1), transparent 55%),
-    var(--bg-card);
+  margin: 22px 0 0;
+  padding: 24px;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
-  box-shadow: 0 18px 45px var(--shadow-color);
   box-sizing: border-box;
 
   @include sm {
-    padding: 22px 16px;
-    border-radius: 24px;
+    padding: 16px;
   }
 
   .analyticsHeader {
     margin-bottom: 24px;
 
     span {
-      width: fit-content;
-      min-height: 32px;
-      padding: 0 13px;
-      border-radius: 999px;
-      background: rgba(254, 206, 81, 0.12);
+      display: block;
+      margin-bottom: 8px;
       color: var(--accent);
-      border: 1px solid rgba(254, 206, 81, 0.25);
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 950;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 13px;
     }
 
     h2 {
       margin: 0 0 8px;
       color: var(--text-main);
+      font-family: var(--font-display);
       font-size: 32px;
-      font-weight: 950;
+      font-weight: 600;
 
       @include sm {
         font-size: 25px;
@@ -72,9 +60,8 @@
     }
 
     .miniMetric {
-      padding: 18px;
-      border-radius: 20px;
-      background: var(--bg-main);
+      padding: 16px;
+      background: var(--bg-soft);
       border: 1px solid var(--border-color);
 
       span {

@@ -1,13 +1,21 @@
-import { useContext, useMemo, useState } from "react";
-import { useLoaderData, useNavigate } from "react-router-dom";
+import { useContext, useRef, useState } from "react";
+import { Link, useLoaderData, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./singlePage.scss";
 import Slider from "../../components/slider/slider";
 import Map from "../../components/map/map";
 import StatusBadge from "../../components/statusBadge/statusBadge";
 import RecommendedProperties from "../../components/recommendedProperties/recommendedProperties";
 import PageState from "../../components/pageState/pageState";
+import ReportModal from "../../components/reportModal/reportModal";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
+import { getListingPhone, toCallHref } from "../../lib/listingContact";
+import {
+  canViewPropertyDetails,
+  isPropertyUnavailable,
+  toUiPropertyStatus,
+} from "../../lib/propertyStatus";
 
 function LocationIcon() {
   return (
@@ -68,6 +76,14 @@ function ChatIcon() {
   );
 }
 
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M7 4h3.2l1 4.2-2.1 1.2a12.2 12.2 0 0 0 5.5 5.5l1.2-2.1 4.2 1V17c0 .9-.7 1.6-1.6 1.6C9.6 18.6 5.4 14.4 5.4 7.6 5.4 6.7 6.1 6 7 6Z" />
+    </svg>
+  );
+}
+
 function SaveIcon({ active }) {
   return (
     <svg viewBox="0 0 24 24">
@@ -79,13 +95,24 @@ function SaveIcon({ active }) {
   );
 }
 
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
-      <path d="M13.5 8.5l2 2" />
-    </svg>
-  );
+function getImageUrl(image, fallback = "/no-image.png") {
+  const SERVER_URL = (
+    process.env.REACT_APP_API_URL || "http://localhost:8800/api"
+  ).replace("/api", "");
+
+  if (!image || typeof image !== "string") {
+    return fallback;
+  }
+
+  if (
+    image.startsWith("http") ||
+    image.startsWith("data:") ||
+    image.startsWith("/no-")
+  ) {
+    return image;
+  }
+
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 function formatPrice(price) {
@@ -99,10 +126,7 @@ function formatPrice(price) {
 }
 
 function formatLabel(value, fallback = "Property") {
-  if (!value) {
-    return fallback;
-  }
-
+  if (!value) return fallback;
   return String(value).charAt(0).toUpperCase() + String(value).slice(1);
 }
 
@@ -115,84 +139,161 @@ function SinglePage() {
   const post = normalizePost(loaderData);
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { currentUser } = useContext(AuthContext);
 
   const [saved, setSaved] = useState(Boolean(post?.isSaved));
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const sendingMessageRef = useRef(false);
 
   const postDetail = post?.postDetail || {};
-  const owner = post?.user || {};
+  const listingAgent = post?.user || {};
+  const listingAgentProfile = listingAgent.agentProfile || {};
 
-  const postOwnerId = String(post?.userId || post?.user?.id || "");
-  const currentUserId = String(currentUser?.id || "");
+  const listingAgentId = String(post?.userId || listingAgent.id || "");
+  const currentUserId = String(currentUser?.id || currentUser?._id || "");
   const currentUserRole = String(currentUser?.role || "").toUpperCase();
+  const homeownerId = String(post?.requestedByUserId || "");
 
-  const status = String(post?.status || "available").toLowerCase();
-  const postType = String(post?.type || "buy").toLowerCase();
+  const status = toUiPropertyStatus(post?.status);
+  const listingKind = String(
+    post?.listingType || post?.type || "buy"
+  ).toLowerCase();
+  const isRent = listingKind === "rent";
 
-  const isUnavailable = status === "sold" || status === "rented";
+  const propertyDeal = isRent
+    ? t("single.labels.forRent")
+    : t("single.labels.forSale");
+
+  const isUnavailable = isPropertyUnavailable(post?.status);
   const isAdmin = currentUserRole === "ADMIN";
-  const isOwner = Boolean(currentUserId && currentUserId === postOwnerId);
-  const canEditPost = Boolean(currentUserId && (isOwner || isAdmin));
-  const canSendMessage = !currentUserId || currentUserId !== postOwnerId;
+  const isListingAgent = Boolean(
+    currentUserId && currentUserId === listingAgentId
+  );
+  const isHomeowner = Boolean(currentUserId && homeownerId && currentUserId === homeownerId);
+  const canEditPost = Boolean(
+    currentUserId && (isListingAgent || isHomeowner || isAdmin)
+  );
+  const canSendMessage = !currentUserId || !isListingAgent;
+  const listingAgentName =
+    listingAgentProfile.name ||
+    listingAgent.username ||
+    t("single.fallback.unknownUser");
+  const listingAgentAvatar = listingAgentProfile.image || listingAgent.avatar;
+  const canViewAgentProfile = Boolean(
+    listingAgent.id &&
+      (String(listingAgent.role || "").toUpperCase() === "AGENT" ||
+        listingAgentProfile.id)
+  );
+  const listingPhone =
+    post?.listingPhone ||
+    getListingPhone(listingAgentProfile) ||
+    getListingPhone(listingAgent) ||
+    getListingPhone(post);
+  const callHref = toCallHref(listingPhone);
+  const canCall = canSendMessage;
+  const callLabel = canViewAgentProfile
+    ? t("single.buttons.call", { defaultValue: "Call agent" })
+    : t("single.buttons.callOwner", { defaultValue: "Call owner" });
 
   const latitude = Number(post?.latitude);
   const longitude = Number(post?.longitude);
-
   const hasValidLocation =
     Number.isFinite(latitude) && Number.isFinite(longitude);
 
   const mapPost = hasValidLocation
-    ? {
-        ...post,
-        latitude,
-        longitude,
-      }
+    ? { ...post, latitude, longitude }
     : null;
 
-  const propertyDeal = postType === "rent" ? "For Rent" : "For Sale";
-  const propertyType = postType === "rent" ? "Rent" : "Sale";
-  const propertyCategory = formatLabel(post?.property);
+  const propertyCategory = post?.property
+    ? t(`single.propertyTypes.${post.property}`, {
+        defaultValue: formatLabel(post.property),
+      })
+    : t("single.labels.property");
 
   const images =
     Array.isArray(post?.images) && post.images.length > 0
-      ? post.images.filter(Boolean)
+      ? post.images.filter(Boolean).map((image) => getImageUrl(image))
       : ["/no-image.png"];
 
-  const features = useMemo(() => {
-    return [
-      {
-        icon: <SizeIcon />,
-        value: `${postDetail.size || 0} m²`,
-        label: "Total Size",
-      },
-      {
-        icon: <BedIcon />,
-        value: post?.bedroom || 0,
-        label: "Bedrooms",
-      },
-      {
-        icon: <BathIcon />,
-        value: post?.bathroom || 0,
-        label: "Bathrooms",
-      },
-    ];
-  }, [postDetail.size, post?.bedroom, post?.bathroom]);
+  const stats = [
+    {
+      icon: <SizeIcon />,
+      value: `${postDetail.size || 0}`,
+      label: t("single.features.areaUnit"),
+    },
+    {
+      icon: <BedIcon />,
+      value: post?.bedroom || 0,
+      label: t("single.features.bedrooms"),
+    },
+    {
+      icon: <BathIcon />,
+      value: post?.bathroom || 0,
+      label: t("single.features.bathrooms"),
+    },
+  ];
 
   if (!post) {
     return (
-      <div className="singlePage pageFade">
+      <main className="singlePage pageFade">
         <PageState
           type="empty"
-          title="Property Not Found"
-          message="This property may have been deleted or is no longer available."
-          buttonText="Back to Properties"
+          title={t("single.notFound.title")}
+          message={t("single.notFound.message")}
+          buttonText={t("single.notFound.button")}
           buttonLink="/list"
         />
-      </div>
+      </main>
     );
   }
+
+  if (
+    !canViewPropertyDetails(post.status, {
+      userId: currentUserId,
+      role: currentUserRole,
+      listingAgentId,
+      homeownerId,
+    })
+  ) {
+    return (
+      <main className="singlePage pageFade">
+        <PageState
+          type="empty"
+          title={
+            status === "sold"
+              ? t("single.unavailable.sold")
+              : t("single.unavailable.rented")
+          }
+          message={t("single.notFound.message")}
+          buttonText={t("single.notFound.button")}
+          buttonLink="/list"
+        />
+      </main>
+    );
+  }
+
+  const buildPropertyMessage = () => {
+    const propertyLink = window.location.href;
+
+    return `${t("single.chatMessage.greeting")}
+
+${t("single.chatMessage.title")}: ${post?.title || t("single.labels.property")}
+${t("single.chatMessage.price")}: $${formatPrice(post?.price)}
+${t("single.chatMessage.deal")}: ${propertyDeal}
+${t("single.chatMessage.city")}: ${post?.city || t("single.fallback.unknown")}
+${t("single.chatMessage.address")}: ${
+      post?.address || t("single.fallback.noAddress")
+    }
+
+${t("single.chatMessage.propertyLink")}:
+${propertyLink}
+
+${t("single.chatMessage.closing")}`;
+  };
 
   const handleSave = async () => {
     if (!currentUser) {
@@ -200,25 +301,23 @@ function SinglePage() {
       return;
     }
 
-    if (!post?.id || isSaving) {
-      return;
-    }
+    if (!post?.id || isSaving) return;
 
     try {
       setIsSaving(true);
       setSaved((prev) => !prev);
-
       await apiRequest.post(`/users/save/${post.id}`);
     } catch (error) {
       setSaved((prev) => !prev);
-      console.log("SAVE PROPERTY ERROR:", error);
-      alert(error.response?.data?.message || "Failed to save property.");
+      alert(error.response?.data?.message || t("single.alerts.saveFailed"));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleSendMessage = async () => {
+    if (sendingMessageRef.current || isSendingMessage) return;
+
     if (!currentUser) {
       navigate("/login");
       return;
@@ -227,241 +326,222 @@ function SinglePage() {
     if (isUnavailable) {
       alert(
         status === "sold"
-          ? "This property is already sold."
-          : "This property is already rented."
+          ? t("single.alerts.alreadySold")
+          : t("single.alerts.alreadyRented")
       );
       return;
     }
 
-    if (!postOwnerId) {
-      alert("Cannot find the owner of this property.");
+    if (!listingAgentId) {
+      alert(t("single.alerts.ownerNotFound"));
       return;
     }
 
-    if (currentUserId === postOwnerId) {
-      alert("You cannot send a message to yourself.");
-      return;
-    }
-
-    if (isSendingMessage) {
+    if (currentUserId === listingAgentId) {
+      alert(t("single.alerts.cannotMessageYourself"));
       return;
     }
 
     try {
+      sendingMessageRef.current = true;
       setIsSendingMessage(true);
 
-      const res = await apiRequest.post("/chats", {
-        receiverId: postOwnerId,
+      const chatRes = await apiRequest.post("/chats", {
+        propertyId: post.id,
+        receiverId: listingAgentId,
+      });
+
+      const chat = chatRes.data?.chat || chatRes.data;
+
+      if (!chat?.id) {
+        throw new Error("Chat was not created.");
+      }
+
+      await apiRequest.post("/messages", {
+        chatId: chat.id,
+        text: buildPropertyMessage(),
       });
 
       navigate("/chat", {
         state: {
-          chatId: res.data.id,
+          chatId: chat.id,
+          openChatNow: Date.now(),
         },
       });
     } catch (error) {
-      console.log("START CHAT ERROR:", error);
-      alert(error.response?.data?.message || "Failed to start chat.");
+      alert(error.response?.data?.message || t("single.alerts.chatFailed"));
     } finally {
+      sendingMessageRef.current = false;
       setIsSendingMessage(false);
     }
   };
 
-  const handleEditPost = () => {
-    if (!canEditPost) {
-      alert("You are not allowed to edit this property.");
-      return;
-    }
-
-    navigate(`/posts/edit/${post.id}`);
-  };
+  const contactLabel = isUnavailable
+    ? status === "sold"
+      ? t("single.buttons.propertySold")
+      : t("single.buttons.propertyRented")
+    : isSendingMessage
+    ? t("single.buttons.openingChat")
+    : t("single.buttons.contactOwner");
 
   return (
-    <div className="singlePage pageFade">
-      <div className="singleContainer">
-        <section className="propertyGallerySection">
-          <div className="galleryCard">
-            <Slider images={images} />
+    <main className="singlePage pageFade">
+      <div className="singleBar">
+        <Link to="/list">{t("single.nav.backToProperties")}</Link>
+        {canEditPost && (
+          <Link to={`/posts/edit/${post.id}`}>{t("single.nav.editProperty")}</Link>
+        )}
+      </div>
+
+      <section className="singleGallery">
+        <Slider images={images} />
+      </section>
+
+      <section className="singleBody">
+        <div className="singleMain">
+          <header className="singleIntro">
+            <div className="singleTags">
+              <span className={isRent ? "tag rent" : "tag sale"}>
+                {propertyDeal}
+              </span>
+              <StatusBadge status={status} />
+              <span className="tag ghost">{propertyCategory}</span>
+              <span className="tag ghost">
+                {post.city || t("single.fallback.unknownCity")}
+              </span>
+            </div>
+
+            <h1>{post.title || t("single.fallback.noTitle")}</h1>
+
+            <p className="singleAddress">
+              <LocationIcon />
+              {post.address || t("single.fallback.noAddress")}
+            </p>
+          </header>
+
+          <div className="singleStats">
+            {stats.map((item) => (
+              <div key={item.label}>
+                {item.icon}
+                <b>{item.value}</b>
+                <span>{item.label}</span>
+              </div>
+            ))}
           </div>
-        </section>
 
-        <section className="propertyContent">
-          <main className="propertyMain">
-            <div className="propertyHero">
-              <div className="propertyMainInfo">
-                <div className="singleTitleRow">
-                  <div>
-                    <span className="propertyLabel">{propertyDeal}</span>
-                    <h1>{post.title || "No Title"}</h1>
-                  </div>
+          {isUnavailable && (
+            <p className="singleNotice">
+              {status === "sold"
+                ? t("single.unavailable.sold")
+                : t("single.unavailable.rented")}
+            </p>
+          )}
 
-                  <div className="statusHolder">
-                    <StatusBadge status={status} />
-                  </div>
-                </div>
+          <article className="singleCopy">
+            <h2>{t("single.sections.propertyDescription")}</h2>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: postDetail.desc || t("single.fallback.noDescription"),
+              }}
+            />
+          </article>
 
-                <div className="address">
-                  <span className="addressIcon">
-                    <LocationIcon />
-                  </span>
-
-                  <span>{post.address || "No address available"}</span>
-                </div>
-
-                <div className="singleMeta">
-                  <div className="priceBox">
-                    <span>Property Price</span>
-                    <strong>$ {formatPrice(post.price)}</strong>
-                  </div>
-
-                  <div className="metaChip">{propertyType}</div>
-                  <div className="metaChip">{propertyCategory}</div>
-                </div>
-
-                {isUnavailable && (
-                  <div className="unavailableBox">
-                    {status === "sold"
-                      ? "This property has been sold."
-                      : "This property has been rented."}
-                  </div>
-                )}
-
-                {canEditPost && (
-                  <button
-                    className="editPropertyBtn"
-                    type="button"
-                    onClick={handleEditPost}
-                  >
-                    <EditIcon />
-                    Edit Property
-                  </button>
-                )}
-              </div>
-
-              <div className="ownerCard">
-                <div className="ownerBadge">Property Owner</div>
-
-                <img
-                  src={owner.avatar || "/no-avatar.png"}
-                  alt={owner.username || "Property owner"}
-                  onError={(e) => {
-                    e.currentTarget.src = "/no-avatar.png";
-                  }}
-                />
-
-                <h3>{owner.username || "Unknown User"}</h3>
-
-                <p>Contact this owner for more property information.</p>
-              </div>
+          <article className="singleMap">
+            <h2>{t("single.sections.propertyLocation")}</h2>
+            <div className="singleMapBox">
+              {mapPost ? (
+                <Map items={[mapPost]} />
+              ) : (
+                <p>{t("single.fallback.noLocation")}</p>
+              )}
             </div>
+          </article>
+        </div>
 
-            <div className="descriptionCard">
-              <div className="sectionTitle">
-                <span>Overview</span>
-                <h2>Description</h2>
-              </div>
+        <aside className="singleAside">
+          <div className="singleOffer">
+            <small>{t("single.summary.propertyPrice")}</small>
+            <strong>${formatPrice(post.price)}</strong>
 
-              <div
-                className="descriptionContent"
-                dangerouslySetInnerHTML={{
-                  __html: postDetail.desc || "No description available.",
-                }}
-              ></div>
-            </div>
-
-            <div className="actionBar">
+            <div className="singleActions">
               {canSendMessage && (
                 <button
                   type="button"
-                  onClick={handleSendMessage}
+                  className="primary"
                   disabled={isSendingMessage || isUnavailable}
-                  className={isUnavailable ? "disabledActionBtn" : ""}
+                  onClick={handleSendMessage}
                 >
                   <ChatIcon />
-
-                  {isUnavailable
-                    ? status === "sold"
-                      ? "Property Sold"
-                      : "Property Rented"
-                    : isSendingMessage
-                    ? "Opening Chat..."
-                    : "Send Message"}
+                  {contactLabel}
                 </button>
               )}
 
+              {canCall &&
+                (callHref ? (
+                  <a className="soft" href={callHref}>
+                    <PhoneIcon />
+                    {callLabel}
+                  </a>
+                ) : canViewAgentProfile ? (
+                  <Link className="soft" to={`/agents/${listingAgent.id}`}>
+                    <PhoneIcon />
+                    {callLabel}
+                  </Link>
+                ) : null)}
+
               <button
                 type="button"
-                onClick={handleSave}
+                className={saved ? "ghost isSaved" : "ghost"}
                 disabled={isSaving}
-                className={saved ? "savedBtn" : ""}
+                onClick={handleSave}
               >
                 <SaveIcon active={saved} />
-                {saved ? "Property Saved" : "Save Property"}
+                {saved ? t("single.buttons.saved") : t("single.buttons.save")}
               </button>
             </div>
-          </main>
+          </div>
 
-          <aside className="propertySide">
-            <div className="sideSection">
-              <p className="title">Property Details</p>
-
-              <div className="sizes">
-                {features.map((item) => (
-                  <div className="size" key={item.label}>
-                    <span className="featureIcon">{item.icon}</span>
-
-                    <div>
-                      <span>{item.value}</span>
-                      <small>{item.label}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="singleOwner">
+            <img
+              src={getImageUrl(listingAgentAvatar, "/no-avatar.png")}
+              alt={listingAgentName}
+              onError={(event) => {
+                event.currentTarget.src = "/no-avatar.png";
+              }}
+            />
+            <div>
+              <small>{t("single.owner.listedBy")}</small>
+              {canViewAgentProfile ? (
+                <Link className="ownerNameLink" to={`/agents/${listingAgent.id}`}>
+                  <b>{listingAgentName}</b>
+                </Link>
+              ) : (
+                <b>{listingAgentName}</b>
+              )}
+              <span>{t("single.owner.listingAgent")}</span>
             </div>
+          </div>
 
-            <div className="sideSection">
-              <p className="title">Property Summary</p>
+          {currentUser && !isListingAgent && !isHomeowner && (
+            <button
+              type="button"
+              className="reportBtn"
+              onClick={() => setReportOpen(true)}
+            >
+              {t("single.report")}
+            </button>
+          )}
+        </aside>
+      </section>
 
-              <div className="summaryList">
-                <div>
-                  <span>Type</span>
-                  <b>{propertyDeal}</b>
-                </div>
+      <RecommendedProperties currentPost={post} />
 
-                <div>
-                  <span>Category</span>
-                  <b>{propertyCategory}</b>
-                </div>
-
-                <div>
-                  <span>Status</span>
-                  <b className={`summaryStatus ${status}`}>{status}</b>
-                </div>
-
-                <div>
-                  <span>City</span>
-                  <b>{post.city || "Unknown"}</b>
-                </div>
-              </div>
-            </div>
-
-            <div className="sideSection mapSection">
-              <p className="title">Location</p>
-
-              <div className="mapContainer">
-                {mapPost ? (
-                  <Map items={[mapPost]} />
-                ) : (
-                  <p>No location available</p>
-                )}
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <RecommendedProperties currentPost={post} />
-      </div>
-    </div>
+      <ReportModal
+        propertyId={post.id}
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
+    </main>
   );
 }
 

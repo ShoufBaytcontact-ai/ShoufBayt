@@ -25,3 +25,15 @@
   color: #fece51;
   border: 1px solid rgba(254, 206, 81, 0.35);
 }
+
+.statusBadge.pending {
+  background: rgba(184, 137, 31, 0.15);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color));
+}
+
+.statusBadge.rejected {
+  background: rgba(255, 92, 92, 0.12);
+  color: #ff5c5c;
+  border: 1px solid rgba(255, 92, 92, 0.35);
+}

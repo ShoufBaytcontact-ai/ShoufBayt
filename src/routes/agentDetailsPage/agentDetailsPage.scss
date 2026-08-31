@@ -1,364 +1,374 @@
 @import "../../responsive.scss";
 
 .agentDetailsPage {
+  width: 100%;
   min-height: calc(100vh - 100px);
-  background: var(--bg-main);
+  padding: 28px 0 80px;
   color: var(--text-main);
-  padding: 45px;
   box-sizing: border-box;
 
-  @include sm {
-    padding: 25px 16px;
-  }
-
-  .agentLoading,
-  .agentNotFound {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 18px;
-    padding: 35px;
-    text-align: center;
-    box-shadow: 0 15px 35px var(--shadow-color);
-
-    h1 {
-      color: var(--text-main);
-      margin-bottom: 15px;
-    }
-
-    a {
-      color: var(--accent);
-      font-weight: 800;
-      text-decoration: none;
-    }
+  a {
+    text-decoration: none;
   }
 
   .agentHero {
     display: grid;
-    grid-template-columns: 330px 1fr;
-    gap: 32px;
-    background: linear-gradient(
-      135deg,
-      var(--bg-card) 0%,
-      var(--bg-card-dark) 100%
-    );
+    grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+    gap: 20px;
+    margin-bottom: 22px;
+    padding: 20px;
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 32px;
-    box-shadow: 0 15px 35px var(--shadow-color);
-    margin-bottom: 35px;
+    box-shadow: inset 3px 0 0 var(--accent);
 
     @include md {
       grid-template-columns: 1fr;
     }
 
     @include sm {
-      padding: 22px;
+      padding: 16px;
+    }
+  }
+
+  .agentImageBox {
+    height: 360px;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+
+    @include sm {
+      height: 280px;
     }
 
-    .agentImageBox {
-      height: 360px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 2px solid var(--accent);
-      background: var(--bg-main);
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+  }
+
+  .agentHeroInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+    min-width: 0;
+
+    .agentBadge {
+      width: fit-content;
+      margin: 0;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
 
       @include sm {
-        height: 300px;
-      }
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+        font-size: 2rem;
       }
     }
 
-    .agentHeroInfo {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 16px;
+    h3 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
 
-      .agentBadge {
-        width: fit-content;
-        padding: 8px 14px;
-        border-radius: 999px;
-        background: rgba(254, 206, 81, 0.12);
-        border: 1px solid rgba(254, 206, 81, 0.35);
+    .agentAgency {
+      margin: 0;
+      color: var(--text-main);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    > p {
+      margin: 0;
+      max-width: 62ch;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .agentRating {
+      width: fit-content;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 700;
+
+      b {
         color: var(--accent);
-        font-weight: 800;
-        font-size: 13px;
+        font-family: var(--font-display);
+        font-size: 1.35rem;
+        font-weight: 600;
+        line-height: 1;
       }
 
-      h1 {
-        font-size: 44px;
-        margin: 0;
-        color: var(--text-main);
-
-        @include sm {
-          font-size: 32px;
-        }
+      span {
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 11px;
       }
 
-      h3 {
+      &:hover span {
         color: var(--accent);
-        margin: 0;
       }
+    }
+  }
 
-      p {
-        color: var(--text-secondary);
-        line-height: 1.8;
-        max-width: 760px;
-        margin: 0;
-      }
+  .agentInfoGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--border-color);
+    border: 1px solid var(--border-color);
 
-      .agentInfoGrid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-        margin: 8px 0;
+    @include sm {
+      grid-template-columns: 1fr;
+    }
 
-        @include sm {
-          grid-template-columns: 1fr;
-        }
+    div {
+      padding: 14px 16px;
+      background: var(--bg-main);
 
-        div {
-          background: var(--bg-main);
-          border: 1px solid var(--border-color);
-          border-radius: 14px;
-          padding: 15px;
-
-          span {
-            display: block;
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 6px;
-          }
-
-          b {
-            color: var(--text-main);
-          }
-        }
-      }
-
-      .heroActions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-
-        button,
-        a {
-          width: fit-content;
-          padding: 14px 24px;
-          border-radius: 12px;
-          border: none;
-          font-weight: 800;
-          cursor: pointer;
-          transition: 0.3s ease;
-          text-decoration: none;
-        }
-
-        button {
-          background: var(--accent);
-          color: #111111;
-
-          &:hover:not(:disabled) {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-          }
-
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-        }
-
-        a {
-          background: var(--bg-main);
-          color: var(--text-main);
-          border: 1px solid var(--border-color);
-
-          &:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            transform: translateY(-2px);
-          }
-        }
-      }
-
-      .agentError {
-        color: #ff5c5c;
+      span {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text-muted);
+        font-size: 11px;
         font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      b {
+        color: var(--text-main);
+        font-size: 14px;
+        word-break: break-word;
       }
     }
+  }
+
+  .heroActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    button,
+    a {
+      min-height: 46px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button {
+      border: none;
+      background: var(--accent);
+      color: var(--accent-ink);
+
+      &:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+
+      &:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+    }
+
+    a {
+      background: var(--bg-main);
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+
+      &:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    }
+  }
+
+  .agentError {
+    margin: 0;
+    color: #ff7676;
+    font-weight: 700;
   }
 
   .agentContent {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 30px;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.7fr);
+    gap: 20px;
+    align-items: start;
 
     @include md {
       grid-template-columns: 1fr;
     }
   }
 
-  .agentListings,
+  .agentListings {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .agentReviews,
   .agentChatPanel {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 22px;
-    padding: 28px;
-    box-shadow: 0 15px 35px var(--shadow-color);
+    padding: 22px 24px;
 
     @include sm {
-      padding: 20px;
+      padding: 18px;
+    }
+  }
+
+  .agentReviews {
+    position: sticky;
+    top: 88px;
+
+    @include md {
+      position: static;
     }
   }
 
   .sectionTitle {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
+
+    span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
 
     h2 {
-      color: var(--text-main);
       margin: 0 0 8px;
-      font-size: 28px;
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 2.4vw, 1.9rem);
     }
 
     p {
-      color: var(--text-secondary);
       margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
     }
   }
 
   .emptyBox,
   .chatStartBox {
+    padding: 24px;
     background: var(--bg-main);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 24px;
     color: var(--text-secondary);
     text-align: center;
+
+    h3 {
+      margin: 0 0 8px;
+      color: var(--text-main);
+      font-family: var(--font-display);
+    }
+
+    p {
+      margin: 0;
+    }
   }
 
   .chatStartBox {
     button {
       margin-top: 16px;
-      padding: 13px 20px;
-      border-radius: 10px;
+      min-height: 46px;
+      padding: 0 18px;
       border: none;
       background: var(--accent);
-      color: #111111;
-      font-weight: 800;
+      color: var(--accent-ink);
+      font-weight: 700;
       cursor: pointer;
-      transition: 0.3s ease;
 
       &:hover:not(:disabled) {
         background: var(--accent-hover);
-        transform: translateY(-2px);
       }
 
       &:disabled {
-        opacity: 0.6;
+        opacity: 0.65;
       }
     }
   }
 
   .listingGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
 
-    @include sm {
-      grid-template-columns: 1fr;
-    }
+  .listingGrid .propertyCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
 
-    .listingCard {
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      overflow: hidden;
-      text-decoration: none;
-      transition: 0.3s ease;
-
-      &:hover {
-        border-color: var(--accent);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 28px rgba(254, 206, 81, 0.1);
-      }
-
-      img {
-        width: 100%;
-        height: 170px;
-        object-fit: cover;
-      }
-
-      .listingInfo {
-        padding: 16px;
-
-        h3 {
-          color: var(--text-main);
-          margin: 0 0 8px;
-          font-size: 18px;
-        }
-
-        p {
-          color: var(--text-secondary);
-          margin: 0 0 10px;
-        }
-
-        b {
-          display: block;
-          color: var(--accent);
-          margin-top: 12px;
-          font-size: 18px;
-        }
-
-        .listingMeta {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-
-          span {
-            background: rgba(254, 206, 81, 0.12);
-            border: 1px solid rgba(254, 206, 81, 0.35);
-            color: var(--accent);
-            padding: 5px 9px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: capitalize;
-          }
-        }
-      }
+    &:hover {
+      border-color: rgba(224, 160, 26, 0.5);
+      box-shadow: var(--shadow-soft);
     }
   }
 
+  .listingGrid .propertyMedia {
+    height: auto;
+    aspect-ratio: 3 / 2;
+    min-height: 0;
+  }
+
+  .listingGrid .propertyContent {
+    padding: 18px 20px 16px;
+  }
+
   .inlineChat {
+    overflow: hidden;
     background: var(--bg-main);
     border: 1px solid var(--border-color);
-    border-radius: 18px;
-    overflow: hidden;
 
     .chatTop {
       display: flex;
       align-items: center;
       gap: 14px;
-      background: var(--bg-card-dark);
-      border-bottom: 1px solid var(--border-color);
       padding: 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
 
       img {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
         object-fit: cover;
-        border: 2px solid var(--accent);
+        border: 1px solid var(--accent);
       }
 
       h3 {
-        color: var(--text-main);
         margin: 0 0 4px;
+        color: var(--text-main);
+        font-family: var(--font-display);
       }
 
       span {
@@ -385,12 +395,11 @@
         align-self: flex-start;
 
         p {
+          margin: 0;
+          padding: 12px 14px;
           background: var(--bg-card);
           color: var(--text-secondary);
           border: 1px solid var(--border-color);
-          padding: 12px 14px;
-          border-radius: 14px 14px 14px 4px;
-          margin: 0;
           line-height: 1.6;
         }
 
@@ -407,9 +416,8 @@
 
           p {
             background: var(--accent);
-            color: #111111;
+            color: var(--accent-ink);
             border-color: var(--accent);
-            border-radius: 14px 14px 4px 14px;
             font-weight: 700;
           }
         }
@@ -420,14 +428,13 @@
       display: flex;
       gap: 12px;
       padding: 14px;
-      background: var(--bg-card-dark);
+      background: var(--bg-card);
       border-top: 1px solid var(--border-color);
 
       textarea {
         flex: 1;
         height: 58px;
         resize: none;
-        border-radius: 10px;
         border: 1px solid var(--border-color);
         background: var(--bg-main);
         color: var(--text-main);
@@ -442,17 +449,22 @@
       button {
         width: 100px;
         border: none;
-        border-radius: 10px;
         background: var(--accent);
-        color: #111111;
-        font-weight: 800;
+        color: var(--accent-ink);
+        font-weight: 700;
         cursor: pointer;
 
         &:disabled {
-          opacity: 0.6;
+          opacity: 0.65;
           cursor: not-allowed;
         }
       }
     }
+  }
+}
+
+[dir="rtl"] .agentDetailsPage {
+  .agentHero {
+    box-shadow: inset -3px 0 0 var(--accent);
   }
 }

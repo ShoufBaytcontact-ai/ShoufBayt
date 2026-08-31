@@ -1,254 +1,306 @@
 .profilePostCard {
   width: 100%;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+.profilePostCard:hover {
+  border-color: var(--accent);
+}
+
+.profilePostCard:hover .profilePostImage img {
+  transform: scale(1.04);
+}
+
+.profilePostCard a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.profilePostImage {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.profilePostImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.55s var(--ease-out);
+}
+
+.profilePostImage span {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 6px 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profilePostInfo {
   display: flex;
-  gap: 22px;
-  padding: 20px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 18px;
-  transition: 0.3s ease;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+}
 
-  &:hover {
-    border-color: #fece51;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(254, 206, 81, 0.1);
-  }
+.profilePostTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
 
-  a {
-    text-decoration: none;
-    color: inherit;
+.profilePostTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.profilePostTitleRow h2 {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.profilePostTitleRow h2:hover {
+  color: var(--accent);
+}
+
+.profilePostCard .statusBadge {
+  border-radius: 0;
+}
+
+.profilePostAddress {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.profilePostAddress svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.profilePostManager {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profilePostManager a {
+  display: inline-block;
+  margin-inline-start: 8px;
+  color: var(--accent);
+}
+
+.profilePostPrice {
+  height: fit-content;
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.profilePostFeatures {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profilePostFeatures div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.profilePostFeatures svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.statusControlBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+}
+
+.statusControlBox label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.statusControlBox em {
+  color: var(--accent);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.statusButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.statusActionBtn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.statusActionBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.statusActionBtn:disabled {
+  cursor: default;
+}
+
+.statusActionBtn.available.is-active {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-card));
+  color: var(--success);
+}
+
+.statusActionBtn.sold.is-active {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-card));
+  color: var(--danger);
+}
+
+.statusActionBtn.rented.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+  color: var(--accent);
+}
+
+.profilePostActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profilePostActions a,
+.profilePostActions button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewBtn {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.editPostBtn {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.deletePostBtn {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.viewBtn:hover {
+  background: var(--accent-hover);
+}
+
+.editPostBtn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.deletePostBtn:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .profilePostCard {
+    grid-template-columns: 1fr;
+    border-radius: 16px;
   }
 
   .profilePostImage {
-    width: 230px;
-    min-width: 230px;
-    height: 170px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #0f0f0f;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  .profilePostInfo {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-width: 0;
-
-    .profilePostTop {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-
-      .profilePostTitleRow {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 10px;
-
-        h2 {
-          margin: 0;
-          font-size: 22px;
-          color: white;
-
-          &:hover {
-            color: #fece51;
-          }
-        }
-      }
-
-      .profilePostAddress {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #cccccc;
-        font-size: 14px;
-
-        img {
-          width: 16px;
-          height: 16px;
-        }
-      }
-
-      .profilePostPrice {
-        height: fit-content;
-        padding: 9px 14px;
-        background: rgba(254, 206, 81, 0.15);
-        color: #fece51;
-        border-radius: 10px;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-    }
-
-    .statusControlBox {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin: 14px 0;
-      padding: 12px;
-      background: #0f0f0f;
-      border: 1px solid #2a2a2a;
-      border-radius: 12px;
-
-      label {
-        color: #cccccc;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      span {
-        color: #fece51;
-        font-size: 13px;
-        font-weight: 700;
-      }
-
-      .statusSelect {
-        padding: 9px 14px;
-        border-radius: 999px;
-        border: 1px solid #2a2a2a;
-        background: #0f0f0f;
-        color: white;
-        font-weight: 800;
-        outline: none;
-        cursor: pointer;
-        transition: 0.3s ease;
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        &.available {
-          border-color: rgba(46, 204, 113, 0.45);
-          color: #2ecc71;
-        }
-
-        &.sold {
-          border-color: rgba(255, 92, 92, 0.45);
-          color: #ff5c5c;
-        }
-
-        &.rented {
-          border-color: rgba(254, 206, 81, 0.45);
-          color: #fece51;
-        }
-      }
-    }
-
-    .profilePostFeatures {
-      display: flex;
-      gap: 12px;
-      margin: 16px 0;
-      flex-wrap: wrap;
-
-      div {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 9px 12px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 10px;
-        color: #cccccc;
-        font-size: 14px;
-
-        img {
-          width: 18px;
-          height: 18px;
-        }
-      }
-    }
-
-    .profilePostActions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-
-      a,
-      button {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s ease;
-        font-size: 14px;
-      }
-
-      .viewBtn {
-        background: #fece51;
-        color: #111;
-      }
-
-      .editPostBtn {
-        background: transparent;
-        color: #fece51;
-        border: 1px solid #fece51;
-      }
-
-      .deletePostBtn {
-        background: transparent;
-        color: #ff5c5c;
-        border: 1px solid #ff5c5c;
-      }
-
-      .viewBtn:hover {
-        background: #ffd86d;
-      }
-
-      .editPostBtn:hover {
-        background: #fece51;
-        color: #111;
-      }
-
-      .deletePostBtn:hover {
-        background: #ff5c5c;
-        color: white;
-      }
-    }
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 }
 
-@media (max-width: 768px) {
-  .profilePostCard {
+@media (max-width: 640px) {
+  .profilePostTop {
     flex-direction: column;
+  }
 
-    .profilePostImage {
-      width: 100%;
-      min-width: 100%;
-      height: 220px;
-    }
+  .statusControlBox {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-    .profilePostInfo {
-      .profilePostTop {
-        flex-direction: column;
-      }
-
-      .statusControlBox {
-        align-items: flex-start;
-        flex-direction: column;
-
-        .statusSelect {
-          width: 100%;
-        }
-      }
-
-      .profilePostActions {
-        a,
-        button {
-          width: 100%;
-          text-align: center;
-        }
-      }
-    }
+  .statusActionBtn,
+  .profilePostActions a,
+  .profilePostActions button {
+    width: 100%;
   }
 }

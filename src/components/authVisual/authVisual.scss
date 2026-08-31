@@ -1,0 +1,417 @@
+.authVisual {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  padding: 36px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  color: #f4f1ea;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(226, 184, 74, 0.16), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 90%, rgba(226, 184, 74, 0.08), transparent 50%),
+    linear-gradient(165deg, #141821 0%, #0c0e12 55%, #10131a 100%);
+}
+
+.authVisualScene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.authVisualScene::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 58%;
+  background: linear-gradient(to top, #0c0e12 12%, rgba(12, 14, 18, 0.55) 45%, transparent);
+}
+
+.authVisualGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 241, 234, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 241, 234, 0.045) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to top, transparent 8%, black 48%, transparent 92%);
+  opacity: 0.7;
+}
+
+.authVisualGlow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  background: #e2b84a;
+}
+
+.authVisualGlowA {
+  width: 220px;
+  height: 220px;
+  top: -40px;
+  right: -50px;
+  opacity: 0.16;
+}
+
+.authVisualGlowB {
+  width: 180px;
+  height: 180px;
+  left: -60px;
+  bottom: 18%;
+  opacity: 0.1;
+}
+
+.authCompass {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  top: 18px;
+  right: -30px;
+  border: 1px dashed rgba(226, 184, 74, 0.28);
+  border-radius: 50%;
+  animation: authCompassSpin 48s linear infinite;
+}
+
+.authCompass::before,
+.authCompass::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 241, 234, 0.08);
+}
+
+.authCompass::after {
+  inset: 56px;
+  border-style: dashed;
+  border-color: rgba(226, 184, 74, 0.18);
+}
+
+.authSkyline {
+  position: absolute;
+  left: 50%;
+  bottom: 42%;
+  width: min(440px, 118%);
+  transform: translateX(-50%);
+  opacity: 0.95;
+}
+
+.authFloorplan circle,
+.authFloorplan path {
+  stroke: rgba(226, 184, 74, 0.18);
+  stroke-width: 1;
+}
+
+.authBuildings path {
+  stroke: rgba(244, 241, 234, 0.55);
+  stroke-width: 1.6;
+  fill: rgba(12, 14, 18, 0.35);
+}
+
+.authHeroBuilding {
+  stroke: #e2b84a !important;
+  fill: rgba(226, 184, 74, 0.08) !important;
+}
+
+.authWindows rect {
+  fill: rgba(244, 241, 234, 0.18);
+}
+
+.authWindowLit {
+  fill: #e2b84a;
+  animation: authWindowPulse 3.6s ease-in-out infinite;
+}
+
+.authWindowLit:nth-of-type(3n) {
+  animation-delay: 0.8s;
+}
+
+.authWindowLit:nth-of-type(4n) {
+  animation-delay: 1.6s;
+}
+
+.authGround {
+  stroke: rgba(226, 184, 74, 0.45);
+  stroke-width: 1.5;
+}
+
+.authVisualBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.authVisualBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.authBrandIcon {
+  width: 42px;
+  height: 42px;
+  position: relative;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(226, 184, 74, 0.18), rgba(226, 184, 74, 0.04));
+  border: 1px solid rgba(226, 184, 74, 0.4);
+}
+
+.authBrandIcon .roof {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 9px;
+  left: 10px;
+  transform: rotate(45deg);
+  border-left: 3px solid #e2b84a;
+  border-top: 3px solid #e2b84a;
+  border-radius: 3px 0 0 0;
+}
+
+.authBrandIcon .tower {
+  position: absolute;
+  width: 21px;
+  height: 17px;
+  left: 10px;
+  bottom: 8px;
+  border: 3px solid #e2b84a;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+}
+
+.authBrandIcon .door {
+  position: absolute;
+  width: 6px;
+  height: 10px;
+  left: 18px;
+  bottom: 8px;
+  background: #e2b84a;
+  border-radius: 2px 2px 0 0;
+}
+
+.authVisualBrand > span {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #e2b84a;
+}
+
+.authVisualBody h2 {
+  margin: 0;
+  max-width: 18ch;
+  color: #f4f1ea;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.authVisualBody > p {
+  max-width: 36ch;
+  margin: 14px 0 0;
+  color: rgba(244, 241, 234, 0.72);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.authJourney {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.authJourney li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: rgba(12, 14, 18, 0.5);
+  border: 1px solid rgba(244, 241, 234, 0.1);
+  color: #f4f1ea;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.authJourney li span {
+  color: #e2b84a;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.authShowcase {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.authShowcaseCard {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(12, 14, 18, 0.55);
+  border: 1px solid rgba(244, 241, 234, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.authShowcaseIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e2b84a;
+  background: rgba(226, 184, 74, 0.12);
+  border: 1px solid rgba(226, 184, 74, 0.28);
+}
+
+.authShowcaseIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.authShowcaseCard strong {
+  display: block;
+  color: #f4f1ea;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.authShowcaseCard p {
+  margin: 4px 0 0;
+  color: rgba(244, 241, 234, 0.68);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.authChips {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.authChips span {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(226, 184, 74, 0.1);
+  border: 1px solid rgba(226, 184, 74, 0.28);
+  color: #f4f1ea;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.authVisualNote {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(12, 14, 18, 0.55);
+  border: 1px solid rgba(244, 241, 234, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.authVisualNote strong {
+  display: block;
+  color: #e2b84a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.authVisualNote p {
+  margin: 6px 0 0;
+  color: rgba(244, 241, 234, 0.7);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@keyframes authCompassSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes authWindowPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1050px) {
+  .authVisual {
+    min-height: 420px;
+    padding: 28px 24px;
+  }
+
+  .authSkyline {
+    bottom: 46%;
+    width: min(380px, 90%);
+  }
+}
+
+@media (max-width: 720px) {
+  .authVisual {
+    min-height: auto;
+    padding: 24px 20px 22px;
+  }
+
+  .authSkyline {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: min(320px, 100%);
+    transform: none;
+    margin: 0 auto 8px;
+    display: block;
+  }
+
+  .authVisualScene {
+    position: relative;
+    min-height: 170px;
+  }
+
+  .authVisualScene::after {
+    height: 28%;
+  }
+
+  .authCompass {
+    top: -20px;
+    right: -40px;
+  }
+
+  .authVisualBody h2 {
+    max-width: none;
+    font-size: 28px;
+  }
+
+  .authJourney {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authCompass,
+  .authWindowLit {
+    animation: none;
+  }
+}

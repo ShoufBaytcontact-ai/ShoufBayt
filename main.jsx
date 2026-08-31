@@ -9,13 +9,11 @@ import "./theme.scss";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <React.StrictMode>
-    <AuthContextProvider>
-      <ThemeContextProvider>
-        <SocketContextProvider>
-          <App />
-        </SocketContextProvider>
-      </ThemeContextProvider>
-    </AuthContextProvider>
-  </React.StrictMode>
+  <AuthContextProvider>
+    <ThemeContextProvider>
+      <SocketContextProvider>
+        <App />
+      </SocketContextProvider>
+    </ThemeContextProvider>
+  </AuthContextProvider>
 );

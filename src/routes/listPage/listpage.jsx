@@ -1,66 +1,48 @@
 import "./listpage.scss";
-import { Link, useLoaderData } from "react-router-dom";
+import { useContext } from "react";
+import { Link, useLoaderData, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Card from "../../components/card/card";
 import Map from "../../components/map/map";
 import ListFilter from "../../components/listFilter/listFilter";
 import PageState from "../../components/pageState/pageState";
+import { AuthContext } from "../../context/AuthContext.jsx";
 
-function PropertyIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M4 21V10.5L12 4l8 6.5V21" />
-      <path d="M9 21v-7h6v7" />
-      <path d="M7 21h10" />
-    </svg>
-  );
-}
+function normalizeProperties(data) {
+  const unwrap = (item) => {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
 
-function AvailableIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M20 7 10 17l-5-5" />
-    </svg>
-  );
-}
+    if (item.property && typeof item.property === "object") {
+      return item.property;
+    }
 
-function RentIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M4 7h16" />
-      <path d="M6 7V5.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V7" />
-      <path d="M6 7v13" />
-      <path d="M18 7v13" />
-      <path d="M9 11h6" />
-      <path d="M9 15h6" />
-    </svg>
-  );
-}
+    if (item.post && typeof item.post === "object") {
+      return item.post;
+    }
 
-function SaleIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M12 2v20" />
-      <path d="M17 6.5C16.2 5.4 14.5 4.7 12.5 4.7c-2.8 0-4.7 1.4-4.7 3.4 0 2.2 2.4 2.9 4.5 3.4 2.2.5 4.4 1 4.4 3.4 0 2-1.9 3.4-4.7 3.4-2.2 0-4-.8-4.9-2.1" />
-    </svg>
-  );
-}
+    return item;
+  };
 
-function MapIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M12 21s7-5.1 7-12a7 7 0 0 0-14 0c0 6.9 7 12 7 12Z" />
-      <circle cx="12" cy="9" r="2.4" />
-    </svg>
-  );
-}
-
-function normalizePosts(data) {
   if (Array.isArray(data)) {
-    return data.map((item) => item?.post || item).filter(Boolean);
+    return data.map(unwrap).filter(Boolean);
+  }
+
+  if (Array.isArray(data?.properties)) {
+    return data.properties.map(unwrap).filter(Boolean);
   }
 
   if (Array.isArray(data?.posts)) {
-    return data.posts.map((item) => item?.post || item).filter(Boolean);
+    return data.posts.map(unwrap).filter(Boolean);
+  }
+
+  if (Array.isArray(data?.items)) {
+    return data.items.map(unwrap).filter(Boolean);
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data.map(unwrap).filter(Boolean);
   }
 
   return [];
@@ -68,159 +50,175 @@ function normalizePosts(data) {
 
 function ListPage() {
   const data = useLoaderData();
-  const posts = normalizePosts(data);
+  const properties = normalizeProperties(data);
+  const pagination = data?.pagination || null;
+  const { t } = useTranslation();
+  const { currentUser } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const availableCount = posts.filter((post) => {
-    return (post.status || "available") === "available";
-  }).length;
+  const role = String(currentUser?.role || "").toUpperCase();
+  const canCreateDirectly = role === "AGENT" || role === "ADMIN";
+  const createPath = canCreateDirectly ? "/newPostPage" : "/request-listing";
+  const createLabel = canCreateDirectly
+    ? t("list.hero.createListing")
+    : t("list.hero.requestListing");
 
-  const rentCount = posts.filter((post) => post.type === "rent").length;
-  const saleCount = posts.filter((post) => post.type === "buy").length;
+  const listedProperties = properties.filter((property) =>
+    ["PUBLISHED", "SOLD", "RENTED"].includes(
+      String(property.status || "").toUpperCase()
+    )
+  );
+
+  const activeType = searchParams.get("type") || "";
+  const currentPage = Number(pagination?.page || searchParams.get("page") || 1);
+  const totalPages = Number(pagination?.totalPages || 1);
+  const totalResults = Number(pagination?.total || listedProperties.length);
+
+  const setType = (type) => {
+    const next = new URLSearchParams(searchParams);
+
+    if (!type) {
+      next.delete("type");
+    } else {
+      next.set("type", type);
+    }
+
+    next.delete("page");
+    const query = next.toString();
+    navigate(query ? `/list?${query}` : "/list");
+  };
+
+  const setPage = (page) => {
+    const next = new URLSearchParams(searchParams);
+    if (page <= 1) {
+      next.delete("page");
+    } else {
+      next.set("page", String(page));
+    }
+    const query = next.toString();
+    navigate(query ? `/list?${query}` : "/list");
+  };
 
   return (
-    <div className="listPage pageFade">
-      <div className="listContainer">
-        <div className="listHero">
-          <div className="heroContent">
-            <span className="heroBadge">Property Listings</span>
+    <main className="listPage pageFade">
+      <section className="listHero">
+        <div>
+          <p className="listEyebrow">{t("list.hero.badge")}</p>
+          <h1>{t("list.hero.title")}</h1>
+          <span>{t("list.hero.description")}</span>
+        </div>
 
-            <h1>Explore Available Properties</h1>
+        {currentUser && (
+          <Link to={createPath} className="createListingBtn">
+            {createLabel}
+          </Link>
+        )}
+      </section>
 
+      <nav className="listTabs" aria-label={t("list.hero.badge")}>
+        <button
+          type="button"
+          className={!activeType ? "isActive" : ""}
+          onClick={() => setType("")}
+        >
+          {t("list.tabs.all")}
+        </button>
+        <button
+          type="button"
+          className={activeType === "buy" ? "isActive" : ""}
+          onClick={() => setType("buy")}
+        >
+          {t("list.tabs.buy")}
+        </button>
+        <button
+          type="button"
+          className={activeType === "rent" ? "isActive" : ""}
+          onClick={() => setType("rent")}
+        >
+          {t("list.tabs.rent")}
+        </button>
+      </nav>
+
+      <section className="filterSection">
+        <ListFilter />
+      </section>
+
+      <section className="listContent">
+        <div className="resultsPanel">
+          <div className="resultsHeader">
+            <h2>
+              {totalResults === 1
+                ? t("list.results.propertyFound", {
+                    count: totalResults,
+                  })
+                : t("list.results.propertiesFound", {
+                    count: totalResults,
+                  })}
+            </h2>
             <p>
-              Browse real estate listings, compare property details, filter by
-              your needs, and view each location directly on the map.
+              {listedProperties.length > 0
+                ? t("list.results.descriptionWithResults")
+                : t("list.results.descriptionEmpty")}
             </p>
           </div>
 
-          <div className="heroAction">
-            <Link to="/newPostPage">Create Listing</Link>
-          </div>
-        </div>
-
-        <ListFilter />
-
-        <div className="statsGrid">
-          <div className="statCard">
-            <span className="statIcon">
-              <PropertyIcon />
-            </span>
-
-            <div>
-              <strong>{posts.length}</strong>
-              <p>Total Properties</p>
-            </div>
-          </div>
-
-          <div className="statCard">
-            <span className="statIcon">
-              <AvailableIcon />
-            </span>
-
-            <div>
-              <strong>{availableCount}</strong>
-              <p>Available</p>
-            </div>
-          </div>
-
-          <div className="statCard">
-            <span className="statIcon">
-              <SaleIcon />
-            </span>
-
-            <div>
-              <strong>{saleCount}</strong>
-              <p>For Sale</p>
-            </div>
-          </div>
-
-          <div className="statCard">
-            <span className="statIcon">
-              <RentIcon />
-            </span>
-
-            <div>
-              <strong>{rentCount}</strong>
-              <p>For Rent</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="wrapper">
-          <div className="resultInfo">
-            <div>
-              <span>Search Results</span>
-
-              <h2>
-                {posts.length} Propert{posts.length === 1 ? "y" : "ies"} Found
-              </h2>
-
-              <p>
-                {posts.length > 0
-                  ? "Choose a property to view full details, location, images, and owner information."
-                  : "Try changing your filters to find more properties."}
-              </p>
-            </div>
-          </div>
-
           <div className="cardsContainer">
-            {posts.length > 0 ? (
-              posts.map((post) => <Card key={post.id} item={post} />)
+            {listedProperties.length > 0 ? (
+              listedProperties.map((property) => (
+                <Card key={property.id} item={property} />
+              ))
             ) : (
               <PageState
                 type="empty"
-                title="No Properties Found"
-                message="We could not find properties matching your search. Try another city, price range, or property type."
-                buttonText="Reset Search"
+                title={t("list.empty.title")}
+                message={t("list.empty.message")}
+                buttonText={t("list.empty.button")}
                 buttonLink="/list"
               />
             )}
           </div>
-        </div>
-      </div>
 
-      <div className="mapContainer">
-        <div className="mapSticky">
-          <div className="mapPanel">
-            <div className="mapHeader">
-              <div className="mapTitle">
-                <span className="mapBadge">Interactive Map</span>
-
-                <h2>Property Locations</h2>
-
-                <p>
-                  View all matching properties on a larger map and explore
-                  nearby listing locations easily.
-                </p>
-              </div>
-
-              <div className="mapIcon">
-                <MapIcon />
-              </div>
+          {totalPages > 1 && (
+            <div className="listPagination">
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => setPage(currentPage - 1)}
+              >
+                {t("list.pagination.prev")}
+              </button>
+              <span>
+                {t("list.pagination.page", {
+                  page: currentPage,
+                  pages: totalPages,
+                })}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage(currentPage + 1)}
+              >
+                {t("list.pagination.next")}
+              </button>
             </div>
+          )}
+        </div>
 
-            <div className="mapStats">
-              <div>
-                <strong>{posts.length}</strong>
-                <span>Total Listings</span>
-              </div>
-
-              <div>
-                <strong>{availableCount}</strong>
-                <span>Available</span>
-              </div>
+        <aside className="mapPanel">
+          <div className="mapCard">
+            <div className="mapHeader">
+              <h2>{t("list.map.title")}</h2>
+              <p>{t("list.map.badge")}</p>
             </div>
 
             <div className="mapBox">
-              <div className="mapOverlayTop">
-                <span>Live Property Map</span>
-              </div>
-
-              <Map items={posts} />
+              <Map items={listedProperties} />
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </aside>
+      </section>
+    </main>
   );
 }
 

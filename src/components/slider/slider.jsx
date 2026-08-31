@@ -1,142 +1,172 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./slider.scss";
 
+function ArrowIcon({ direction }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {direction === "left" ? (
+        <path d="M15 5 8 12l7 7" />
+      ) : (
+        <path d="M9 5l7 7-7 7" />
+      )}
+    </svg>
+  );
+}
+
 function Slider({ images = [] }) {
+  const { t } = useTranslation();
+
+  const imageKey = useMemo(
+    () => (Array.isArray(images) ? images.filter(Boolean).join("|") : ""),
+    [images]
+  );
+
   const safeImages = useMemo(() => {
-    const list = Array.isArray(images) ? images.filter(Boolean) : [];
-    return list.length > 0 ? list : ["/no-image.png"];
-  }, [images]);
+    return imageKey ? imageKey.split("|") : ["/no-image.png"];
+  }, [imageKey]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullScreen, setFullScreen] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-
-  const thumbnailRefs = useRef([]);
   const thumbnailRailRef = useRef(null);
 
   const hasMultipleImages = safeImages.length > 1;
+  const currentImage = safeImages[currentIndex] || "/no-image.png";
+
+  const goTo = useCallback(
+    (index) => {
+      const last = safeImages.length - 1;
+      if (last < 0) return;
+      if (index < 0) {
+        setCurrentIndex(last);
+        return;
+      }
+      if (index > last) {
+        setCurrentIndex(0);
+        return;
+      }
+      setCurrentIndex(index);
+    },
+    [safeImages.length]
+  );
 
   const changeSlide = useCallback(
     (direction) => {
-      if (!hasMultipleImages) {
-        return;
-      }
+      if (!hasMultipleImages) return;
 
       setCurrentIndex((prev) => {
         if (direction === "left") {
           return prev === 0 ? safeImages.length - 1 : prev - 1;
         }
-
         return prev === safeImages.length - 1 ? 0 : prev + 1;
       });
     },
     [hasMultipleImages, safeImages.length]
   );
 
-  const openFullScreen = () => {
-    setFullScreen(true);
-    setIsPaused(true);
-  };
-
-  const closeFullScreen = () => {
-    setFullScreen(false);
-    setIsPaused(false);
-  };
-
   useEffect(() => {
     setCurrentIndex(0);
-    thumbnailRefs.current = [];
-  }, [safeImages.length]);
-
-  useEffect(() => {
-    if (!hasMultipleImages || fullScreen || isPaused) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      changeSlide("right");
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [hasMultipleImages, fullScreen, isPaused, changeSlide]);
+  }, [imageKey]);
 
   useEffect(() => {
     const rail = thumbnailRailRef.current;
-    const activeThumbnail = thumbnailRefs.current[currentIndex];
+    if (!rail) return;
 
-    if (!rail || !activeThumbnail) {
-      return;
-    }
+    const active = rail.querySelector(".thumbnail.active");
+    if (!active) return;
 
-    const railRect = rail.getBoundingClientRect();
-    const thumbRect = activeThumbnail.getBoundingClientRect();
+    const railBox = rail.getBoundingClientRect();
+    const thumbBox = active.getBoundingClientRect();
+    const extra =
+      thumbBox.left - railBox.left - railBox.width / 2 + thumbBox.width / 2;
 
-    const hasVerticalScroll = rail.scrollHeight > rail.clientHeight;
-    const hasHorizontalScroll = rail.scrollWidth > rail.clientWidth;
-
-    if (hasVerticalScroll) {
-      const thumbTop = thumbRect.top - railRect.top + rail.scrollTop;
-      const targetTop =
-        thumbTop - rail.clientHeight / 2 + activeThumbnail.clientHeight / 2;
-
-      rail.scrollTo({
-        top: targetTop,
-        behavior: "smooth",
-      });
-    }
-
-    if (hasHorizontalScroll) {
-      const thumbLeft = thumbRect.left - railRect.left + rail.scrollLeft;
-      const targetLeft =
-        thumbLeft - rail.clientWidth / 2 + activeThumbnail.clientWidth / 2;
-
-      rail.scrollTo({
-        left: targetLeft,
-        behavior: "smooth",
-      });
-    }
+    rail.scrollBy({ left: extra, behavior: "smooth" });
   }, [currentIndex]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!fullScreen) {
-        return;
-      }
+    if (!fullScreen) return undefined;
 
-      if (e.key === "ArrowLeft") {
-        changeSlide("left");
-      }
-
-      if (e.key === "ArrowRight") {
-        changeSlide("right");
-      }
-
-      if (e.key === "Escape") {
-        closeFullScreen();
-      }
+    const onKey = (e) => {
+      if (e.key === "ArrowLeft") changeSlide("left");
+      if (e.key === "ArrowRight") changeSlide("right");
+      if (e.key === "Escape") setFullScreen(false);
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [fullScreen, changeSlide]);
 
   return (
-    <div
-      className="slider"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => {
-        if (!fullScreen) {
-          setIsPaused(false);
-        }
-      }}
-    >
+    <div className="propertySlider">
+      <div className="sliderStage">
+        <img
+          src={currentImage}
+          alt={t("slider.alt.mainProperty")}
+          onClick={() => setFullScreen(true)}
+          onError={(e) => {
+            e.currentTarget.src = "/no-image.png";
+          }}
+        />
+
+        <span className="sliderCount">
+          {currentIndex + 1} / {safeImages.length}
+        </span>
+
+        {hasMultipleImages && (
+          <>
+            <button
+              type="button"
+              className="sliderArrow isPrev"
+              onClick={() => changeSlide("left")}
+              aria-label="Previous photo"
+            >
+              <ArrowIcon direction="left" />
+            </button>
+            <button
+              type="button"
+              className="sliderArrow isNext"
+              onClick={() => changeSlide("right")}
+              aria-label="Next photo"
+            >
+              <ArrowIcon direction="right" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {hasMultipleImages && (
+        <div className="sliderThumbs" ref={thumbnailRailRef}>
+          {safeImages.map((image, index) => (
+            <button
+              type="button"
+              key={`${image}-${index}`}
+              className={index === currentIndex ? "thumbnail active" : "thumbnail"}
+              onClick={() => goTo(index)}
+            >
+              <img
+                src={image}
+                alt={t("slider.alt.propertyNumber", { number: index + 1 })}
+                onError={(e) => {
+                  e.currentTarget.src = "/no-image.png";
+                }}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
       {fullScreen && (
-        <div className="fullSlider">
+        <div className="sliderLightbox" onClick={() => setFullScreen(false)}>
           <button
             type="button"
-            className="closeFullSlider"
-            onClick={closeFullScreen}
+            className="lightboxClose"
+            onClick={() => setFullScreen(false)}
           >
             ✕
           </button>
@@ -144,103 +174,39 @@ function Slider({ images = [] }) {
           {hasMultipleImages && (
             <button
               type="button"
-              className="fullArrow leftArrow"
-              onClick={() => changeSlide("left")}
-            >
-              ‹
-            </button>
-          )}
-
-          <div className="fullImageBox">
-            <img
-              src={safeImages[currentIndex]}
-              alt="Property preview"
-              onError={(e) => {
-                e.currentTarget.src = "/no-image.png";
+              className="sliderArrow isPrev"
+              onClick={(e) => {
+                e.stopPropagation();
+                changeSlide("left");
               }}
-            />
-          </div>
-
-          {hasMultipleImages && (
-            <button
-              type="button"
-              className="fullArrow rightArrow"
-              onClick={() => changeSlide("right")}
             >
-              ›
+              <ArrowIcon direction="left" />
             </button>
           )}
 
-          <div className="fullCounter">
-            {currentIndex + 1} / {safeImages.length}
-          </div>
-        </div>
-      )}
-
-      <div className="sliderLayout">
-        <div className="mainImagePanel">
           <img
-            src={safeImages[currentIndex]}
-            alt="Main property"
-            onClick={openFullScreen}
+            src={currentImage}
+            alt={t("slider.alt.propertyPreview")}
+            onClick={(e) => e.stopPropagation()}
             onError={(e) => {
               e.currentTarget.src = "/no-image.png";
             }}
           />
 
-          <div className="galleryBadge">
-            {hasMultipleImages
-              ? isPaused
-                ? "Gallery Paused"
-                : "Auto Gallery"
-              : "Property Gallery"}
-          </div>
-
-          <div className="galleryCounter">
-            {currentIndex + 1} / {safeImages.length}
-          </div>
-
           {hasMultipleImages && (
-            <div className="mainControls">
-              <button type="button" onClick={() => changeSlide("left")}>
-                ‹
-              </button>
-
-              <button type="button" onClick={() => changeSlide("right")}>
-                ›
-              </button>
-            </div>
+            <button
+              type="button"
+              className="sliderArrow isNext"
+              onClick={(e) => {
+                e.stopPropagation();
+                changeSlide("right");
+              }}
+            >
+              <ArrowIcon direction="right" />
+            </button>
           )}
         </div>
-
-        {hasMultipleImages && (
-          <div className="thumbnailRail" ref={thumbnailRailRef}>
-            {safeImages.map((image, index) => (
-              <button
-                type="button"
-                ref={(el) => {
-                  thumbnailRefs.current[index] = el;
-                }}
-                className={
-                  currentIndex === index ? "thumbnail active" : "thumbnail"
-                }
-                key={`${image}-${index}`}
-                onClick={() => setCurrentIndex(index)}
-              >
-                <img
-                  src={image}
-                  alt={`Property ${index + 1}`}
-                  onError={(e) => {
-                    e.currentTarget.src = "/no-image.png";
-                  }}
-                />
-
-                <span>{index + 1}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

@@ -1,46 +1,62 @@
 import "./map.scss";
-import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useTranslation } from "react-i18next";
 import Pin from "../pin/pin";
+import { getMapCoordinates } from "../../lib/mapCoordinates";
+import { MAP_TILES, SATELLITE_LABELS, SATELLITE_TILES } from "../../lib/mapTiles";
 
 const defaultCenter = [33.8938, 35.5018];
-
-delete L.Icon.Default.prototype._getIconUrl;
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 function FixMapSize() {
   const map = useMap();
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
+    const container = map.getContainer();
+    const timeouts = [80, 250, 700].map((ms) =>
+      setTimeout(() => map.invalidateSize(), ms)
+    );
 
-    return () => clearTimeout(timeout);
+    const observer =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => map.invalidateSize())
+        : null;
+
+    observer?.observe(container);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      observer?.disconnect();
+    };
   }, [map]);
 
   return null;
 }
 
-function ChangeMapView({ validItems }) {
+function ChangeMapView({ validItems, mapType }) {
   const map = useMap();
 
   useEffect(() => {
+    const isSatellite = mapType === "satellite";
+    map.setMaxZoom(isSatellite ? 19 : MAP_TILES.maxZoom);
+
+    if (isSatellite && map.getZoom() < 16) {
+      map.setZoom(Math.min(18, map.getZoom() + 3));
+    }
+  }, [map, mapType]);
+
+  useEffect(() => {
+    map.invalidateSize();
+
     if (!validItems || validItems.length === 0) {
       map.setView(defaultCenter, 9);
       return;
     }
 
     if (validItems.length === 1) {
-      map.setView([validItems[0].latitude, validItems[0].longitude], 15);
+      map.setView([validItems[0].latitude, validItems[0].longitude], 16);
       return;
     }
 
@@ -49,7 +65,7 @@ function ChangeMapView({ validItems }) {
     );
 
     map.fitBounds(bounds, {
-      padding: [70, 70],
+      padding: [56, 56],
       maxZoom: 14,
     });
   }, [map, validItems]);
@@ -77,42 +93,44 @@ function normalizeMapSource(items, item) {
   return [];
 }
 
-function Map({ items, item }) {
-  const mapItems = useMemo(() => {
-    const source = normalizeMapSource(items, item);
+function Map({ items, item, className = "" }) {
+  const { t } = useTranslation();
+  const [mapType, setMapType] = useState("map");
 
-    return source
+  const mapItems = useMemo(() => {
+    return normalizeMapSource(items, item)
       .filter(Boolean)
       .map((post) => {
-        const latitude = Number(post.latitude);
-        const longitude = Number(post.longitude);
+        const coords = getMapCoordinates(post);
+
+        if (!coords) {
+          return null;
+        }
 
         return {
           ...post,
-          latitude,
-          longitude,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
         };
       })
-      .filter((post) => {
-        const validLatitude =
-          Number.isFinite(post.latitude) &&
-          post.latitude >= -90 &&
-          post.latitude <= 90;
-
-        const validLongitude =
-          Number.isFinite(post.longitude) &&
-          post.longitude >= -180 &&
-          post.longitude <= 180;
-
-        return validLatitude && validLongitude;
-      });
+      .filter(Boolean);
   }, [items, item]);
 
   const hasValidLocations = mapItems.length > 0;
+  const isSatellite = mapType === "satellite";
 
   return (
-    <div className="mapWrapper">
+    <div
+      className={[
+        "mapWrapper",
+        isSatellite ? "isSatellite" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <MapContainer
+        key={hasValidLocations ? "listings" : "empty"}
         className="map"
         center={
           hasValidLocations
@@ -120,15 +138,41 @@ function Map({ items, item }) {
             : defaultCenter
         }
         zoom={hasValidLocations ? 13 : 9}
+        minZoom={5}
+        maxZoom={isSatellite ? 19 : MAP_TILES.maxZoom}
         scrollWheelZoom={true}
+        zoomControl={false}
       >
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <ZoomControl position="topright" />
+        {isSatellite ? (
+          <>
+            <TileLayer
+              key="satellite"
+              attribution={SATELLITE_TILES.attribution}
+              url={SATELLITE_TILES.url}
+              maxZoom={SATELLITE_TILES.maxZoom}
+              maxNativeZoom={19}
+            />
+            <TileLayer
+              key="satellite-labels"
+              url={SATELLITE_LABELS}
+              attribution=""
+              maxZoom={19}
+              pane="overlayPane"
+            />
+          </>
+        ) : (
+          <TileLayer
+            key="street"
+            attribution={MAP_TILES.attribution}
+            url={MAP_TILES.url}
+            maxZoom={MAP_TILES.maxZoom}
+            subdomains={MAP_TILES.subdomains}
+          />
+        )}
 
         <FixMapSize />
-        <ChangeMapView validItems={mapItems} />
+        <ChangeMapView validItems={mapItems} mapType={mapType} />
 
         {mapItems.map((post, index) => (
           <Pin
@@ -138,19 +182,36 @@ function Map({ items, item }) {
         ))}
       </MapContainer>
 
-      {!hasValidLocations && (
-        <div className="mapEmptyOverlay">
-          <div>
-            <span>📍</span>
-            <h3>No Location Available</h3>
-            <p>This property does not have valid map coordinates yet.</p>
-          </div>
-        </div>
-      )}
+      <div className="mapTypeSwitch" role="group" aria-label={t("list.map.title")}>
+        <button
+          type="button"
+          className={!isSatellite ? "isActive" : ""}
+          onClick={() => setMapType("map")}
+        >
+          {t("list.map.mapView")}
+        </button>
+        <button
+          type="button"
+          className={isSatellite ? "isActive" : ""}
+          onClick={() => setMapType("satellite")}
+        >
+          {t("list.map.satellite")}
+        </button>
+      </div>
 
       {hasValidLocations && (
         <div className="mapInfoBadge">
-          {mapItems.length} location{mapItems.length === 1 ? "" : "s"} shown
+          {mapItems.length === 1
+            ? t("list.map.oneListing", { count: mapItems.length })
+            : t("list.map.manyListings", { count: mapItems.length })}
+        </div>
+      )}
+
+      {!hasValidLocations && (
+        <div className="mapEmptyOverlay mapEmptySoft">
+          <div>
+            <p>{t("list.map.emptyMessage")}</p>
+          </div>
         </div>
       )}
     </div>

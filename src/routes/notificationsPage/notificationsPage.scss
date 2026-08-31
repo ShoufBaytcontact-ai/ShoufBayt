@@ -1,0 +1,341 @@
+.notificationsPage {
+  width: 100%;
+  padding: 28px 0 72px;
+  color: var(--text-main);
+}
+
+.notificationsPage a {
+  text-decoration: none;
+}
+
+.notificationsEyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.notificationsHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notificationsHero h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.notificationsHero p:not(.notificationsEyebrow) {
+  max-width: 54ch;
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.headerActions,
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.notificationStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 22px 0 0;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.notificationStats > div {
+  padding: 18px 20px;
+  border-right: 1px solid var(--border-color);
+}
+
+.notificationStats > div:last-child {
+  border-right: none;
+}
+
+.notificationStats span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.notificationStats strong {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.notice,
+.emptyBox {
+  margin-top: 22px;
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 3px 0 0 var(--accent);
+  color: var(--text-secondary);
+}
+
+.notice.error {
+  box-shadow: inset 3px 0 0 var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-card));
+  color: var(--danger);
+}
+
+.emptyBox h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  color: var(--text-main);
+  font-size: 1.6rem;
+}
+
+.emptyBox p {
+  margin: 0;
+  max-width: 54ch;
+  line-height: 1.6;
+}
+
+.notificationsList {
+  margin-top: 22px;
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--border-color);
+  background: var(--border-color);
+}
+
+.notificationCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+}
+
+.noticeMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.noticeMain:hover h3 {
+  color: var(--accent);
+}
+
+.noticeMark {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  position: relative;
+}
+
+.noticeMark::after {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  border-radius: 3px;
+  background: currentColor;
+}
+
+.noticeMark.tone-message {
+  color: #2f6fed;
+  background: rgba(47, 111, 237, 0.12);
+}
+
+.noticeMark.tone-success {
+  color: var(--success, #1f9d62);
+  background: color-mix(in srgb, var(--success, #1f9d62) 14%, transparent);
+}
+
+.noticeMark.tone-danger {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-card));
+}
+
+.noticeMark.tone-warning,
+.noticeMark.tone-calendar,
+.noticeMark.tone-listing,
+.noticeMark.tone-neutral {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
+}
+
+.noticeFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.noticeFilters button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.noticeFilters button.isActive {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.noticeGroup {
+  margin-top: 22px;
+}
+
+.noticeGroup h2 {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.notificationCard.unread {
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-card));
+}
+
+.notificationCard h3 {
+  margin: 8px 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.notificationCard p,
+.notificationCard small {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.notificationCard p,
+.notificationCard small {
+  color: var(--text-secondary);
+}
+
+.notificationCard p {
+  margin: 0;
+  max-width: 62ch;
+  line-height: 1.6;
+}
+
+.notificationCard small {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.type {
+  display: inline-block;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.primaryBtn,
+.ghostBtn {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.primaryBtn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+}
+
+.primaryBtn:hover {
+  background: var(--accent-hover);
+}
+
+.ghostBtn {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-strong);
+}
+
+.ghostBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ghostBtn.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.ghostBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .notificationsHero,
+  .notificationCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notificationsHero h1 {
+    max-width: none;
+  }
+
+  .notificationStats {
+    grid-template-columns: 1fr;
+  }
+
+  .notificationStats > div {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .notificationStats > div:last-child {
+    border-bottom: none;
+  }
+}

@@ -1,170 +1,446 @@
 import prisma from "../lib/prisma.js";
 
-const formatText = (value, fallback = "") => {
-  if (!value && value !== 0) {
+const PROPERTY_TYPES = [
+  "APARTMENT",
+  "HOUSE",
+  "LAND",
+  "VILLA",
+  "OFFICE",
+  "SHOP",
+  "WAREHOUSE",
+];
+
+const LISTING_TYPES = ["SALE", "RENT"];
+
+const CONTACT_TYPES = ["MESSAGE", "REPORT"];
+
+const CONTACT_STATUSES = [
+  "OPEN",
+  "READ",
+  "RESOLVED",
+];
+
+const isValidObjectId = (id) => {
+  return (
+    typeof id === "string" &&
+    /^[0-9a-fA-F]{24}$/.test(id)
+  );
+};
+
+const cleanText = (
+  value,
+  fallback = ""
+) => {
+  if (
+    value === undefined ||
+    value === null
+  ) {
     return fallback;
   }
 
-  return String(value).trim();
+  const text = String(value).trim();
+
+  return text || fallback;
 };
 
-const formatPrice = (price) => {
-  const numberPrice = Number(price);
-
-  if (!Number.isFinite(numberPrice) || numberPrice <= 0) {
-    return "a competitive price";
-  }
-
-  return `$${numberPrice.toLocaleString()}`;
+const escapeHtml = (value) => {
+  return cleanText(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 };
 
-const getPropertyLabel = (property) => {
-  if (property === "apartment") {
-    return "apartment";
+const parsePositiveNumber = (
+  value,
+  fallback = null
+) => {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return fallback;
   }
 
-  if (property === "house") {
-    return "house";
+  const parsedValue = Number(value);
+
+  if (
+    !Number.isFinite(parsedValue) ||
+    parsedValue <= 0
+  ) {
+    return fallback;
   }
 
-  if (property === "land") {
-    return "land";
-  }
-
-  return "property";
+  return parsedValue;
 };
 
-const getDealLabel = (type) => {
-  if (type === "rent") {
+const pickRandom = (items) => {
+  return items[
+    Math.floor(Math.random() * items.length)
+  ];
+};
+
+const handleError = (
+  res,
+  error,
+  fallbackMessage
+) => {
+  console.error(
+    fallbackMessage.toUpperCase(),
+    error
+  );
+
+  if (error?.code === "P2025") {
+    return res.status(404).json({
+      message: "Record not found",
+    });
+  }
+
+  return res.status(500).json({
+    message: fallbackMessage,
+  });
+};
+
+const checkAdmin = async (userId) => {
+  if (!isValidObjectId(userId)) {
+    return false;
+  }
+
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+
+      select: {
+        id: true,
+        role: true,
+        status: true,
+      },
+    });
+
+  return (
+    user?.role === "ADMIN" &&
+    user?.status === "ACTIVE"
+  );
+};
+
+const getPropertyLabel = (
+  propertyType
+) => {
+  const normalizedType = cleanText(
+    propertyType,
+    "PROPERTY"
+  ).toUpperCase();
+
+  const labels = {
+    APARTMENT: "apartment",
+    HOUSE: "house",
+    LAND: "land",
+    VILLA: "villa",
+    OFFICE: "office",
+    SHOP: "shop",
+    WAREHOUSE: "warehouse",
+  };
+
+  return labels[normalizedType] || "property";
+};
+
+const getListingLabel = (
+  listingType
+) => {
+  const normalizedType = cleanText(
+    listingType,
+    "SALE"
+  ).toUpperCase();
+
+  if (normalizedType === "RENT") {
     return "for rent";
   }
 
-  if (type === "buy") {
+  if (normalizedType === "SALE") {
     return "for sale";
   }
 
   return "available";
 };
 
-const checkAdmin = async (userId) => {
-  if (!userId) {
-    return false;
+const formatPrice = (price) => {
+  const parsedPrice =
+    parsePositiveNumber(price);
+
+  if (!parsedPrice) {
+    return "a competitive price";
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      id: true,
-      role: true,
-    },
-  });
-
-  return user?.role === "ADMIN";
+  return `$${parsedPrice.toLocaleString(
+    "en-US"
+  )}`;
 };
 
-export const generatePropertyDescription = async (req, res) => {
+/* =========================================================
+   PROPERTY DESCRIPTION GENERATOR
+========================================================= */
+
+export const generatePropertyDescription = async (
+  req,
+  res
+) => {
   try {
-    const {
-      title,
-      price,
-      address,
-      city,
-      bedroom,
-      bathroom,
-      size,
-      type,
-      property,
-    } = req.body;
+    const title = cleanText(
+      req.body.title,
+      "This property"
+    );
 
-    const cleanTitle = formatText(title, "This property");
-    const cleanCity = formatText(city, "a prime location");
-    const cleanAddress = formatText(address, cleanCity);
-    const propertyLabel = getPropertyLabel(property);
-    const dealLabel = getDealLabel(type);
-    const priceLabel = formatPrice(price);
+    const address = cleanText(
+      req.body.address
+    );
 
-    const bedrooms = Number(bedroom);
-    const bathrooms = Number(bathroom);
-    const propertySize = Number(size);
+    const city = cleanText(
+      req.body.city,
+      "a prime location"
+    );
 
-    let specs = "";
+    const price =
+      parsePositiveNumber(
+        req.body.price
+      );
 
-    if (propertyLabel === "land") {
-      specs = propertySize
-        ? `The land offers approximately ${propertySize}m², giving buyers excellent flexibility for future development or investment.`
-        : "The land offers excellent flexibility for future development or investment.";
-    } else {
-      const bedroomText =
-        Number.isFinite(bedrooms) && bedrooms > 0
-          ? `${bedrooms} bedroom${bedrooms === 1 ? "" : "s"}`
-          : "comfortable rooms";
+    const bedrooms =
+      parsePositiveNumber(
+        req.body.bedrooms ??
+          req.body.bedroom
+      );
 
-      const bathroomText =
-        Number.isFinite(bathrooms) && bathrooms > 0
-          ? `${bathrooms} bathroom${bathrooms === 1 ? "" : "s"}`
-          : "practical bathroom space";
+    const bathrooms =
+      parsePositiveNumber(
+        req.body.bathrooms ??
+          req.body.bathroom
+      );
 
-      const sizeText =
-        Number.isFinite(propertySize) && propertySize > 0
-          ? `and ${propertySize}m² of living space`
-          : "and a practical interior layout";
+    const area =
+      parsePositiveNumber(
+        req.body.area ??
+          req.body.size
+      );
 
-      specs = `It features ${bedroomText}, ${bathroomText}, ${sizeText}, making it suitable for families, professionals, or investors.`;
+    const rawPropertyType =
+      cleanText(
+        req.body.propertyType ??
+          req.body.property
+      ).toUpperCase();
+
+    const rawListingType =
+      cleanText(
+        req.body.listingType ??
+          req.body.type
+      ).toUpperCase();
+
+    const normalizedPropertyType =
+      PROPERTY_TYPES.includes(rawPropertyType)
+        ? rawPropertyType
+        : "APARTMENT";
+
+    let normalizedListingType =
+      rawListingType;
+
+    // Compatibility with older frontend values
+    if (rawListingType === "BUY") {
+      normalizedListingType = "SALE";
     }
 
+    if (
+      !LISTING_TYPES.includes(
+        normalizedListingType
+      )
+    ) {
+      normalizedListingType = "SALE";
+    }
+
+    const propertyLabel =
+      getPropertyLabel(
+        normalizedPropertyType
+      );
+
+    const listingLabel =
+      getListingLabel(
+        normalizedListingType
+      );
+
+    const priceLabel =
+      formatPrice(price);
+
+    const safeTitle =
+      escapeHtml(title);
+
+    const safeCity =
+      escapeHtml(city);
+
+    const safeAddress =
+      escapeHtml(
+        address || city
+      );
+
+    let specifications = "";
+
+    if (
+      normalizedPropertyType ===
+      "LAND"
+    ) {
+      specifications = area
+        ? `The land offers approximately ${area.toLocaleString(
+            "en-US"
+          )}m², providing excellent flexibility for construction, investment, or future development.`
+        : "The land provides excellent potential for construction, investment, or future development.";
+    } else {
+      const bedroomText = bedrooms
+        ? `${bedrooms} bedroom${
+            bedrooms === 1 ? "" : "s"
+          }`
+        : "comfortable rooms";
+
+      const bathroomText = bathrooms
+        ? `${bathrooms} bathroom${
+            bathrooms === 1 ? "" : "s"
+          }`
+        : "practical bathroom space";
+
+      const areaText = area
+        ? `${area.toLocaleString(
+            "en-US"
+          )}m² of interior space`
+        : "a practical interior layout";
+
+      specifications =
+        `The property includes ${bedroomText}, ` +
+        `${bathroomText}, and approximately ${areaText}. ` +
+        "Its layout makes it suitable for families, professionals, or investors.";
+    }
+
+    const features = [];
+
+    // Schema-aligned amenities array (PropertyDetail.amenities)
+    if (Array.isArray(req.body.amenities)) {
+      for (const amenity of req.body.amenities) {
+        const cleaned = cleanText(amenity);
+        if (cleaned) {
+          features.push(cleaned);
+        }
+      }
+    }
+
+    // Legacy boolean feature flags (kept for older frontend forms)
+    const legacyFeatures = [
+      ["furnished", "Furnished"],
+      ["parking", "Parking"],
+      ["balcony", "Balcony"],
+      ["garden", "Garden"],
+      ["pool", "Swimming pool"],
+      ["elevator", "Elevator"],
+    ];
+
+    for (const [key, label] of legacyFeatures) {
+      if (
+        req.body[key] === true ||
+        req.body[key] === "true"
+      ) {
+        if (!features.includes(label)) {
+          features.push(label);
+        }
+      }
+    }
+
+    const featuresParagraph =
+      features.length > 0
+        ? `<p>Additional features include ${features
+            .map((feature) =>
+              escapeHtml(feature)
+            )
+            .join(", ")}.</p>`
+        : "";
+
     const description = `
-      <p><strong>${cleanTitle}</strong> is a well-presented ${propertyLabel} ${dealLabel} in ${cleanCity}.</p>
+<p><strong>${safeTitle}</strong> is a well-presented ${propertyLabel} ${listingLabel} in ${safeCity}.</p>
 
-      <p>Located near ${cleanAddress}, this listing offers a convenient location with easy access to nearby services, transportation, and daily needs.</p>
+<p>Located near ${safeAddress}, this property provides convenient access to local services, transportation, shops, and other daily necessities.</p>
 
-      <p>${specs}</p>
+<p>${escapeHtml(
+      specifications
+    )}</p>
 
-      <p>With a price of <strong>${priceLabel}</strong>, this property is a strong option for users looking for comfort, value, and a reliable real estate opportunity through SmartEstate.</p>
+${featuresParagraph}
 
-      <ul>
-        <li>Property type: ${propertyLabel}</li>
-        <li>Listing type: ${dealLabel}</li>
-        <li>Location: ${cleanCity}</li>
-        <li>Price: ${priceLabel}</li>
-      </ul>
-    `;
+<p>Offered at <strong>${escapeHtml(
+      priceLabel
+    )}</strong>, this property represents an attractive opportunity for buyers, renters, families, professionals, or investors looking for value in the Lebanese real estate market.</p>
 
-    res.status(200).json({
-      message: "Description generated successfully",
+<ul>
+  <li>Property type: ${escapeHtml(
+    propertyLabel
+  )}</li>
+  <li>Listing type: ${escapeHtml(
+    listingLabel
+  )}</li>
+  <li>Location: ${safeCity}</li>
+  ${
+    area
+      ? `<li>Area: ${area.toLocaleString(
+          "en-US"
+        )}m²</li>`
+      : ""
+  }
+  <li>Price: ${escapeHtml(
+    priceLabel
+  )}</li>
+</ul>
+`.trim();
+
+    return res.status(200).json({
+      message:
+        "Description generated successfully",
+
       description,
+
+      normalizedData: {
+        propertyType:
+          normalizedPropertyType,
+        listingType:
+          normalizedListingType,
+        bedrooms,
+        bathrooms,
+        area,
+        price,
+      },
     });
   } catch (error) {
-    console.log("GENERATE DESCRIPTION ERROR:", error);
-    res.status(500).json({
-      message: "Failed to generate description",
-    });
+    return handleError(
+      res,
+      error,
+      "Failed to generate description"
+    );
   }
 };
 
+/* =========================================================
+   ADMIN REPLY GENERATOR
+========================================================= */
 
-
-const pickRandom = (items) => {
-  return items[Math.floor(Math.random() * items.length)];
-};
-
-const cleanText = (value, fallback = "") => {
-  if (!value && value !== 0) {
-    return fallback;
-  }
-
-  return String(value).trim();
-};
-
-const detectMessageTopic = (subject, message) => {
-  const text = `${subject} ${message}`.toLowerCase();
+const detectMessageTopic = (
+  subject,
+  message
+) => {
+  const text =
+    `${subject} ${message}`.toLowerCase();
 
   if (
     text.includes("fake") ||
     text.includes("scam") ||
     text.includes("fraud") ||
-    text.includes("wrong information") ||
+    text.includes(
+      "wrong information"
+    ) ||
     text.includes("false")
   ) {
     return "fakeListing";
@@ -202,6 +478,7 @@ const detectMessageTopic = (subject, message) => {
     text.includes("image") ||
     text.includes("photo") ||
     text.includes("upload") ||
+    text.includes("property") ||
     text.includes("post") ||
     text.includes("listing")
   ) {
@@ -212,7 +489,7 @@ const detectMessageTopic = (subject, message) => {
     text.includes("visit") ||
     text.includes("appointment") ||
     text.includes("schedule") ||
-    text.includes("view")
+    text.includes("viewing")
   ) {
     return "appointment";
   }
@@ -220,179 +497,256 @@ const detectMessageTopic = (subject, message) => {
   return "general";
 };
 
-const buildTopicResponse = (topic, type) => {
+const buildTopicResponse = (
+  topic,
+  type
+) => {
   const responses = {
     fakeListing: [
-      "We will review the reported listing carefully and check whether the information, images, and owner details are valid.",
-      "Our team will investigate the listing and take action if we find misleading or unsafe information.",
-      "We will compare the reported information with the listing details and handle it according to SmartEstate safety rules.",
+      "We will carefully review the reported property, including its information, images, owner details, and publication status.",
+      "Our team will investigate the listing and take action if it contains misleading, fraudulent, or unsafe information.",
+      "We will compare the report with the property details and handle it according to ShoufBayt safety policies.",
     ],
 
     payment: [
-      "Please avoid sending any payment outside trusted communication channels until the property and owner are verified.",
-      "We recommend confirming all payment details directly with the verified owner or agent before making any commitment.",
-      "Our team will review the payment-related concern and make sure the listing does not include misleading financial information.",
+      "Please avoid transferring money outside trusted communication channels before confirming the property and agent information.",
+      "We recommend verifying all payment details directly with the property owner or verified agent before making any commitment.",
+      "Our team will review the payment concern and check whether the listing contains misleading financial information.",
     ],
 
     account: [
-      "We will check the account-related issue and help make sure your SmartEstate profile remains secure and accessible.",
-      "Our support team will review the account problem and guide you with the next steps if more action is needed.",
-      "We will look into the profile or login issue and work on resolving it as soon as possible.",
+      "We will review the account issue and help ensure that your ShoufBayt profile remains secure and accessible.",
+      "Our support team will investigate the account problem and provide the appropriate next steps.",
+      "We will check the login or profile issue and work to resolve it as soon as possible.",
     ],
 
     communication: [
-      "We will review the communication issue and check if there is a problem with messages, owners, or agent contact.",
-      "Our team will look into the chat or contact issue and make sure the communication flow is working properly.",
-      "We will verify the reported communication problem and follow up if additional details are required.",
+      "We will review the communication issue and check whether there is a problem with messages, property owners, or agents.",
+      "Our team will investigate the chat or contact issue and make sure communication is working correctly.",
+      "We will verify the reported communication problem and request more information when necessary.",
     ],
 
     listing: [
-      "We will review the listing details, images, and property information to make sure everything is accurate.",
-      "Our team will check the property post and update or remove anything that does not follow SmartEstate standards.",
-      "We will investigate the listing issue and make sure the property information is clear and correct.",
+      "We will review the property details, images, location, and listing information to confirm that everything is accurate.",
+      "Our team will inspect the property listing and update, reject, or remove information that violates ShoufBayt standards.",
+      "We will investigate the listing issue and ensure that the property information is accurate and clear.",
     ],
 
     appointment: [
-      "We recommend coordinating visit times directly with the property owner or agent through SmartEstate messages.",
-      "Our team will check the request and help make sure property visit communication is clear.",
-      "We will review the appointment-related concern and assist if the owner or agent is not responding properly.",
+      "We recommend coordinating viewing times directly with the property owner or agent through ShoufBayt messages.",
+      "Our team will review the visit request and help ensure that communication with the agent is clear.",
+      "We will investigate the appointment concern and assist if the property owner or agent is not responding.",
     ],
 
     general: [
       type === "REPORT"
-        ? "We will review the report carefully and take the necessary action based on SmartEstate policies."
-        : "We will review your message and assist you with the best possible solution.",
+        ? "We will carefully review the report and take the appropriate action according to ShoufBayt policies."
+        : "We will review your message and assist you with the most appropriate solution.",
+
       type === "REPORT"
-        ? "Our admin team will investigate this report and update the status once it has been checked."
-        : "Our support team will check your request and follow up if more details are needed.",
+        ? "Our administrative team will investigate this report and update its status after completing the review."
+        : "Our support team will check your request and contact you if more information is needed.",
+
       type === "REPORT"
-        ? "We appreciate your report and will handle it carefully to keep SmartEstate safe and professional."
-        : "Thank you for reaching out. We will do our best to help you with this request.",
+        ? "We appreciate your report and will handle it carefully to keep ShoufBayt professional and safe."
+        : "Thank you for contacting us. We will do our best to assist you.",
     ],
   };
 
-  return pickRandom(responses[topic] || responses.general);
+  return pickRandom(
+    responses[topic] ||
+      responses.general
+  );
 };
 
-export const generateAdminReply = async (req, res) => {
+export const generateAdminReply = async (
+  req,
+  res
+) => {
   try {
-    const isAdmin = await checkAdmin(req.userId);
+    const isAdmin =
+      await checkAdmin(req.userId);
 
     if (!isAdmin) {
       return res.status(403).json({
-        message: "Only admins can generate replies",
+        message:
+          "Only active admins can generate replies",
       });
     }
 
-    const { name, email, subject, message, type, status } = req.body;
+    const name = cleanText(
+      req.body.name,
+      "there"
+    );
+
+    const email = cleanText(
+      req.body.email
+    );
+
+    const subject = cleanText(
+      req.body.subject
+    );
+
+    const message = cleanText(
+      req.body.message
+    );
+
+    const requestedType = cleanText(
+      req.body.type,
+      "MESSAGE"
+    ).toUpperCase();
+
+    const requestedStatus = cleanText(
+      req.body.status,
+      "OPEN"
+    ).toUpperCase();
 
     if (!subject || !message) {
       return res.status(400).json({
-        message: "Subject and message are required",
+        message:
+          "Subject and message are required",
       });
     }
 
-    const cleanName = cleanText(name, "there");
-    const cleanSubject = cleanText(subject, "your request");
-    const cleanMessage = cleanText(message, "");
-    const cleanType = cleanText(type, "MESSAGE").toUpperCase();
-    const cleanStatus = cleanText(status, "OPEN").toUpperCase();
+    const type =
+      CONTACT_TYPES.includes(
+        requestedType
+      )
+        ? requestedType
+        : "MESSAGE";
 
-    const topic = detectMessageTopic(cleanSubject, cleanMessage);
+    const status =
+      CONTACT_STATUSES.includes(
+        requestedStatus
+      )
+        ? requestedStatus
+        : "OPEN";
+
+    const topic =
+      detectMessageTopic(
+        subject,
+        message
+      );
 
     const greetings = [
-      `Hello ${cleanName},`,
-      `Hi ${cleanName},`,
-      `Dear ${cleanName},`,
+      `Hello ${name},`,
+      `Hi ${name},`,
+      `Dear ${name},`,
     ];
 
-    const thankYouLines = cleanType === "REPORT"
-      ? [
-          "Thank you for sending this report to SmartEstate.",
-          "Thank you for helping us keep SmartEstate safe and reliable.",
-          "We appreciate you taking the time to report this issue.",
-        ]
-      : [
-          "Thank you for contacting SmartEstate support.",
-          "Thank you for reaching out to the SmartEstate team.",
-          "We appreciate your message and are happy to assist you.",
-        ];
+    const thankYouLines =
+      type === "REPORT"
+        ? [
+            "Thank you for sending this report to ShoufBayt.",
+            "Thank you for helping us keep ShoufBayt safe and reliable.",
+            "We appreciate you taking the time to report this issue.",
+          ]
+        : [
+            "Thank you for contacting ShoufBayt support.",
+            "Thank you for reaching out to the ShoufBayt team.",
+            "We appreciate your message and are happy to assist you.",
+          ];
 
     const statusLines = {
       OPEN: [
-        "Your request is currently open and will be reviewed by our admin team.",
-        "The current status is open, and our team will check it shortly.",
-        "We have marked this request as open while we review the details.",
+        "Your request is currently open and will be reviewed by our administrative team.",
+        "The request is currently open, and our team will review it shortly.",
+        "We have marked the request as open while we investigate the details.",
       ],
+
       READ: [
-        "Your request has been reviewed, and we are checking the details.",
-        "We have read your message and are now reviewing the best next step.",
-        "This request has been read and is being handled by our team.",
+        "Your request has been reviewed, and we are currently checking the details.",
+        "We have read your message and are reviewing the appropriate next step.",
+        "The request has been read and is now being handled by our team.",
       ],
+
       RESOLVED: [
-        "This request has been marked as resolved after review.",
-        "The issue has been reviewed and marked as resolved.",
-        "We have completed the review and updated the request as resolved.",
+        "This request has been reviewed and marked as resolved.",
+        "The issue has been investigated and marked as resolved.",
+        "We have completed our review and updated the request status to resolved.",
       ],
     };
 
     const closingLines = [
-      "Best regards,\nSmartEstate Admin Team",
-      "Kind regards,\nSmartEstate Support Team",
-      "Thank you,\nSmartEstate Admin Team",
+      "Best regards,\nShoufBayt Admin Team",
+      "Kind regards,\nShoufBayt Support Team",
+      "Thank you,\nShoufBayt Admin Team",
     ];
 
     const messagePreview =
-      cleanMessage.length > 160
-        ? `${cleanMessage.slice(0, 160)}...`
-        : cleanMessage;
-
-    const includePreview = Math.random() > 0.45;
+      message.length > 160
+        ? `${message.slice(
+            0,
+            160
+          )}...`
+        : message;
 
     const replyParts = [
       pickRandom(greetings),
       "",
       pickRandom(thankYouLines),
       "",
-      `We received your ${cleanType === "REPORT" ? "report" : "message"} regarding "${cleanSubject}".`,
+      `We received your ${
+        type === "REPORT"
+          ? "report"
+          : "message"
+      } regarding "${subject}".`,
       "",
-      buildTopicResponse(topic, cleanType),
+      buildTopicResponse(
+        topic,
+        type
+      ),
     ];
 
-    if (includePreview && messagePreview) {
+    if (messagePreview) {
       replyParts.push("");
-      replyParts.push(`We also reviewed the details you provided: "${messagePreview}"`);
+      replyParts.push(
+        `We reviewed the details you provided: "${messagePreview}"`
+      );
     }
 
     replyParts.push("");
-    replyParts.push(pickRandom(statusLines[cleanStatus] || statusLines.OPEN));
+    replyParts.push(
+      pickRandom(
+        statusLines[status]
+      )
+    );
+
     replyParts.push("");
 
-    if (cleanType === "REPORT") {
+    if (type === "REPORT") {
       replyParts.push(
-        "If the issue requires action, we may update the listing, contact the related user, or remove content that does not follow our platform rules."
+        "When necessary, we may update the property, contact the related user, reject the listing, or remove content that violates our platform policies."
       );
     } else {
       replyParts.push(
-        "If we need more information, we will contact you using the email connected to your message."
+        "If additional information is required, we will contact you using the email associated with your message."
       );
     }
 
     replyParts.push("");
-    replyParts.push(pickRandom(closingLines));
+    replyParts.push(
+      pickRandom(closingLines)
+    );
 
-    const reply = replyParts.join("\n");
+    const reply =
+      replyParts.join("\n");
 
-    res.status(200).json({
-      message: "Reply generated successfully",
+    return res.status(200).json({
+      message:
+        "Reply generated successfully",
+
       reply,
       email: email || null,
       topic,
+      type,
+      status,
     });
   } catch (error) {
-    console.log("GENERATE ADMIN REPLY ERROR:", error);
-    res.status(500).json({
-      message: "Failed to generate admin reply",
-    });
+    return handleError(
+      res,
+      error,
+      "Failed to generate admin reply"
+    );
   }
 };

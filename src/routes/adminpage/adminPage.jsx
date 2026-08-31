@@ -1,10 +1,23 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./adminPage.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
+import PageState from "../../components/pageState/pageState";
 import AdminAgentRequests from "../../components/adminAgentRequests/adminAgentRequests";
 import AdminAnalytics from "../../components/adminAnalytics/adminAnalytics";
+import AdminBillingPanel from "../../components/adminBillingPanel/adminBillingPanel";
+import AdminSupportChat from "../../components/adminSupportChat/adminSupportChat";
+import PhoneField from "../../components/phoneField/PhoneField";
+import { isValidPhone } from "../../lib/phoneCountries";
 
 const initialAgentForm = {
   userId: "",
@@ -13,12 +26,39 @@ const initialAgentForm = {
   phone: "",
   location: "",
   bio: "",
-  image: "",
 };
+
+function getServerUrl() {
+  return (process.env.REACT_APP_API_URL || "http://localhost:8800/api").replace(
+    "/api",
+    ""
+  );
+}
+
+function getImageUrl(image, fallback = "/no-avatar.png") {
+  if (!image || typeof image !== "string") {
+    return fallback;
+  }
+
+  if (image.startsWith("http") || image.startsWith("data:")) {
+    return image;
+  }
+
+  const serverUrl = getServerUrl();
+
+  return `${serverUrl}${image.startsWith("/") ? "" : "/"}${image}`;
+}
 
 function AdminPage() {
   const { currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const previousSnapshotRef = useRef(null);
+  const notificationIdRef = useRef(1);
+  const bootstrappedRef = useRef(false);
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
@@ -26,7 +66,10 @@ function AdminPage() {
   const [contactMessages, setContactMessages] = useState([]);
   const [agents, setAgents] = useState([]);
 
-  const [activeTab, setActiveTab] = useState("users");
+  const [section, setSection] = useState("desk");
+  const [peoplePane, setPeoplePane] = useState("users");
+  const [billingPane, setBillingPane] = useState("payments");
+  const [supportPane, setSupportPane] = useState("live");
 
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -34,6 +77,8 @@ function AdminPage() {
   const [postSearch, setPostSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [propertyFilter, setPropertyFilter] = useState("ALL");
+  const [listingStatusFilter, setListingStatusFilter] = useState("ALL");
+  const [listingActionId, setListingActionId] = useState("");
 
   const [messageSearch, setMessageSearch] = useState("");
   const [messageTypeFilter, setMessageTypeFilter] = useState("ALL");
@@ -44,6 +89,12 @@ function AdminPage() {
   const [aiReplyLoading, setAiReplyLoading] = useState("");
 
   const [agentForm, setAgentForm] = useState(initialAgentForm);
+  const [agentImageFile, setAgentImageFile] = useState(null);
+  const [agentImagePreview, setAgentImagePreview] = useState("");
+  const [agentRequestsCount, setAgentRequestsCount] = useState(0);
+
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,40 +102,143 @@ function AdminPage() {
 
   const isAdmin = currentUser?.role?.toUpperCase() === "ADMIN";
 
-  const fetchAdminData = useCallback(async (firstLoad = false) => {
-    try {
-      if (firstLoad) {
-        setLoading(true);
-      } else {
-        setRefreshing(true);
-      }
+  const pushAdminNotification = useCallback((type, title, message) => {
+    const notification = {
+      id: notificationIdRef.current,
+      type,
+      title,
+      message,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      read: false,
+      system: false,
+    };
 
-      setError("");
+    notificationIdRef.current += 1;
 
-      const [statsRes, usersRes, postsRes, messagesRes, agentsRes] =
-        await Promise.all([
-          apiRequest.get("/admin/stats"),
-          apiRequest.get("/admin/users"),
-          apiRequest.get("/admin/posts"),
-          apiRequest.get("/admin/contact-messages"),
-          apiRequest.get("/admin/agents"),
-        ]);
-
-      setStats(statsRes.data || {});
-      setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
-      setPosts(Array.isArray(postsRes.data) ? postsRes.data : []);
-      setContactMessages(
-        Array.isArray(messagesRes.data) ? messagesRes.data : []
-      );
-      setAgents(Array.isArray(agentsRes.data) ? agentsRes.data : []);
-    } catch (err) {
-      console.log("ADMIN PAGE ERROR:", err);
-      setError(err.response?.data?.message || "Failed to load admin data");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    setAdminNotifications((prev) => [notification, ...prev].slice(0, 12));
   }, []);
+
+  const fetchAdminData = useCallback(
+    async (firstLoad = false, silent = false) => {
+      try {
+        if (firstLoad) {
+          setLoading(true);
+        } else if (!silent) {
+          setRefreshing(true);
+        }
+
+        setError("");
+
+        const [statsRes, usersRes, postsRes, messagesRes, agentsRes] =
+          await Promise.all([
+            apiRequest.get("/admin/stats"),
+            apiRequest.get("/admin/users"),
+            apiRequest.get("/admin/posts"),
+            apiRequest.get("/admin/contact-messages"),
+            apiRequest.get("/admin/agents"),
+          ]);
+
+        const nextStats = statsRes.data || {};
+        const nextUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
+        const nextPosts = Array.isArray(postsRes.data) ? postsRes.data : [];
+        const nextMessages = Array.isArray(messagesRes.data)
+          ? messagesRes.data
+          : [];
+        const nextAgents = Array.isArray(agentsRes.data) ? agentsRes.data : [];
+
+        let nextAgentRequestsCount = 0;
+
+        try {
+          const requestsRes = await apiRequest.get("/admin/agent-requests");
+          const requests = Array.isArray(requestsRes.data)
+            ? requestsRes.data
+            : [];
+
+          nextAgentRequestsCount = requests.filter((request) => {
+            return (request.status || "PENDING").toUpperCase() === "PENDING";
+          }).length;
+        } catch (err) {
+          nextAgentRequestsCount = Number(
+            nextStats.pendingAgentRequestsCount ||
+              nextStats.agentRequestsCount ||
+              nextStats.pendingRequestsCount ||
+              0
+          );
+        }
+
+        const nextSnapshot = {
+          messagesCount: nextMessages.length,
+          openMessagesCount: nextMessages.filter(
+            (item) => (item.status || "").toUpperCase() === "OPEN"
+          ).length,
+          agentRequestsCount: nextAgentRequestsCount,
+        };
+
+        const previousSnapshot = previousSnapshotRef.current;
+
+        if (previousSnapshot && !firstLoad) {
+          if (nextSnapshot.messagesCount > previousSnapshot.messagesCount) {
+            const added =
+              nextSnapshot.messagesCount - previousSnapshot.messagesCount;
+
+            pushAdminNotification(
+              "message",
+              tRef.current("admin.notifications.newSupportTitle"),
+              tRef.current("admin.notifications.newSupportMessage", {
+                count: added,
+              })
+            );
+          }
+
+          if (
+            nextSnapshot.agentRequestsCount >
+            previousSnapshot.agentRequestsCount
+          ) {
+            const added =
+              nextSnapshot.agentRequestsCount -
+              previousSnapshot.agentRequestsCount;
+
+            pushAdminNotification(
+              "request",
+              tRef.current("admin.notifications.newAgentRequestTitle"),
+              tRef.current("admin.notifications.newAgentRequestMessage", {
+                count: added,
+              })
+            );
+          }
+        }
+
+        previousSnapshotRef.current = nextSnapshot;
+
+        setStats(nextStats);
+        setUsers(nextUsers);
+        setPosts(nextPosts);
+        setContactMessages(nextMessages);
+        setAgents(nextAgents);
+        setAgentRequestsCount(nextAgentRequestsCount);
+      } catch (err) {
+        console.log("ADMIN PAGE ERROR:", err);
+        setError(
+          err.response?.data?.message || tRef.current("admin.errors.loadData")
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [pushAdminNotification]
+  );
+
+  useEffect(() => {
+  return () => {
+    if (agentImagePreview) {
+      URL.revokeObjectURL(agentImagePreview);
+    }
+  };
+}, [agentImagePreview]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -97,8 +251,164 @@ function AdminPage() {
       return;
     }
 
+    if (bootstrappedRef.current) {
+      return;
+    }
+
+    bootstrappedRef.current = true;
     fetchAdminData(true);
   }, [currentUser, isAdmin, navigate, fetchAdminData]);
+
+  useEffect(() => {
+    if (!currentUser || !isAdmin) {
+      return undefined;
+    }
+
+    const interval = setInterval(() => {
+      fetchAdminData(false, true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [currentUser, isAdmin, fetchAdminData]);
+
+  const unreadNotifications = useMemo(() => {
+    return adminNotifications.filter((item) => !item.read).length;
+  }, [adminNotifications]);
+
+  const openMessagesCount = useMemo(() => {
+    return contactMessages.filter((item) => {
+      return (item.status || "").toUpperCase() === "OPEN";
+    }).length;
+  }, [contactMessages]);
+
+  const reportMessagesCount = useMemo(() => {
+    return contactMessages.filter((item) => {
+      return (item.type || "").toUpperCase() === "REPORT";
+    }).length;
+  }, [contactMessages]);
+
+  const pendingListingsFromList = posts.filter(
+    (post) => String(post.status || "").toUpperCase() === "PENDING"
+  ).length;
+  const pendingListingsCount = Number(
+    stats?.pendingPropertiesCount ?? pendingListingsFromList
+  );
+
+  const notificationBellCount = useMemo(() => {
+    return (
+      agentRequestsCount +
+      openMessagesCount +
+      unreadNotifications +
+      pendingListingsCount
+    );
+  }, [
+    agentRequestsCount,
+    openMessagesCount,
+    unreadNotifications,
+    pendingListingsCount,
+  ]);
+
+  const notificationItems = useMemo(() => {
+    const systemItems = [];
+
+    if (agentRequestsCount > 0) {
+      systemItems.push({
+        id: "system-agent-requests",
+        type: "request",
+        title: t("admin.notifications.pendingAgentRequests"),
+        message: t("admin.notifications.pendingAgentRequestsMessage", {
+          count: agentRequestsCount,
+        }),
+        time: t("admin.notifications.now"),
+        read: false,
+        system: true,
+        actionSection: "unlock",
+      });
+    }
+
+    if (openMessagesCount > 0) {
+      systemItems.push({
+        id: "system-open-messages",
+        type: "message",
+        title: t("admin.notifications.newMessagesReports"),
+        message: t("admin.notifications.newMessagesReportsMessage", {
+          count: openMessagesCount,
+        }),
+        time: t("admin.notifications.now"),
+        read: false,
+        system: true,
+        actionSection: "support",
+        actionPane: "inbox",
+      });
+    }
+
+    if (pendingListingsCount > 0) {
+      systemItems.push({
+        id: "system-pending-listings",
+        type: "post",
+        title: t("admin.notifications.pendingListings"),
+        message: t("admin.notifications.pendingListingsMessage", {
+          count: pendingListingsCount,
+        }),
+        time: t("admin.notifications.now"),
+        read: false,
+        system: true,
+        actionSection: "listings",
+      });
+    }
+
+    return [...systemItems, ...adminNotifications];
+  }, [
+    agentRequestsCount,
+    openMessagesCount,
+    pendingListingsCount,
+    adminNotifications,
+    t,
+  ]);
+
+  const markNotificationsRead = () => {
+    setAdminNotifications((prev) =>
+      prev.map((item) => ({
+        ...item,
+        read: true,
+      }))
+    );
+  };
+
+  const handleNotificationToggle = () => {
+    setShowNotifications((prev) => !prev);
+    markNotificationsRead();
+  };
+
+  const openSection = (nextSection, pane) => {
+    setSection(nextSection);
+
+    if (nextSection === "people" && pane) {
+      setPeoplePane(pane);
+    }
+
+    if (nextSection === "billing" && pane) {
+      setBillingPane(pane);
+    }
+
+    if (nextSection === "support" && pane) {
+      setSupportPane(pane);
+    }
+
+    setShowNotifications(false);
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (notification.actionSection === "listings") {
+      setListingStatusFilter("PENDING");
+    }
+
+    if (notification.actionSection) {
+      openSection(notification.actionSection, notification.actionPane);
+    }
+
+    markNotificationsRead();
+  };
 
   const filteredUsers = useMemo(() => {
     const search = userSearch.toLowerCase().trim();
@@ -120,21 +430,39 @@ function AdminPage() {
   const filteredPosts = useMemo(() => {
     const search = postSearch.toLowerCase().trim();
 
-    return posts.filter((post) => {
+    const matches = posts.filter((post) => {
       const searchText = `${post.title || ""} ${post.city || ""} ${
         post.address || ""
       } ${post.user?.username || ""}`
         .toLowerCase()
         .trim();
 
-      const matchesSearch = searchText.includes(search);
-      const matchesType = typeFilter === "ALL" || post.type === typeFilter;
-      const matchesProperty =
-        propertyFilter === "ALL" || post.property === propertyFilter;
+      const listingKind = String(post.listingType || post.type || "").toLowerCase();
+      const category = String(
+        post.propertyType || post.property || ""
+      ).toLowerCase();
+      const status = String(post.status || "").toUpperCase();
 
-      return matchesSearch && matchesType && matchesProperty;
+      const matchesSearch = searchText.includes(search);
+      const matchesType =
+        typeFilter === "ALL" ||
+        listingKind === typeFilter ||
+        (typeFilter === "buy" && listingKind === "sale");
+      const matchesProperty =
+        propertyFilter === "ALL" || category === propertyFilter;
+      const matchesStatus =
+        listingStatusFilter === "ALL" || status === listingStatusFilter;
+
+      return matchesSearch && matchesType && matchesProperty && matchesStatus;
     });
-  }, [posts, postSearch, typeFilter, propertyFilter]);
+
+    return [...matches].sort((a, b) => {
+      const aPending = String(a.status || "").toUpperCase() === "PENDING";
+      const bPending = String(b.status || "").toUpperCase() === "PENDING";
+      if (aPending === bPending) return 0;
+      return aPending ? -1 : 1;
+    });
+  }, [posts, postSearch, typeFilter, propertyFilter, listingStatusFilter]);
 
   const filteredContactMessages = useMemo(() => {
     const search = messageSearch.toLowerCase().trim();
@@ -177,22 +505,20 @@ function AdminPage() {
     return users.filter((user) => user.role?.toUpperCase() === "USER");
   }, [users]);
 
-  const openReportsCount = useMemo(() => {
-    return contactMessages.filter((item) => item.status === "OPEN").length;
-  }, [contactMessages]);
-
   const formatDate = (date) => {
     if (!date) {
-      return "Unknown date";
+      return t("admin.fallback.unknownDate");
     }
 
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
-      return "Unknown date";
+      return t("admin.fallback.unknownDate");
     }
 
-    return parsedDate.toLocaleDateString();
+    return parsedDate.toLocaleDateString(
+      i18n.language === "ar" ? "ar-LB" : "en-US"
+    );
   };
 
   const formatMoney = (price) => {
@@ -205,14 +531,44 @@ function AdminPage() {
     return `$${numberPrice.toLocaleString()}`;
   };
 
+  const getMessageStatusLabel = (status) => {
+    const value = (status || "OPEN").toUpperCase();
+
+    if (value === "OPEN") return t("admin.messageStatus.new");
+    if (value === "READ") return t("admin.messageStatus.inReview");
+    if (value === "RESOLVED") return t("admin.messageStatus.answered");
+
+    return value.replace("_", " ");
+  };
+
+  const getMessageStatusClass = (status) => {
+    const value = (status || "OPEN").toUpperCase();
+
+    if (value === "OPEN") return "new";
+    if (value === "READ") return "in-review";
+    if (value === "RESOLVED") return "answered";
+
+    return "new";
+  };
+
+  const formatType = (value) => {
+    if (!value) {
+      return t("admin.fallback.na");
+    }
+
+    return t(`admin.values.${value}`, { defaultValue: value });
+  };
+
   const handleDeleteUser = async (user) => {
     if (user.id === currentUser?.id) {
-      alert("You cannot delete your own admin account.");
+      alert(t("admin.alerts.cannotDeleteSelf"));
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${user.username}? This will delete their posts, saved posts, chats, and messages.`
+      t("admin.confirms.deleteUser", {
+        username: user.username || t("admin.fallback.user"),
+      })
     );
 
     if (!confirmDelete) {
@@ -224,13 +580,15 @@ function AdminPage() {
       await fetchAdminData(false);
     } catch (err) {
       console.log("DELETE USER ERROR:", err);
-      alert(err.response?.data?.message || "Failed to delete user");
+      alert(err.response?.data?.message || t("admin.errors.deleteUser"));
     }
   };
 
   const handleDeletePost = async (post) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${post.title}"?`
+      t("admin.confirms.deletePost", {
+        title: post.title || t("admin.fallback.property"),
+      })
     );
 
     if (!confirmDelete) {
@@ -242,13 +600,15 @@ function AdminPage() {
       await fetchAdminData(false);
     } catch (err) {
       console.log("DELETE POST ERROR:", err);
-      alert(err.response?.data?.message || "Failed to delete post");
+      alert(err.response?.data?.message || t("admin.errors.deletePost"));
     }
   };
 
   const handleDeleteContactMessage = async (message) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete this message from ${message.name}?`
+      t("admin.confirms.deleteMessage", {
+        name: message.name || t("admin.fallback.user"),
+      })
     );
 
     if (!confirmDelete) {
@@ -260,7 +620,7 @@ function AdminPage() {
       await fetchAdminData(false);
     } catch (err) {
       console.log("DELETE CONTACT MESSAGE ERROR:", err);
-      alert(err.response?.data?.message || "Failed to delete message");
+      alert(err.response?.data?.message || t("admin.errors.deleteMessage"));
     }
   };
 
@@ -279,7 +639,7 @@ function AdminPage() {
       await fetchAdminData(false);
     } catch (err) {
       console.log("UPDATE ROLE ERROR:", err);
-      alert(err.response?.data?.message || "Failed to update role");
+      alert(err.response?.data?.message || t("admin.errors.updateRole"));
     }
   };
 
@@ -300,9 +660,11 @@ function AdminPage() {
             : item
         )
       );
+
+      await fetchAdminData(false, true);
     } catch (err) {
       console.log("UPDATE MESSAGE STATUS ERROR:", err);
-      alert(err.response?.data?.message || "Failed to update message status");
+      alert(err.response?.data?.message || t("admin.errors.updateMessageStatus"));
     }
   };
 
@@ -332,7 +694,7 @@ function AdminPage() {
       }));
     } catch (err) {
       console.log("GENERATE AI REPLY ERROR:", err);
-      alert(err.response?.data?.message || "Failed to generate AI reply");
+      alert(err.response?.data?.message || t("admin.errors.generateAIReply"));
     } finally {
       setAiReplyLoading("");
     }
@@ -342,7 +704,7 @@ function AdminPage() {
     const replyText = replyForms[message.id];
 
     if (!replyText || !replyText.trim()) {
-      alert("Please write a reply first.");
+      alert(t("admin.alerts.writeReplyFirst"));
       return;
     }
 
@@ -353,7 +715,7 @@ function AdminPage() {
         `/admin/contact-messages/${message.id}/reply`,
         {
           adminReply: replyText.trim(),
-          status: "READ",
+          status: "RESOLVED",
         }
       );
 
@@ -365,9 +727,19 @@ function AdminPage() {
         ...prev,
         [message.id]: "",
       }));
+
+      pushAdminNotification(
+        "reply",
+        t("admin.notifications.replySentTitle"),
+        t("admin.notifications.replySentMessage", {
+          name: message.name || t("admin.fallback.user"),
+        })
+      );
+
+      await fetchAdminData(false, true);
     } catch (err) {
       console.log("SEND ADMIN REPLY ERROR:", err);
-      alert(err.response?.data?.message || "Failed to send reply");
+      alert(err.response?.data?.message || t("admin.errors.sendReply"));
     } finally {
       setReplyLoading("");
     }
@@ -382,31 +754,82 @@ function AdminPage() {
     }));
   };
 
+const handleAgentImageChange = (e) => {
+  const file = e.target.files?.[0];
+
+  if (!file) {
+    setAgentImageFile(null);
+    setAgentImagePreview("");
+    return;
+  }
+
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+  if (!allowedTypes.includes(file.type)) {
+    alert("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+    e.target.value = "";
+    setAgentImageFile(null);
+    setAgentImagePreview("");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Image size must be less than 5MB.");
+    e.target.value = "";
+    setAgentImageFile(null);
+    setAgentImagePreview("");
+    return;
+  }
+
+  setAgentImageFile(file);
+  setAgentImagePreview(URL.createObjectURL(file));
+};
+
   const handleCreateAgent = async (e) => {
     e.preventDefault();
 
-    try {
-      await apiRequest.post("/admin/agents", {
-        ...agentForm,
-        name: agentForm.name.trim(),
-        title: agentForm.title.trim(),
-        phone: agentForm.phone.trim(),
-        location: agentForm.location.trim(),
-        bio: agentForm.bio.trim(),
-        image: agentForm.image.trim(),
-      });
+    if (!isValidPhone(agentForm.phone)) {
+      alert(t("phoneField.errors.invalid"));
+      return;
+    }
 
-      setAgentForm(initialAgentForm);
+    try {
+      const formData = new FormData();
+
+      formData.append("userId", agentForm.userId);
+      formData.append("name", agentForm.name.trim());
+      formData.append("title", agentForm.title.trim());
+      formData.append("phone", agentForm.phone.trim());
+      formData.append("location", agentForm.location.trim());
+      formData.append("bio", agentForm.bio.trim());
+
+      if (agentImageFile) {
+        formData.append("image", agentImageFile);
+      }
+
+      await apiRequest.post("/admin/agents", formData);
+setAgentForm(initialAgentForm);
+setAgentImageFile(null);
+setAgentImagePreview("");
+e.target.reset();
+      pushAdminNotification(
+        "agent",
+        t("admin.notifications.agentAddedTitle"),
+        t("admin.notifications.agentAddedMessage")
+      );
+
       await fetchAdminData(false);
     } catch (err) {
       console.log("CREATE AGENT ERROR:", err);
-      alert(err.response?.data?.message || "Failed to create agent");
+      alert(err.response?.data?.message || t("admin.errors.createAgent"));
     }
   };
 
   const handleRemoveAgent = async (agent) => {
     const confirmRemove = window.confirm(
-      `Are you sure you want to remove ${agent.name} from agents? The user account will stay, but role will become USER.`
+      t("admin.confirms.removeAgent", {
+        name: agent.name || t("admin.fallback.agent"),
+      })
     );
 
     if (!confirmRemove) {
@@ -415,10 +838,19 @@ function AdminPage() {
 
     try {
       await apiRequest.delete(`/admin/agents/${agent.id}`);
+
+      pushAdminNotification(
+        "agent",
+        t("admin.notifications.agentRemovedTitle"),
+        t("admin.notifications.agentRemovedMessage", {
+          name: agent.name || t("admin.fallback.agent"),
+        })
+      );
+
       await fetchAdminData(false);
     } catch (err) {
       console.log("REMOVE AGENT ERROR:", err);
-      alert(err.response?.data?.message || "Failed to remove agent");
+      alert(err.response?.data?.message || t("admin.errors.removeAgent"));
     }
   };
 
@@ -430,214 +862,380 @@ function AdminPage() {
     navigate(`/posts/edit/${id}`);
   };
 
+  const handleListingStatus = async (post, status) => {
+    let rejectionReason = "";
+
+    if (status === "REJECTED") {
+      rejectionReason = window.prompt(
+        t("admin.posts.prompts.rejectReason", {
+          title: post.title || t("admin.fallback.property"),
+        }),
+        ""
+      );
+
+      if (rejectionReason === null) {
+        return;
+      }
+
+      if (!String(rejectionReason).trim()) {
+        alert(t("admin.posts.alerts.reasonRequired"));
+        return;
+      }
+    }
+
+    try {
+      setListingActionId(`${post.id}:${status}`);
+      await apiRequest.patch(`/admin/properties/${post.id}/status`, {
+        status,
+        rejectionReason: String(rejectionReason).trim(),
+      });
+
+      setPosts((prev) =>
+        prev.map((item) =>
+          item.id === post.id
+            ? {
+                ...item,
+                status,
+                rejectionReason: status === "REJECTED" ? rejectionReason : null,
+              }
+            : item
+        )
+      );
+
+      pushAdminNotification(
+        "post",
+        status === "PUBLISHED"
+          ? t("admin.notifications.listingApprovedTitle")
+          : t("admin.notifications.listingRejectedTitle"),
+        status === "PUBLISHED"
+          ? t("admin.notifications.listingApprovedMessage", {
+              title: post.title || t("admin.fallback.property"),
+            })
+          : t("admin.notifications.listingRejectedMessage", {
+              title: post.title || t("admin.fallback.property"),
+            })
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || t("admin.errors.updateListingStatus"));
+    } finally {
+      setListingActionId("");
+    }
+  };
+
   const handleViewAgent = (id) => {
     navigate(`/agents/${id}`);
   };
 
+  const pendingPaymentsCount = Number(stats?.pendingPaymentsCount || 0);
+  const pendingReportsCount = Number(stats?.pendingReportsCount || 0);
+  const unlockQueue = agentRequestsCount;
+  const supportQueue = openMessagesCount + pendingReportsCount;
+  const billingQueue = pendingPaymentsCount;
+
   if (loading) {
     return (
-      <div className="adminPage pageFade">
-        <div className="adminStateBox">
-          <span></span>
-          <h2>Loading Admin Dashboard</h2>
-          <p>Please wait while we prepare the website data.</p>
-        </div>
-      </div>
+      <main className="adminPage pageFade">
+        <PageState
+          type="loading"
+          title={t("admin.loading.title")}
+          message={t("admin.loading.message")}
+        />
+      </main>
     );
   }
 
   if (error) {
     return (
-      <div className="adminPage pageFade">
-        <div className="adminStateBox errorState">
-          <h2>Admin Error</h2>
-          <p>{error}</p>
-
-          <button type="button" onClick={() => fetchAdminData(true)}>
-            Try Again
-          </button>
-        </div>
-      </div>
+      <main className="adminPage pageFade">
+        <PageState
+          type="error"
+          title={t("admin.errorState.title")}
+          message={error}
+          buttonText={t("admin.buttons.tryAgain")}
+          onClick={() => fetchAdminData(true)}
+        />
+      </main>
     );
   }
 
+  const navItems = [
+    { id: "desk", label: t("admin.tabs.desk") },
+    { id: "people", label: t("admin.tabs.people"), count: 0 },
+    { id: "listings", label: t("admin.tabs.listings"), count: pendingListingsCount },
+    { id: "unlock", label: t("admin.tabs.unlock"), count: unlockQueue },
+    { id: "billing", label: t("admin.tabs.billing"), count: billingQueue },
+    { id: "support", label: t("admin.tabs.support"), count: supportQueue },
+  ];
+
   return (
-    <div className="adminPage pageFade">
-      <div className="adminHeader">
+    <main className="adminPage pageFade">
+      <div className="adminToastStack">
+        {adminNotifications.slice(0, 3).map((notification) => (
+          <div
+            className={`adminToast ${notification.type}`}
+            key={notification.id}
+          >
+            <strong>{notification.title}</strong>
+            <p>{notification.message}</p>
+          </div>
+        ))}
+      </div>
+
+      <header className="adminHero">
         <div>
-          <span className="adminBadge">Admin Panel</span>
-
-          <h1>SmartEstate Dashboard</h1>
-
-          <p>
-            Control users, properties, agents, reports, contact messages, and
-            platform activity from one place.
-          </p>
+          <p className="adminEyebrow">{t("admin.header.badge")}</p>
         </div>
 
-        <button
-          type="button"
-          className="refreshBtn"
-          onClick={() => fetchAdminData(false)}
-          disabled={refreshing}
-        >
-          {refreshing ? "Refreshing..." : "Refresh Data"}
-        </button>
-      </div>
+        <div className="adminHeroActions">
+          <div className="adminNotificationBox">
+            <button
+              type="button"
+              className={
+                notificationBellCount > 0
+                  ? "adminGhostBtn isHot"
+                  : "adminGhostBtn"
+              }
+              onClick={handleNotificationToggle}
+            >
+              {t("admin.notifications.title")}
+              {notificationBellCount > 0 && (
+                <em>{notificationBellCount > 99 ? "99+" : notificationBellCount}</em>
+              )}
+            </button>
 
-      <div className="statsGrid">
-        <StatCard label="Total Users" value={stats?.usersCount || users.length} />
-        <StatCard label="Total Agents" value={agents.length} />
-        <StatCard label="Total Posts" value={stats?.postsCount || posts.length} />
-        <StatCard label="Total Chats" value={stats?.chatsCount || 0} />
-        <StatCard label="Total Messages" value={stats?.messagesCount || 0} />
-        <StatCard label="Saved Posts" value={stats?.savedPostsCount || 0} />
-        <StatCard
-          label="Contact Messages"
-          value={stats?.contactMessagesCount ?? contactMessages.length}
-        />
-        <StatCard
-          label="Open Reports"
-          value={stats?.openContactMessagesCount ?? openReportsCount}
-        />
-      </div>
-
-      <AdminAnalytics
-        users={users}
-        posts={posts}
-        agents={agents}
-        contactMessages={contactMessages}
-        stats={stats}
-      />
-
-      <div className="latestGrid">
-        <div className="latestCard">
-          <div className="latestHeader">
-            <h3>Latest Users</h3>
-            <span>{latestUsers.length}</span>
-          </div>
-
-          {latestUsers.length > 0 ? (
-            latestUsers.map((user) => (
-              <div className="latestItem" key={user.id}>
-                <img
-                  src={user.avatar || "/no-avatar.png"}
-                  alt="User avatar"
-                  onError={(e) => {
-                    e.currentTarget.src = "/no-avatar.png";
-                  }}
-                />
-
-                <div>
-                  <b>{user.username || "User"}</b>
-                  <p>{user.email || "No email"}</p>
+            {showNotifications && (
+              <div className="adminNotificationDropdown">
+                <div className="notificationDropdownHeader">
+                  <h3>{t("admin.notifications.title")}</h3>
+                  <button type="button" onClick={() => setAdminNotifications([])}>
+                    {t("admin.notifications.clear")}
+                  </button>
                 </div>
 
-                <span className="latestBadge">{user.role}</span>
+                {notificationItems.length > 0 ? (
+                  notificationItems.map((notification) => (
+                    <button
+                      type="button"
+                      className={`notificationItem ${notification.type} ${
+                        notification.system ? "system" : ""
+                      }`}
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <strong>{notification.title}</strong>
+                      <p>{notification.message}</p>
+                      <span>{notification.time}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="notificationEmpty">
+                    {t("admin.notifications.empty")}
+                  </div>
+                )}
               </div>
-            ))
-          ) : (
-            <div className="emptySmall">No latest users.</div>
-          )}
-        </div>
-
-        <div className="latestCard">
-          <div className="latestHeader">
-            <h3>Latest Posts</h3>
-            <span>{latestPosts.length}</span>
+            )}
           </div>
 
-          {latestPosts.length > 0 ? (
-            latestPosts.map((post) => (
-              <div className="latestItem" key={post.id}>
-                <img
-                  src={post.images?.[0] || "/no-image.png"}
-                  alt="Property"
-                  onError={(e) => {
-                    e.currentTarget.src = "/no-image.png";
-                  }}
-                />
-
-                <div>
-                  <b>{post.title || "Property"}</b>
-
-                  <p>
-                    {post.city || "Unknown"} • {formatMoney(post.price)} •{" "}
-                    {formatDate(post.createdAt)}
-                  </p>
-                </div>
-
-                <button type="button" onClick={() => handleViewPost(post.id)}>
-                  View
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="emptySmall">No latest posts.</div>
-          )}
+          <button
+            type="button"
+            className="adminPrimaryBtn"
+            onClick={() => fetchAdminData(false)}
+            disabled={refreshing}
+          >
+            {refreshing
+              ? t("admin.buttons.refreshing")
+              : t("admin.buttons.refreshData")}
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="adminTabs">
-        <button
-          type="button"
-          className={activeTab === "users" ? "active" : ""}
-          onClick={() => setActiveTab("users")}
-        >
-          Users
-        </button>
+      <nav className="adminTabs" aria-label={t("admin.header.badge")}>
+        {navItems.map((item) => (
+          <button
+            type="button"
+            key={item.id}
+            className={section === item.id ? "isActive" : ""}
+            onClick={() => openSection(item.id)}
+          >
+            {item.label}
+            {item.count > 0 ? <span>{item.count}</span> : null}
+          </button>
+        ))}
+      </nav>
 
-        <button
-          type="button"
-          className={activeTab === "posts" ? "active" : ""}
-          onClick={() => setActiveTab("posts")}
-        >
-          Posts
-        </button>
+      {section === "desk" && (
+        <>
+          <section className="adminQueues">
+            <button type="button" onClick={() => openSection("unlock")}>
+              <span>{t("admin.desk.unlock")}</span>
+              <strong>{unlockQueue}</strong>
+              <p>{t("admin.desk.unlockHint")}</p>
+            </button>
+            <button type="button" onClick={() => openSection("billing", "payments")}>
+              <span>{t("admin.desk.payments")}</span>
+              <strong>{billingQueue}</strong>
+              <p>{t("admin.desk.paymentsHint")}</p>
+            </button>
+            <button type="button" onClick={() => openSection("support", "live")}>
+              <span>{t("admin.desk.support")}</span>
+              <strong>{openMessagesCount}</strong>
+              <p>{t("admin.desk.supportHint")}</p>
+            </button>
+            <button type="button" onClick={() => openSection("support", "reports")}>
+              <span>{t("admin.desk.reports")}</span>
+              <strong>{pendingReportsCount}</strong>
+              <p>{t("admin.desk.reportsHint")}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setListingStatusFilter("PENDING");
+                openSection("listings");
+              }}
+            >
+              <span>{t("admin.desk.listings")}</span>
+              <strong>{pendingListingsCount}</strong>
+              <p>{t("admin.desk.listingsHint")}</p>
+            </button>
+          </section>
 
-        <button
-          type="button"
-          className={activeTab === "agents" ? "active" : ""}
-          onClick={() => setActiveTab("agents")}
-        >
-          Agents
-        </button>
-
-        <button
-          type="button"
-          className={activeTab === "agentRequests" ? "active" : ""}
-          onClick={() => setActiveTab("agentRequests")}
-        >
-          Agent Requests
-        </button>
-
-        <button
-          type="button"
-          className={activeTab === "messages" ? "active" : ""}
-          onClick={() => setActiveTab("messages")}
-        >
-          Messages / Reports
-        </button>
-      </div>
-
-      {activeTab === "users" && (
-        <div className="adminSection">
-          <div className="sectionHeader">
+          <section className="adminSnapshot">
             <div>
-              <span>Users</span>
+              <span>{t("admin.stats.totalUsers")}</span>
+              <strong>{Number(stats?.usersCount ?? users.length)}</strong>
+            </div>
+            <div>
+              <span>{t("admin.stats.totalAgents")}</span>
+              <strong>{Number(stats?.agentsCount ?? agents.length)}</strong>
+            </div>
+            <div>
+              <span>{t("admin.stats.totalPosts")}</span>
+              <strong>{Number(stats?.postsCount ?? posts.length)}</strong>
+            </div>
+            <div>
+              <span>{t("admin.stats.subscriptions")}</span>
+              <strong>{Number(stats?.subscriptionsCount ?? 0)}</strong>
+            </div>
+          </section>
 
-              <h2>Users Management</h2>
+          <section className="latestGrid">
+            <div className="latestCard">
+              <div className="latestHeader">
+                <h3>{t("admin.overview.latestUsers")}</h3>
+                <span>{latestUsers.length}</span>
+              </div>
 
-              <p>Search users, change roles, and remove accounts.</p>
+              {latestUsers.length > 0 ? (
+                latestUsers.map((user) => (
+                  <div className="latestItem" key={user.id}>
+                    <img
+                      src={getImageUrl(user.avatar)}
+                      alt={t("admin.alt.userAvatar")}
+                      onError={(e) => {
+                        e.currentTarget.src = "/no-avatar.png";
+                      }}
+                    />
+
+                    <div>
+                      <b>{user.username || t("admin.fallback.user")}</b>
+                      <p>{user.email || t("admin.fallback.noEmail")}</p>
+                    </div>
+
+                    <span className="latestBadge">{user.role}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="emptySmall">
+                  {t("admin.overview.noLatestUsers")}
+                </div>
+              )}
             </div>
 
-            <span className="countPill">{filteredUsers.length} users</span>
+            <div className="latestCard">
+              <div className="latestHeader">
+                <h3>{t("admin.overview.latestPosts")}</h3>
+                <span>{latestPosts.length}</span>
+              </div>
+
+              {latestPosts.length > 0 ? (
+                latestPosts.map((post) => (
+                  <div className="latestItem" key={post.id}>
+                    <img
+                      src={getImageUrl(post.images?.[0], "/no-image.png")}
+                      alt={t("admin.alt.property")}
+                      onError={(e) => {
+                        e.currentTarget.src = "/no-image.png";
+                      }}
+                    />
+
+                    <div>
+                      <b>{post.title || t("admin.fallback.property")}</b>
+                      <p>
+                        {post.city || t("admin.fallback.unknown")} •{" "}
+                        {formatMoney(post.price)} • {formatDate(post.createdAt)}
+                      </p>
+                    </div>
+
+                    <button type="button" onClick={() => handleViewPost(post.id)}>
+                      {t("admin.buttons.view")}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="emptySmall">
+                  {t("admin.overview.noLatestPosts")}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <AdminAnalytics
+            users={users}
+            posts={posts}
+            agents={agents}
+            contactMessages={contactMessages}
+            stats={stats}
+          />
+        </>
+      )}
+
+      {section === "people" && (
+        <nav className="adminSubTabs">
+          <button
+            type="button"
+            className={peoplePane === "users" ? "isActive" : ""}
+            onClick={() => setPeoplePane("users")}
+          >
+            {t("admin.tabs.users")}
+          </button>
+          <button
+            type="button"
+            className={peoplePane === "agents" ? "isActive" : ""}
+            onClick={() => setPeoplePane("agents")}
+          >
+            {t("admin.tabs.agents")}
+          </button>
+        </nav>
+      )}
+
+      {section === "people" && peoplePane === "users" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>{t("admin.users.badge")}</span>
+              <h2>{t("admin.users.title")}</h2>
+              <p>{t("admin.users.description")}</p>
+            </div>
+
+            <span className="countPill">
+              {t("admin.users.count", { count: filteredUsers.length })}
+            </span>
           </div>
 
           <div className="filtersGrid">
             <input
               type="text"
-              placeholder="Search by username or email..."
+              placeholder={t("admin.users.searchPlaceholder")}
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
             />
@@ -646,10 +1244,10 @@ function AdminPage() {
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
-              <option value="ALL">All Roles</option>
-              <option value="USER">Users Only</option>
-              <option value="AGENT">Agents Only</option>
-              <option value="ADMIN">Admins Only</option>
+              <option value="ALL">{t("admin.users.allRoles")}</option>
+              <option value="USER">{t("admin.users.usersOnly")}</option>
+              <option value="AGENT">{t("admin.users.agentsOnly")}</option>
+              <option value="ADMIN">{t("admin.users.adminsOnly")}</option>
             </select>
           </div>
 
@@ -657,13 +1255,13 @@ function AdminPage() {
             <table>
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Posts</th>
-                  <th>Saved</th>
-                  <th>Messages</th>
-                  <th>Actions</th>
+                  <th>{t("admin.users.table.user")}</th>
+                  <th>{t("admin.users.table.email")}</th>
+                  <th>{t("admin.users.table.role")}</th>
+                  <th>{t("admin.users.table.posts")}</th>
+                  <th>{t("admin.users.table.saved")}</th>
+                  <th>{t("admin.users.table.messages")}</th>
+                  <th>{t("admin.users.table.actions")}</th>
                 </tr>
               </thead>
 
@@ -674,18 +1272,18 @@ function AdminPage() {
                       <td>
                         <div className="userCell">
                           <img
-                            src={user.avatar || "/no-avatar.png"}
-                            alt="User avatar"
+                            src={getImageUrl(user.avatar)}
+                            alt={t("admin.alt.userAvatar")}
                             onError={(e) => {
                               e.currentTarget.src = "/no-avatar.png";
                             }}
                           />
 
-                          <span>{user.username || "User"}</span>
+                          <span>{user.username || t("admin.fallback.user")}</span>
                         </div>
                       </td>
 
-                      <td>{user.email || "No email"}</td>
+                      <td>{user.email || t("admin.fallback.noEmail")}</td>
 
                       <td>
                         <select
@@ -712,7 +1310,7 @@ function AdminPage() {
                           onClick={() => handleDeleteUser(user)}
                           disabled={user.id === currentUser?.id}
                         >
-                          Delete
+                          {t("admin.buttons.delete")}
                         </button>
                       </td>
                     </tr>
@@ -720,34 +1318,34 @@ function AdminPage() {
                 ) : (
                   <tr>
                     <td colSpan="7">
-                      <div className="emptyState">No users found.</div>
+                      <div className="emptyState">{t("admin.users.noUsers")}</div>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       )}
 
-      {activeTab === "posts" && (
-        <div className="adminSection">
+      {section === "listings" && (
+        <section className="adminSection">
           <div className="sectionHeader">
             <div>
-              <span>Posts</span>
-
-              <h2>Posts Management</h2>
-
-              <p>Search, review, open, edit, and delete property listings.</p>
+              <span>{t("admin.posts.badge")}</span>
+              <h2>{t("admin.posts.title")}</h2>
+              <p>{t("admin.posts.description")}</p>
             </div>
 
-            <span className="countPill">{filteredPosts.length} posts</span>
+            <span className="countPill">
+              {t("admin.posts.count", { count: filteredPosts.length })}
+            </span>
           </div>
 
           <div className="filtersGrid postFilters">
             <input
               type="text"
-              placeholder="Search by title, city, address, or owner..."
+              placeholder={t("admin.posts.searchPlaceholder")}
               value={postSearch}
               onChange={(e) => setPostSearch(e.target.value)}
             />
@@ -756,19 +1354,31 @@ function AdminPage() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
-              <option value="ALL">All Types</option>
-              <option value="buy">Buy</option>
-              <option value="rent">Rent</option>
+              <option value="ALL">{t("admin.posts.allTypes")}</option>
+              <option value="buy">{t("admin.values.buy")}</option>
+              <option value="rent">{t("admin.values.rent")}</option>
             </select>
 
             <select
               value={propertyFilter}
               onChange={(e) => setPropertyFilter(e.target.value)}
             >
-              <option value="ALL">All Properties</option>
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-              <option value="land">Land</option>
+              <option value="ALL">{t("admin.posts.allProperties")}</option>
+              <option value="apartment">{t("admin.values.apartment")}</option>
+              <option value="house">{t("admin.values.house")}</option>
+              <option value="land">{t("admin.values.land")}</option>
+            </select>
+
+            <select
+              value={listingStatusFilter}
+              onChange={(e) => setListingStatusFilter(e.target.value)}
+            >
+              <option value="ALL">{t("admin.posts.allStatuses")}</option>
+              <option value="PENDING">{t("admin.posts.status.pending")}</option>
+              <option value="PUBLISHED">{t("admin.posts.status.published")}</option>
+              <option value="REJECTED">{t("admin.posts.status.rejected")}</option>
+              <option value="SOLD">{t("admin.posts.status.sold")}</option>
+              <option value="RENTED">{t("admin.posts.status.rented")}</option>
             </select>
           </div>
 
@@ -776,13 +1386,14 @@ function AdminPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Property</th>
-                  <th>Owner</th>
-                  <th>City</th>
-                  <th>Price</th>
-                  <th>Type</th>
-                  <th>Category</th>
-                  <th>Actions</th>
+                  <th>{t("admin.posts.table.property")}</th>
+                  <th>{t("admin.posts.table.owner")}</th>
+                  <th>{t("admin.posts.table.city")}</th>
+                  <th>{t("admin.posts.table.price")}</th>
+                  <th>{t("admin.posts.table.type")}</th>
+                  <th>{t("admin.posts.table.category")}</th>
+                  <th>{t("admin.posts.table.status")}</th>
+                  <th>{t("admin.posts.table.actions")}</th>
                 </tr>
               </thead>
 
@@ -793,28 +1404,55 @@ function AdminPage() {
                       <td>
                         <div className="postCell">
                           <img
-                            src={post.images?.[0] || "/no-image.png"}
-                            alt="Property"
+                            src={getImageUrl(post.images?.[0], "/no-image.png")}
+                            alt={t("admin.alt.property")}
                             onError={(e) => {
                               e.currentTarget.src = "/no-image.png";
                             }}
                           />
 
-                          <span>{post.title || "Property"}</span>
+                          <span>{post.title || t("admin.fallback.property")}</span>
                         </div>
                       </td>
 
-                      <td>{post.user?.username || "Unknown"}</td>
-                      <td>{post.city || "Unknown"}</td>
+                      <td>{post.user?.username || t("admin.fallback.unknown")}</td>
+                      <td>{post.city || t("admin.fallback.unknown")}</td>
                       <td>{formatMoney(post.price)}</td>
 
                       <td>
-                        <span className="miniBadge">{post.type || "N/A"}</span>
+                        <span className="miniBadge">
+                          {formatType(
+                            String(
+                              post.listingType || post.type || ""
+                            ).toLowerCase() === "sale"
+                              ? "buy"
+                              : String(post.listingType || post.type || "").toLowerCase()
+                          )}
+                        </span>
                       </td>
 
                       <td>
                         <span className="miniBadge">
-                          {post.property || "N/A"}
+                          {formatType(
+                            String(post.propertyType || post.property || "").toLowerCase()
+                          )}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span
+                          className={`miniBadge ${(
+                            post.status || "PENDING"
+                          ).toLowerCase()}`}
+                        >
+                          {t(
+                            `admin.posts.status.${String(
+                              post.status || "PENDING"
+                            ).toLowerCase()}`,
+                            {
+                              defaultValue: post.status || "PENDING",
+                            }
+                          )}
                         </span>
                       </td>
 
@@ -825,7 +1463,7 @@ function AdminPage() {
                             className="viewBtn"
                             onClick={() => handleViewPost(post.id)}
                           >
-                            View
+                            {t("admin.buttons.view")}
                           </button>
 
                           <button
@@ -833,15 +1471,55 @@ function AdminPage() {
                             className="viewBtn"
                             onClick={() => handleEditPost(post.id)}
                           >
-                            Edit
+                            {t("admin.buttons.edit")}
                           </button>
+
+                          {["PENDING", "REJECTED"].includes(
+                            String(post.status || "").toUpperCase()
+                          ) && (
+                            <button
+                              type="button"
+                              className="viewBtn"
+                              disabled={Boolean(listingActionId)}
+                              onClick={() =>
+                                handleListingStatus(post, "PUBLISHED")
+                              }
+                            >
+                              {listingActionId === `${post.id}:PUBLISHED`
+                                ? t("admin.buttons.working")
+                                : String(post.status || "").toUpperCase() ===
+                                    "REJECTED"
+                                  ? t("admin.buttons.approveAgain")
+                                  : t("admin.buttons.approve")}
+                            </button>
+                          )}
+
+                          {["PENDING", "PUBLISHED"].includes(
+                            String(post.status || "").toUpperCase()
+                          ) && (
+                            <button
+                              type="button"
+                              className="dangerBtn"
+                              disabled={Boolean(listingActionId)}
+                              onClick={() =>
+                                handleListingStatus(post, "REJECTED")
+                              }
+                            >
+                              {listingActionId === `${post.id}:REJECTED`
+                                ? t("admin.buttons.working")
+                                : String(post.status || "").toUpperCase() ===
+                                    "PUBLISHED"
+                                  ? t("admin.buttons.rejectApproved")
+                                  : t("admin.buttons.reject")}
+                            </button>
+                          )}
 
                           <button
                             type="button"
                             className="dangerBtn"
                             onClick={() => handleDeletePost(post)}
                           >
-                            Delete
+                            {t("admin.buttons.delete")}
                           </button>
                         </div>
                       </td>
@@ -849,113 +1527,234 @@ function AdminPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7">
-                      <div className="emptyState">No posts found.</div>
+                    <td colSpan="8">
+                      <div className="emptyState">{t("admin.posts.noPosts")}</div>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       )}
 
-      {activeTab === "agents" && (
-        <div className="adminSection">
+      {section === "people" && peoplePane === "agents" && (
+        <section className="adminSection">
           <div className="sectionHeader">
             <div>
-              <span>Agents</span>
-
-              <h2>Agents Management</h2>
-
-              <p>Add real agents from existing users and remove agent access.</p>
+              <span>{t("admin.agents.badge")}</span>
+              <h2>{t("admin.agents.title")}</h2>
+              <p>{t("admin.agents.description")}</p>
             </div>
 
-            <span className="countPill">{agents.length} agents</span>
+            <span className="countPill">
+              {t("admin.agents.count", { count: agents.length })}
+            </span>
           </div>
 
-          <form className="agentCreateBox" onSubmit={handleCreateAgent}>
-            <h3>Add New Agent Manually</h3>
+       <form className="agentCreateBox" onSubmit={handleCreateAgent}>
+  <div className="agentCreateHeader">
+    <div>
+      <span className="agentCreateBadge">
+        {t("admin.agents.manualSetup", {
+          defaultValue: "Manual Agent Setup",
+        })}
+      </span>
 
-            <div className="agentFormGrid">
-              <select
-                name="userId"
-                value={agentForm.userId}
-                onChange={handleAgentFormChange}
-                required
-              >
-                <option value="">Select existing user</option>
+      <h3>{t("admin.agents.addNewAgent")}</h3>
 
-                {availableAgentUsers.map((user) => (
-                  <option value={user.id} key={user.id}>
-                    {user.username} - {user.email}
-                  </option>
-                ))}
-              </select>
+      <p>
+        {t("admin.agents.addNewAgentDescription", {
+          defaultValue:
+            "Select an existing user, complete their professional profile, and upload a clear agent profile picture.",
+        })}
+      </p>
+    </div>
 
-              <input
-                name="name"
-                type="text"
-                placeholder="Agent full name"
-                value={agentForm.name}
-                onChange={handleAgentFormChange}
-                required
-              />
+    <div className="agentCreateIcon">
+      <span>AG</span>
+    </div>
+  </div>
 
-              <input
-                name="title"
-                type="text"
-                placeholder="Agent title"
-                value={agentForm.title}
-                onChange={handleAgentFormChange}
-                required
-              />
+  <div className="agentCreateBody">
+    <div className="agentUploadCard">
+     <div className={agentImagePreview ? "agentUploadPreview hasImage" : "agentUploadPreview"}>
+  {agentImagePreview ? (
+    <img src={agentImagePreview} alt="Agent preview" />
+  ) : (
+    <span>Photo</span>
+  )}
+</div>
+      <div className="agentUploadInfo">
+        <h4>
+          {t("admin.agents.profilePicture", {
+            defaultValue: "Profile Picture",
+          })}
+        </h4>
 
-              <input
-                name="phone"
-                type="text"
-                placeholder="Phone number"
-                value={agentForm.phone}
-                onChange={handleAgentFormChange}
-                required
-              />
+        <p>
+          {agentImageFile
+            ? agentImageFile.name
+            : t("admin.agents.uploadImageHint", {
+                defaultValue: "Upload JPG, PNG, JPEG, or WEBP image.",
+              })}
+        </p>
+      </div>
 
-              <input
-                name="location"
-                type="text"
-                placeholder="Location"
-                value={agentForm.location}
-                onChange={handleAgentFormChange}
-                required
-              />
+      <input
+        id="agentImageUpload"
+        className="agentFileInput"
+        name="image"
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        onChange={handleAgentImageChange}
+      />
 
-              <input
-                name="image"
-                type="text"
-                placeholder="Image URL optional"
-                value={agentForm.image}
-                onChange={handleAgentFormChange}
-              />
-            </div>
+      <label htmlFor="agentImageUpload" className="agentUploadBtn">
+        {agentImageFile
+          ? t("admin.agents.changePhoto", {
+              defaultValue: "Change Photo",
+            })
+          : t("admin.agents.choosePhoto", {
+              defaultValue: "Choose Photo",
+            })}
+      </label>
+    </div>
 
-            <textarea
-              name="bio"
-              placeholder="Agent bio"
-              value={agentForm.bio}
-              onChange={handleAgentFormChange}
-              required
-            ></textarea>
+    <div className="agentFieldsPanel">
+      <div className="agentFormGrid">
+        <div className="agentField full">
+          <label>
+            {t("admin.agents.userAccount", {
+              defaultValue: "User Account",
+            })}
+          </label>
 
-            <button type="submit">Add Agent</button>
-          </form>
+          <select
+            name="userId"
+            value={agentForm.userId}
+            onChange={handleAgentFormChange}
+            required
+          >
+            <option value="">{t("admin.agents.selectExistingUser")}</option>
+
+            {availableAgentUsers.map((user) => (
+              <option value={user.id} key={user.id}>
+                {user.username} - {user.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="agentField">
+          <label>
+            {t("admin.agents.nameLabel", {
+              defaultValue: "Full Name",
+            })}
+          </label>
+
+          <input
+            name="name"
+            type="text"
+            placeholder={t("admin.agents.agentFullName")}
+            value={agentForm.name}
+            onChange={handleAgentFormChange}
+            required
+          />
+        </div>
+
+        <div className="agentField">
+          <label>
+            {t("admin.agents.titleLabel", {
+              defaultValue: "Professional Title",
+            })}
+          </label>
+
+          <input
+            name="title"
+            type="text"
+            placeholder={t("admin.agents.agentTitle")}
+            value={agentForm.title}
+            onChange={handleAgentFormChange}
+            required
+          />
+        </div>
+
+        <div className="agentField">
+          <label htmlFor="admin-agent-phone">
+            {t("admin.agents.phoneLabel", {
+              defaultValue: "Phone Number",
+            })}
+          </label>
+
+          <PhoneField
+            id="admin-agent-phone"
+            value={agentForm.phone}
+            onChange={(phone) =>
+              setAgentForm((prev) => ({
+                ...prev,
+                phone,
+              }))
+            }
+            required
+          />
+        </div>
+
+        <div className="agentField">
+          <label>
+            {t("admin.agents.locationLabel", {
+              defaultValue: "Location",
+            })}
+          </label>
+
+          <input
+            name="location"
+            type="text"
+            placeholder={t("admin.agents.location")}
+            value={agentForm.location}
+            onChange={handleAgentFormChange}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="agentField bioField">
+        <label>
+          {t("admin.agents.bioLabel", {
+            defaultValue: "Professional Bio",
+          })}
+        </label>
+
+        <textarea
+          name="bio"
+          placeholder={t("admin.agents.agentBio")}
+          value={agentForm.bio}
+          onChange={handleAgentFormChange}
+          required
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div className="agentCreateFooter">
+    <p>
+      {t("admin.agents.addAgentNote", {
+        defaultValue:
+          "The selected user will be upgraded to an agent after submission.",
+      })}
+    </p>
+
+    <button type="submit">{t("admin.agents.addAgent")}</button>
+  </div>
+</form>
 
           <div className="agentCardsGrid">
             {agents.length > 0 ? (
               agents.map((agent) => (
                 <div className="adminAgentCard" key={agent.id}>
                   <img
-                    src={agent.image || "/no-avatar.png"}
-                    alt={agent.name || "Agent"}
+                    src={getImageUrl(agent.image)}
+                    alt={agent.name || t("admin.fallback.agent")}
                     onError={(e) => {
                       e.currentTarget.src = "/no-avatar.png";
                     }}
@@ -967,19 +1766,23 @@ function AdminPage() {
 
                     <div className="agentMiniDetails">
                       <span>
-                        <b>Email:</b> {agent.email}
+                        <b>{t("admin.agents.email")}:</b>{" "}
+                        {agent.email || t("admin.fallback.noEmail")}
                       </span>
 
                       <span>
-                        <b>Phone:</b> {agent.phone}
+                        <b>{t("admin.agents.phone")}:</b>{" "}
+                        {agent.phone || t("admin.fallback.noPhone")}
                       </span>
 
                       <span>
-                        <b>Location:</b> {agent.location}
+                        <b>{t("admin.agents.locationLabel")}:</b>{" "}
+                        {agent.location || t("admin.fallback.noLocation")}
                       </span>
 
                       <span>
-                        <b>Listings:</b> {agent.properties}
+                        <b>{t("admin.agents.listings")}:</b>{" "}
+                        {agent.properties || 0}
                       </span>
                     </div>
 
@@ -989,7 +1792,7 @@ function AdminPage() {
                         className="viewBtn"
                         onClick={() => handleViewAgent(agent.id)}
                       >
-                        View
+                        {t("admin.buttons.view")}
                       </button>
 
                       <button
@@ -997,55 +1800,104 @@ function AdminPage() {
                         className="dangerBtn"
                         onClick={() => handleRemoveAgent(agent)}
                       >
-                        Remove Agent
+                        {t("admin.agents.removeAgent")}
                       </button>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="emptyState">No agents found.</div>
+              <div className="emptyState">{t("admin.agents.noAgents")}</div>
             )}
           </div>
-        </div>
+        </section>
       )}
 
-      {activeTab === "agentRequests" && (
-        <div className="adminSection">
+      {section === "unlock" && (
+        <section className="adminSection">
           <div className="sectionHeader">
             <div>
-              <span>Requests</span>
-
-              <h2>Agent Requests</h2>
-
-              <p>Review users who requested to become SmartEstate agents.</p>
-            </div>
-          </div>
-
-          <AdminAgentRequests onRequestUpdated={() => fetchAdminData(false)} />
-        </div>
-      )}
-
-      {activeTab === "messages" && (
-        <div className="adminSection">
-          <div className="sectionHeader">
-            <div>
-              <span>Support</span>
-
-              <h2>Messages / Reports</h2>
-
-              <p>Read feedback, reports, reply to users, and update statuses.</p>
+              <span>{t("admin.agentRequests.badge")}</span>
+              <h2>{t("admin.agentRequests.title")}</h2>
+              <p>{t("admin.agentRequests.description")}</p>
             </div>
 
             <span className="countPill">
-              {filteredContactMessages.length} messages
+              {t("admin.agentRequests.pending", { count: agentRequestsCount })}
             </span>
+          </div>
+
+          <AdminAgentRequests onRequestUpdated={() => fetchAdminData(false)} />
+        </section>
+      )}
+
+      {section === "support" && (
+        <nav className="adminSubTabs">
+          <button
+            type="button"
+            className={supportPane === "live" ? "isActive" : ""}
+            onClick={() => setSupportPane("live")}
+          >
+            {t("admin.liveChat.badge")}
+          </button>
+          <button
+            type="button"
+            className={supportPane === "inbox" ? "isActive" : ""}
+            onClick={() => setSupportPane("inbox")}
+          >
+            {t("admin.tabs.messagesReports")}
+            {openMessagesCount > 0 ? <span>{openMessagesCount}</span> : null}
+          </button>
+          <button
+            type="button"
+            className={supportPane === "reports" ? "isActive" : ""}
+            onClick={() => setSupportPane("reports")}
+          >
+            {t("admin.tabs.propertyReports")}
+            {pendingReportsCount > 0 ? <span>{pendingReportsCount}</span> : null}
+          </button>
+        </nav>
+      )}
+
+      {section === "support" && supportPane === "live" && <AdminSupportChat />}
+
+      {section === "support" && supportPane === "inbox" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>{t("admin.messages.badge")}</span>
+              <h2>{t("admin.messages.title")}</h2>
+              <p>{t("admin.messages.description")}</p>
+            </div>
+
+            <span className="countPill">
+              {t("admin.messages.count", {
+                count: filteredContactMessages.length,
+              })}
+            </span>
+          </div>
+
+          <div className="messageSummaryGrid">
+            <div>
+              <strong>{contactMessages.length}</strong>
+              <span>{t("admin.messages.totalMessages")}</span>
+            </div>
+
+            <div>
+              <strong>{openMessagesCount}</strong>
+              <span>{t("admin.messages.new")}</span>
+            </div>
+
+            <div>
+              <strong>{reportMessagesCount}</strong>
+              <span>{t("admin.messages.reports")}</span>
+            </div>
           </div>
 
           <div className="filtersGrid messageFilters">
             <input
               type="text"
-              placeholder="Search by name, email, subject, message, or reply..."
+              placeholder={t("admin.messages.searchPlaceholder")}
               value={messageSearch}
               onChange={(e) => setMessageSearch(e.target.value)}
             />
@@ -1054,19 +1906,21 @@ function AdminPage() {
               value={messageTypeFilter}
               onChange={(e) => setMessageTypeFilter(e.target.value)}
             >
-              <option value="ALL">All Types</option>
-              <option value="MESSAGE">Messages</option>
-              <option value="REPORT">Reports</option>
+              <option value="ALL">{t("admin.messages.allTypes")}</option>
+              <option value="MESSAGE">{t("admin.messages.messages")}</option>
+              <option value="REPORT">{t("admin.messages.reports")}</option>
             </select>
 
             <select
               value={messageStatusFilter}
               onChange={(e) => setMessageStatusFilter(e.target.value)}
             >
-              <option value="ALL">All Status</option>
-              <option value="OPEN">Open</option>
-              <option value="READ">Read</option>
-              <option value="RESOLVED">Resolved</option>
+              <option value="ALL">{t("admin.messages.allStatus")}</option>
+              <option value="OPEN">{t("admin.messageStatus.new")}</option>
+              <option value="READ">{t("admin.messageStatus.inReview")}</option>
+              <option value="RESOLVED">
+                {t("admin.messageStatus.answered")}
+              </option>
             </select>
           </div>
 
@@ -1078,36 +1932,48 @@ function AdminPage() {
                     <div>
                       <div className="messageBadges">
                         <span
-                          className={`miniBadge ${item.type?.toLowerCase()}`}
+                          className={`miniBadge ${(
+                            item.type || "message"
+                          ).toLowerCase()}`}
                         >
-                          {item.type}
+                          {item.type === "REPORT"
+                            ? t("admin.messages.report")
+                            : t("admin.messages.message")}
                         </span>
 
                         <span
-                          className={`miniBadge ${item.status?.toLowerCase()}`}
+                          className={`miniBadge ${getMessageStatusClass(
+                            item.status
+                          )}`}
                         >
-                          {item.status}
+                          {getMessageStatusLabel(item.status)}
                         </span>
                       </div>
 
                       <h3>{item.subject}</h3>
 
                       <p>
-                        From <b>{item.name}</b> • {item.email} •{" "}
-                        {formatDate(item.createdAt)}
+                        {t("admin.messages.from")} <b>{item.name}</b> •{" "}
+                        {item.email} • {formatDate(item.createdAt)}
                       </p>
                     </div>
 
                     <div className="messageActions">
                       <select
-                        value={item.status}
+                        value={item.status || "OPEN"}
                         onChange={(e) =>
                           handleContactStatusChange(item.id, e.target.value)
                         }
                       >
-                        <option value="OPEN">OPEN</option>
-                        <option value="READ">READ</option>
-                        <option value="RESOLVED">RESOLVED</option>
+                        <option value="OPEN">
+                          {t("admin.messageStatus.new")}
+                        </option>
+                        <option value="READ">
+                          {t("admin.messageStatus.inReview")}
+                        </option>
+                        <option value="RESOLVED">
+                          {t("admin.messageStatus.answered")}
+                        </option>
                       </select>
 
                       <button
@@ -1115,7 +1981,7 @@ function AdminPage() {
                         className="dangerBtn"
                         onClick={() => handleDeleteContactMessage(item)}
                       >
-                        Delete
+                        {t("admin.buttons.delete")}
                       </button>
                     </div>
                   </div>
@@ -1124,23 +1990,24 @@ function AdminPage() {
 
                   {item.adminReply && (
                     <div className="adminReplyPreview">
-                      <b>Admin Reply</b>
+                      <b>{t("admin.messages.adminReply")}</b>
 
                       <p>{item.adminReply}</p>
 
                       {item.adminRepliedAt && (
                         <span>
-                          Replied on {formatDate(item.adminRepliedAt)}
+                          {t("admin.messages.repliedOn")}{" "}
+                          {formatDate(item.adminRepliedAt)}
                         </span>
                       )}
                     </div>
                   )}
 
                   <div className="adminReplyForm">
-                    <label>Reply to user</label>
+                    <label>{t("admin.messages.replyToUser")}</label>
 
                     <textarea
-                      placeholder="Write an admin reply..."
+                      placeholder={t("admin.messages.replyPlaceholder")}
                       value={replyForms[item.id] || ""}
                       onChange={(e) =>
                         handleReplyChange(item.id, e.target.value)
@@ -1158,8 +2025,8 @@ function AdminPage() {
                         }
                       >
                         {aiReplyLoading === item.id
-                          ? "Generating..."
-                          : "Generate AI Reply"}
+                          ? t("admin.buttons.generating")
+                          : t("admin.buttons.generateAIReply")}
                       </button>
 
                       <button
@@ -1171,7 +2038,9 @@ function AdminPage() {
                           aiReplyLoading === item.id
                         }
                       >
-                        {replyLoading === item.id ? "Sending..." : "Send Reply"}
+                        {replyLoading === item.id
+                          ? t("admin.buttons.sending")
+                          : t("admin.buttons.sendReply")}
                       </button>
 
                       <button
@@ -1181,35 +2050,91 @@ function AdminPage() {
                           handleContactStatusChange(item.id, "RESOLVED")
                         }
                       >
-                        Mark Resolved
+                        {t("admin.buttons.markAnswered")}
                       </button>
                     </div>
                   </div>
 
                   {item.user && (
                     <div className="linkedUser">
-                      Linked account: <b>{item.user.username}</b> (
-                      {item.user.email})
+                      {t("admin.messages.linkedAccount")}:{" "}
+                      <b>{item.user.username}</b> ({item.user.email})
                     </div>
                   )}
                 </div>
               ))
             ) : (
-              <div className="emptyState">No messages found.</div>
+              <div className="emptyState">{t("admin.messages.noMessages")}</div>
             )}
           </div>
-        </div>
+        </section>
       )}
-    </div>
-  );
-}
 
-function StatCard({ label, value }) {
-  return (
-    <div className="statCard">
-      <span>{label}</span>
-      <h2>{value}</h2>
-    </div>
+      {section === "billing" && (
+        <nav className="adminSubTabs">
+          <button
+            type="button"
+            className={billingPane === "payments" ? "isActive" : ""}
+            onClick={() => setBillingPane("payments")}
+          >
+            {t("admin.tabs.payments")}
+            {billingQueue > 0 ? <span>{billingQueue}</span> : null}
+          </button>
+          <button
+            type="button"
+            className={billingPane === "subscriptions" ? "isActive" : ""}
+            onClick={() => setBillingPane("subscriptions")}
+          >
+            {t("admin.tabs.subscriptions")}
+          </button>
+        </nav>
+      )}
+
+      {section === "billing" && billingPane === "payments" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>{t("admin.tabs.payments", { defaultValue: "Payments" })}</span>
+              <h2>{t("admin.tabs.payments")}</h2>
+              <p>{t("admin.desk.paymentsHint")}</p>
+            </div>
+          </div>
+          <AdminBillingPanel section="payments" />
+        </section>
+      )}
+
+      {section === "billing" && billingPane === "subscriptions" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>
+                {t("admin.tabs.subscriptions", { defaultValue: "Subscriptions" })}
+              </span>
+              <h2>{t("admin.tabs.subscriptions")}</h2>
+              <p>{t("admin.desk.subscriptionsHint")}</p>
+            </div>
+          </div>
+          <AdminBillingPanel section="subscriptions" />
+        </section>
+      )}
+
+      {section === "support" && supportPane === "reports" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>
+                {t("admin.tabs.propertyReports", {
+                  defaultValue: "Property Reports",
+                })}
+              </span>
+              <h2>Listing reports</h2>
+              <p>Review user reports on suspicious or incorrect listings.</p>
+            </div>
+          </div>
+          <AdminBillingPanel section="reports" />
+        </section>
+      )}
+    </main>
   );
 }
 

@@ -1,19 +1,29 @@
 .layout {
   min-height: 100vh;
-  background: var(--bg-main);
+  background: transparent;
   color: var(--text-main);
-  transition: background 0.3s ease, color 0.3s ease;
+  display: flex;
+  flex-direction: column;
 
   .content {
+    flex: 1;
     min-height: calc(100vh - 90px);
-    max-width: 1366px;
-    margin: 0 auto;
-    padding: 0 20px;
-    background: var(--bg-main);
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0 var(--page-pad, clamp(14px, 2vw, 32px));
     box-sizing: border-box;
 
-    @media (max-width: 738px) {
+    &:has(.homepage) {
+      padding: 0;
+    }
+
+    @media (max-width: 480px) {
       padding: 0 14px;
+
+      &:has(.homepage) {
+        padding: 0;
+      }
     }
   }
 }

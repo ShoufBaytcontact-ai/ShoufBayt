@@ -32,15 +32,22 @@
     justify-content: center;
     font-size: 30px;
     font-weight: 950;
+    overflow: visible;
+  }
 
-    .loader {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 4px solid rgba(254, 206, 81, 0.2);
-      border-top-color: var(--accent);
-      animation: pageStateSpin 0.9s linear infinite;
-    }
+  &.loadingState .stateIcon,
+  &.emptyState .stateIcon {
+    width: auto;
+    height: auto;
+    min-height: 88px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+  }
+
+  &.loadingState .stateIcon {
+    min-height: 96px;
   }
 
   h2 {
@@ -103,8 +110,8 @@
   }
 }
 
-@keyframes pageStateSpin {
-  to {
-    transform: rotate(360deg);
+@media (prefers-reduced-motion: reduce) {
+  .pageState .stateIcon {
+    animation: none;
   }
 }

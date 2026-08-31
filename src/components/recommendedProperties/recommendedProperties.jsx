@@ -1,112 +1,126 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./recommendedProperties.scss";
 import apiRequest from "../../lib/apiRequest";
+import { citiesMatch } from "../../lib/cityMatch";
 import Card from "../card/card";
 
+const MAX_RECOMMENDED_POSTS = 3;
+
+function getPostId(post) {
+  return String(post?.id || post?._id || "");
+}
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function listingKind(post) {
+  const type = normalizeText(post?.type || post?.listingType);
+
+  if (type === "rent") return "rent";
+  if (type === "buy" || type === "sale") return "buy";
+  return "";
+}
+
+function unwrapPosts(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.properties)) return payload.properties;
+  if (Array.isArray(payload?.posts)) return payload.posts;
+  return [];
+}
+
 function RecommendedProperties({ currentPost }) {
+  const { t } = useTranslation();
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const currentPostId = currentPost?.id;
+  const currentPostId = getPostId(currentPost);
+  const currentCity = normalizeText(currentPost?.city);
+  const currentKind = listingKind(currentPost);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchRecommendedPosts = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const res = await apiRequest.get("/posts");
+        const params = new URLSearchParams();
 
-        const data = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data?.posts)
-          ? res.data.posts
-          : [];
+        if (currentKind) {
+          params.set("type", currentKind);
+        }
 
-        setPosts(data);
+        params.set("includeClosed", "false");
+        params.set("limit", "10");
+
+        const query = params.toString();
+        const res = await apiRequest.get(query ? `/posts?${query}` : "/posts");
+
+        if (isMounted) {
+          setPosts(unwrapPosts(res.data));
+        }
       } catch (err) {
         console.log("RECOMMENDED PROPERTIES ERROR:", err);
-        setError("Failed to load recommended properties.");
+
+        if (isMounted) {
+          setError(t("recommended.errors.failed"));
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchRecommendedPosts();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t, currentPost?.city, currentKind]);
 
   const recommendedPosts = useMemo(() => {
-    if (!currentPost || posts.length === 0) {
+    if (!currentPost || !currentCity || !currentKind || posts.length === 0) {
       return [];
     }
 
-    const currentPrice = Number(currentPost.price) || 0;
-    const currentBedroom = Number(currentPost.bedroom) || 0;
+    return posts
+      .filter((post) => {
+        const postId = getPostId(post);
 
-    const scoredPosts = posts
-      .filter((post) => post?.id !== currentPostId)
-      .map((post) => {
-        let score = 0;
-
-        if (
-          post.city &&
-          currentPost.city &&
-          post.city.toLowerCase() === currentPost.city.toLowerCase()
-        ) {
-          score += 35;
+        if (!postId || postId === currentPostId) {
+          return false;
         }
 
-        if (post.property && post.property === currentPost.property) {
-          score += 25;
+        if (!citiesMatch(post.city, currentPost.city)) {
+          return false;
         }
 
-        if (post.type && post.type === currentPost.type) {
-          score += 20;
+        if (listingKind(post) !== currentKind) {
+          return false;
         }
 
-        const postPrice = Number(post.price) || 0;
-
-        if (currentPrice > 0 && postPrice > 0) {
-          const priceDifference = Math.abs(postPrice - currentPrice);
-          const pricePercent = priceDifference / currentPrice;
-
-          if (pricePercent <= 0.15) {
-            score += 20;
-          } else if (pricePercent <= 0.3) {
-            score += 12;
-          } else if (pricePercent <= 0.5) {
-            score += 6;
-          }
+        const status = normalizeText(post.status);
+        if (status === "sold" || status === "rented") {
+          return false;
         }
 
-        const postBedroom = Number(post.bedroom) || 0;
-
-        if (currentBedroom > 0 && postBedroom > 0) {
-          if (postBedroom === currentBedroom) {
-            score += 10;
-          } else if (Math.abs(postBedroom - currentBedroom) === 1) {
-            score += 5;
-          }
-        }
-
-        return {
-          ...post,
-          recommendationScore: score,
-        };
+        return true;
       })
-      .sort((a, b) => b.recommendationScore - a.recommendationScore);
-
-    const strongMatches = scoredPosts.filter(
-      (post) => post.recommendationScore > 0
-    );
-
-    const fallbackPosts = scoredPosts.filter(
-      (post) => post.recommendationScore === 0
-    );
-
-    return [...strongMatches, ...fallbackPosts].slice(0, 3);
-  }, [posts, currentPost, currentPostId]);
+      .sort((a, b) => {
+        const aTime = new Date(a.createdAt || 0).getTime();
+        const bTime = new Date(b.createdAt || 0).getTime();
+        return bTime - aTime;
+      })
+      .slice(0, MAX_RECOMMENDED_POSTS);
+  }, [posts, currentPost, currentPostId, currentKind]);
 
   if (!currentPost) {
     return null;
@@ -116,38 +130,32 @@ function RecommendedProperties({ currentPost }) {
     <section className="recommendedProperties">
       <div className="recommendedHeader">
         <div>
-          <span>Smart Recommendations</span>
-          <h2>Recommended Properties</h2>
-          <p>
-            SmartEstate suggests similar listings based on city, type, price,
-            category, and property details.
-          </p>
+          <span>{t("recommended.header.badge")}</span>
+          <h2>{t("recommended.header.title")}</h2>
+          <p>{t("recommended.header.description")}</p>
         </div>
       </div>
 
       {loading ? (
         <div className="recommendedState">
           <span></span>
-          <h3>Loading Recommendations</h3>
-          <p>Please wait while we find similar properties.</p>
+          <h3>{t("recommended.loading.title")}</h3>
+          <p>{t("recommended.loading.message")}</p>
         </div>
       ) : error ? (
         <div className="recommendedState errorState">
-          <h3>Recommendations Unavailable</h3>
+          <h3>{t("recommended.errorState.title")}</h3>
           <p>{error}</p>
         </div>
       ) : recommendedPosts.length === 0 ? (
         <div className="recommendedState">
-          <h3>No Recommendations Yet</h3>
-          <p>
-            There are not enough similar properties available right now. Add
-            more listings to improve recommendations.
-          </p>
+          <h3>{t("recommended.empty.title")}</h3>
+          <p>{t("recommended.empty.message")}</p>
         </div>
       ) : (
         <div className="recommendedGrid">
           {recommendedPosts.map((post) => (
-            <Card item={post} key={post.id} />
+            <Card item={post} key={getPostId(post)} />
           ))}
         </div>
       )}
