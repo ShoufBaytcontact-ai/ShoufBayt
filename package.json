@@ -25,7 +25,8 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "jest": "^27.5.1"
+    "jest": "^27.5.1",
+    "yaml": "^2.9.0"
   },
   "scripts": {
     "start": "react-scripts start",
