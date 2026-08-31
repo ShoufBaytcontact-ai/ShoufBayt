@@ -9,7 +9,7 @@ import userroute from "./routes/user.route.js";
 import postroute from "./routes/post.route.js";
 import authroute from "./routes/auth.route.js";
 import testroute from "./routes/test.route.js";
-import chatroute from "./routes/chat.route.js";
+import chatroute from "./routes/Chat.route.js";
 import messageroute from "./routes/message.route.js";
 import adminroute from "./routes/admin.route.js";
 import contactroute from "./routes/contact.route.js";
