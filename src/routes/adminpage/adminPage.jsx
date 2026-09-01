@@ -15,7 +15,6 @@ import PageState from "../../components/pageState/pageState";
 import AdminAgentRequests from "../../components/adminAgentRequests/adminAgentRequests";
 import AdminAnalytics from "../../components/adminAnalytics/adminAnalytics";
 import AdminBillingPanel from "../../components/adminBillingPanel/adminBillingPanel";
-import AdminSupportChat from "../../components/adminSupportChat/adminSupportChat";
 import PhoneField from "../../components/phoneField/PhoneField";
 import { isValidPhone } from "../../lib/phoneCountries";
 
@@ -69,7 +68,7 @@ function AdminPage() {
   const [section, setSection] = useState("desk");
   const [peoplePane, setPeoplePane] = useState("users");
   const [billingPane, setBillingPane] = useState("payments");
-  const [supportPane, setSupportPane] = useState("live");
+  const [supportPane, setSupportPane] = useState("inbox");
 
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -392,7 +391,7 @@ function AdminPage() {
     }
 
     if (nextSection === "support" && pane) {
-      setSupportPane(pane);
+      setSupportPane(pane === "live" ? "inbox" : pane);
     }
 
     setShowNotifications(false);
@@ -1076,7 +1075,7 @@ e.target.reset();
               <strong>{billingQueue}</strong>
               <p>{t("admin.desk.paymentsHint")}</p>
             </button>
-            <button type="button" onClick={() => openSection("support", "live")}>
+            <button type="button" onClick={() => openSection("support", "inbox")}>
               <span>{t("admin.desk.support")}</span>
               <strong>{openMessagesCount}</strong>
               <p>{t("admin.desk.supportHint")}</p>
@@ -1835,13 +1834,6 @@ e.target.reset();
         <nav className="adminSubTabs">
           <button
             type="button"
-            className={supportPane === "live" ? "isActive" : ""}
-            onClick={() => setSupportPane("live")}
-          >
-            {t("admin.liveChat.badge")}
-          </button>
-          <button
-            type="button"
             className={supportPane === "inbox" ? "isActive" : ""}
             onClick={() => setSupportPane("inbox")}
           >
@@ -1858,8 +1850,6 @@ e.target.reset();
           </button>
         </nav>
       )}
-
-      {section === "support" && supportPane === "live" && <AdminSupportChat />}
 
       {section === "support" && supportPane === "inbox" && (
         <section className="adminSection">

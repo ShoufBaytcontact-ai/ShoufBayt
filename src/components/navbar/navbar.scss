@@ -4,11 +4,11 @@
   height: 80px;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1300;
   background: var(--nav-bg);
   border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(18px) saturate(1.2);
-  overflow-x: hidden;
+  overflow: visible;
   transition: height 0.3s var(--ease-out), background 0.3s ease,
     box-shadow 0.3s ease;
 }
@@ -29,8 +29,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
+  gap: 12px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .brand {
@@ -691,9 +692,6 @@ body.light .mobileMessageButton {
   background: var(--accent-2-soft);
 }
 
-html[dir="rtl"] .brand,
-html[dir="rtl"] .navActions,
-html[dir="rtl"] .userArea,
 html[dir="rtl"] .messageButton,
 html[dir="rtl"] .profileButton,
 html[dir="rtl"] .mobileTheme,
@@ -824,13 +822,11 @@ html[dir="rtl"] .mobileMessageButton {
   }
 
   .userArea {
-    gap: 6px;
+    display: none;
   }
 
-  .navbar .notificationBell .nbTrigger {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+  .navbar .notificationBell {
+    display: none;
   }
 
   .menuButton {

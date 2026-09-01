@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { useNotificationStore } from "../../lib/notificationStore";
@@ -172,6 +173,7 @@ function Navbar() {
   };
 
   return (
+    <>
     <nav className={scrolled ? "navbar scrolled" : "navbar"}>
       <div className="navWrapper">
         <Link to="/" className="brand" onClick={closeMenu}>
@@ -287,118 +289,129 @@ function Navbar() {
           </button>
         </div>
       </div>
-
-      <div className={open ? "mobileMenu active" : "mobileMenu"}>
-        <div className="mobileMenuTop">
-          <div>
-            <span>{t("nav.navigation")}</span>
-            <h3>{t("nav.menuTitle")}</h3>
-          </div>
-        </div>
-
-        <div className="mobileLinks">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={closeMenu}
-              className={linkClassName(link, true)}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
-          <Link
-            to="/about"
-            onClick={closeMenu}
-            className={linkClassName({ path: "/about" }, true)}
-          >
-            {t("nav.about")}
-          </Link>
-          <Link
-            to="/contact"
-            onClick={closeMenu}
-            className={linkClassName({ path: "/contact" }, true)}
-          >
-            {t("nav.contact")}
-          </Link>
-        </div>
-
-        <div className="mobileDivider"></div>
-
-        <button
-          type="button"
-          className={theme === "dark" ? "mobileTheme active" : "mobileTheme"}
-          onClick={toggleTheme}
-        >
-          <span>{theme === "dark" ? "🌙" : "☀️"}</span>
-          {theme === "dark" ? t("nav.darkMode") : t("nav.lightMode")}
-        </button>
-
-        <button
-          type="button"
-          className={
-            currentLanguage === "ar"
-              ? "mobileLanguage active"
-              : "mobileLanguage"
-          }
-          onClick={handleLanguageChange}
-        >
-          <span>🌐</span>
-          {currentLanguage === "ar" ? "English" : "العربية"}
-        </button>
-
-        {currentUser ? (
-          <div className="mobileUserBox">
-            <Link
-              to="/notifications"
-              className="mobileMessageButton"
-              onClick={closeMenu}
-            >
-              {t("nav.alerts", { defaultValue: "Alerts" })}
-
-              {notificationNumber > 0 && (
-                <span>{notificationNumber > 9 ? "9+" : notificationNumber}</span>
-              )}
-            </Link>
-
-            <Link to="/chat" className="mobileMessageButton" onClick={closeMenu}>
-              {t("nav.messages")}
-
-              {messageNumber > 0 && (
-                <span>{messageNumber > 9 ? "9+" : messageNumber}</span>
-              )}
-            </Link>
-
-            <Link
-              to="/profile"
-              className="mobileProfileButton"
-              onClick={closeMenu}
-            >
-              <img
-                src={getAvatarUrl(currentUser.avatar)}
-                alt="User"
-                onError={(e) => {
-                  e.currentTarget.src = "/no-avatar.png";
-                }}
-              />
-
-              <div>
-                <b>{currentUser.username || t("nav.openProfile")}</b>
-                <small>{t("nav.openProfile")}</small>
-              </div>
-            </Link>
-          </div>
-        ) : (
-          <div className="mobileAuth">
-            <Link to="/login" className="loginButton" onClick={closeMenu}>
-              {t("nav.login")}
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {open && <div className="menuBackdrop" onClick={closeMenu}></div>}
     </nav>
+    {typeof document !== "undefined" &&
+      createPortal(
+        <>
+          <div className={open ? "mobileMenu active" : "mobileMenu"}>
+            <div className="mobileMenuTop">
+              <div>
+                <span>{t("nav.navigation")}</span>
+                <h3>{t("nav.menuTitle")}</h3>
+              </div>
+            </div>
+
+            <div className="mobileLinks">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={closeMenu}
+                  className={linkClassName(link, true)}
+                >
+                  {t(link.labelKey)}
+                </Link>
+              ))}
+              <Link
+                to="/about"
+                onClick={closeMenu}
+                className={linkClassName({ path: "/about" }, true)}
+              >
+                {t("nav.about")}
+              </Link>
+              <Link
+                to="/contact"
+                onClick={closeMenu}
+                className={linkClassName({ path: "/contact" }, true)}
+              >
+                {t("nav.contact")}
+              </Link>
+            </div>
+
+            <div className="mobileDivider"></div>
+
+            <button
+              type="button"
+              className={theme === "dark" ? "mobileTheme active" : "mobileTheme"}
+              onClick={toggleTheme}
+            >
+              <span>{theme === "dark" ? "🌙" : "☀️"}</span>
+              {theme === "dark" ? t("nav.darkMode") : t("nav.lightMode")}
+            </button>
+
+            <button
+              type="button"
+              className={
+                currentLanguage === "ar"
+                  ? "mobileLanguage active"
+                  : "mobileLanguage"
+              }
+              onClick={handleLanguageChange}
+            >
+              <span>🌐</span>
+              {currentLanguage === "ar" ? "English" : "العربية"}
+            </button>
+
+            {currentUser ? (
+              <div className="mobileUserBox">
+                <Link
+                  to="/notifications"
+                  className="mobileMessageButton"
+                  onClick={closeMenu}
+                >
+                  {t("nav.alerts", { defaultValue: "Alerts" })}
+
+                  {notificationNumber > 0 && (
+                    <span>
+                      {notificationNumber > 9 ? "9+" : notificationNumber}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/chat"
+                  className="mobileMessageButton"
+                  onClick={closeMenu}
+                >
+                  {t("nav.messages")}
+
+                  {messageNumber > 0 && (
+                    <span>{messageNumber > 9 ? "9+" : messageNumber}</span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/profile"
+                  className="mobileProfileButton"
+                  onClick={closeMenu}
+                >
+                  <img
+                    src={getAvatarUrl(currentUser.avatar)}
+                    alt="User"
+                    onError={(e) => {
+                      e.currentTarget.src = "/no-avatar.png";
+                    }}
+                  />
+
+                  <div>
+                    <b>{currentUser.username || t("nav.openProfile")}</b>
+                    <small>{t("nav.openProfile")}</small>
+                  </div>
+                </Link>
+              </div>
+            ) : (
+              <div className="mobileAuth">
+                <Link to="/login" className="loginButton" onClick={closeMenu}>
+                  {t("nav.login")}
+                </Link>
+              </div>
+            )}
+          </div>
+          {open ? <div className="menuBackdrop" onClick={closeMenu} /> : null}
+        </>,
+        document.body
+      )}
+    </>
   );
 }
 
