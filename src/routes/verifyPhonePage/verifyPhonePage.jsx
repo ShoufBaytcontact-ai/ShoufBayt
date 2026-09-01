@@ -5,7 +5,6 @@ import "../login/login.scss";
 import "./verifyPhonePage.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
-import AuthVisual from "../../components/authVisual/AuthVisual";
 import PhoneField from "../../components/phoneField/PhoneField";
 import { isValidPhone } from "../../lib/phoneCountries";
 
@@ -103,11 +102,6 @@ function VerifyPhonePage() {
             </button>
           </form>
         </div>
-
-        <AuthVisual
-          title={t("verifyPhone.visual.title")}
-          description={t("verifyPhone.visual.text")}
-        />
       </section>
     </main>
   );

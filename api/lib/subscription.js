@@ -65,7 +65,7 @@ export const getPremiumFreeUntil = () => {
     }
   }
 
-  return new Date("2026-09-05T23:59:59.000+03:00");
+  return new Date("2026-10-02T23:59:59.000+03:00");
 };
 
 export const isLaunchPremiumFree = () => new Date() < getPremiumFreeUntil();
