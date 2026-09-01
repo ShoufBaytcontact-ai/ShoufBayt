@@ -5,7 +5,6 @@ import "./login.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { afterAuthPath } from "../../lib/phoneGate";
-import AuthVisual from "../../components/authVisual/AuthVisual";
 import GoogleAuthButton from "../../components/googleAuthButton/GoogleAuthButton";
 
 const emptyCode = ["", "", "", "", "", ""];
@@ -479,42 +478,6 @@ function Login() {
             </form>
           )}
         </div>
-
-        <AuthVisual
-          title={t("login.visual.title")}
-          description={t("login.visual.description")}
-          journey={[
-            t("login.visual.journeyDiscover"),
-            t("login.visual.journeyShortlist"),
-            t("login.visual.journeyMove"),
-          ]}
-          showcase={[
-            {
-              icon: "search",
-              title: t("login.visual.showcaseDiscoverTitle"),
-              text: t("login.visual.showcaseDiscoverText"),
-            },
-            {
-              icon: "chat",
-              title: t("login.visual.showcaseConnectTitle"),
-              text: t("login.visual.showcaseConnectText"),
-            },
-            {
-              icon: "heart",
-              title: t("login.visual.showcaseSaveTitle"),
-              text: t("login.visual.showcaseSaveText"),
-            },
-          ]}
-          chips={[
-            t("login.visual.chipBuy"),
-            t("login.visual.chipRent"),
-            t("login.visual.chipBeirut"),
-            t("login.visual.chipApartments"),
-            t("login.visual.chipVillas"),
-          ]}
-          noteTitle={t("login.visual.secureLogin")}
-          noteText={t("login.visual.securityText")}
-        />
       </section>
     </main>
   );

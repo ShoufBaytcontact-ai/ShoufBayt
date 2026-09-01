@@ -5,7 +5,6 @@ import "./register.scss";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { afterAuthPath } from "../../lib/phoneGate";
-import AuthVisual from "../../components/authVisual/AuthVisual";
 import GoogleAuthButton from "../../components/googleAuthButton/GoogleAuthButton";
 
 function Register() {
@@ -336,39 +335,6 @@ function Register() {
               </div>
             </form>
           </div>
-
-          <AuthVisual
-            title={t("register.visual.title")}
-            description={t("register.visual.description")}
-            journey={[
-              t("register.visual.journeyCreate"),
-              t("register.visual.journeyList"),
-              t("register.visual.journeyGrow"),
-            ]}
-            showcase={[
-              {
-                icon: "home",
-                title: t("register.visual.showcasePostTitle"),
-                text: t("register.visual.showcasePostText"),
-              },
-              {
-                icon: "heart",
-                title: t("register.visual.showcaseSaveTitle"),
-                text: t("register.visual.showcaseSaveText"),
-              },
-              {
-                icon: "chat",
-                title: t("register.visual.showcaseMessageTitle"),
-                text: t("register.visual.showcaseMessageText"),
-              },
-            ]}
-            chips={[
-              t("register.visual.chipOwners"),
-              t("register.visual.chipBuyers"),
-              t("register.visual.chipRenters"),
-              t("register.visual.chipAgents"),
-            ]}
-          />
         </div>
       </section>
     </main>
