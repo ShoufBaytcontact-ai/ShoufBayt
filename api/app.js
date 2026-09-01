@@ -58,9 +58,22 @@ const CLIENT_URLS = [
   process.env.RENDER_EXTERNAL_URL,
 ].filter((url, index, arr) => url && arr.indexOf(url) === index);
 
-const frontendDir = path.join(__dirname, "..", "build");
-const frontendIndex = path.join(frontendDir, "index.html");
-const serveFrontend = fs.existsSync(frontendIndex);
+const frontendCandidates = [
+  path.join(__dirname, "client-build"),
+  path.join(__dirname, "..", "build"),
+  path.join(process.cwd(), "build"),
+  path.join(process.cwd(), "..", "build"),
+];
+
+const frontendDir =
+  frontendCandidates.find((dir) => fs.existsSync(path.join(dir, "index.html"))) ||
+  "";
+const frontendIndex = frontendDir ? path.join(frontendDir, "index.html") : "";
+const serveFrontend = Boolean(frontendIndex);
+
+if (!serveFrontend) {
+  console.warn("Website build not found. Looked in:", frontendCandidates.join(" | "));
+}
 
 app.use(
   cors({
