@@ -148,7 +148,16 @@ html[dir="rtl"] .supportChat {
 
 @media (max-width: 480px) {
   .supportChat {
-    right: max(12px, env(safe-area-inset-right));
-    bottom: max(12px, env(safe-area-inset-bottom));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  html[dir="rtl"] .supportChat {
+    right: auto;
+    left: max(16px, env(safe-area-inset-left, 0px));
+  }
+
+  .supportPanel {
+    width: min(320px, calc(100vw - 32px));
   }
 }

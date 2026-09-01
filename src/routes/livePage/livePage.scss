@@ -304,8 +304,12 @@
     flex-direction: column;
   }
 
+  .liveHero h1 {
+    max-width: none;
+  }
+
   .liveGrid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .liveBars {

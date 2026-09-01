@@ -321,6 +321,7 @@
 @media (max-width: 760px) {
   .listPage {
     padding: 16px 0 56px;
+    overflow-x: hidden;
   }
 
   .listHero {
@@ -370,13 +371,27 @@
     text-align: start;
   }
 
-  .mapBox {
-    height: 260px;
-  }
-
   .mapPanel {
     position: relative;
     top: 0;
+    width: calc(100% + 2 * var(--page-pad, 16px));
+    max-width: none;
+    margin-inline: calc(-1 * var(--page-pad, 16px));
+  }
+
+  .mapCard {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+  }
+
+  .mapHeader {
+    padding: 12px var(--page-pad, 16px);
+  }
+
+  .mapBox {
+    height: min(48dvh, 360px);
+    min-height: 240px;
   }
 }
 

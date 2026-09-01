@@ -186,6 +186,13 @@ html[dir="rtl"] .nbToast {
 }
 
 @media (max-width: 760px) {
+  .nbPanel {
+    width: calc(100vw - 24px);
+    max-height: min(70dvh, 420px);
+    left: 12px !important;
+    right: 12px;
+  }
+
   .nbToastStack {
     top: auto;
     right: 12px;

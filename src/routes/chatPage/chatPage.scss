@@ -1210,6 +1210,10 @@
 }
 
 @media (max-width: 720px) {
+  .chatPage {
+    padding-bottom: 24px;
+  }
+
   .chatHero h1 {
     font-size: 2rem;
   }

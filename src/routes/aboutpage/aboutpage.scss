@@ -287,6 +287,16 @@
     width: 100%;
   }
 
+  .aboutHero h1 {
+    max-width: none;
+  }
+
+  .aboutHeroActions,
+  .aboutPrimaryBtn,
+  .aboutSecondaryBtn {
+    width: 100%;
+  }
+
   .aboutStats {
     grid-template-columns: 1fr;
   }

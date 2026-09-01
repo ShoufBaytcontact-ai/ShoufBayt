@@ -541,6 +541,17 @@
     align-items: flex-start;
   }
 
+  .listingPathCard,
+  .requestCard {
+    padding: 16px;
+  }
+
+  .requestMapBox {
+    height: min(48dvh, 340px);
+    min-height: 220px;
+    max-width: 100%;
+  }
+
   .requestStats,
   .requestGrid,
   .listingPathGrid {

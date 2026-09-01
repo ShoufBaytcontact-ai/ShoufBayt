@@ -428,6 +428,14 @@
 @media (max-width: 640px) {
   .singlePage {
     padding: 12px 0 56px;
+    overflow-x: hidden;
+  }
+
+  .singleMapBox {
+    height: min(42dvh, 300px);
+    min-height: 220px;
+    border-radius: 14px;
+    max-width: 100%;
   }
 
   .singleBar {

@@ -766,14 +766,15 @@ body.light .descriptionModeTabs button.active {
   }
 
   .newPostHeader {
-    padding-top: 42px;
+    padding-top: 4px;
+    padding-bottom: 18px;
     align-items: flex-start;
     flex-direction: column;
   }
 
   .newPostHeader h1 {
-    font-size: 40px;
-    letter-spacing: -1.3px;
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+    letter-spacing: -0.04em;
   }
 
   .newPostHeader p {
@@ -786,8 +787,8 @@ body.light .descriptionModeTabs button.active {
 
   .postFormSection,
   .imageUploadBox {
-    padding: 18px;
-    border-radius: 24px;
+    padding: 16px;
+    border-radius: 16px;
   }
 
   .postSectionHeader.mapHeader,

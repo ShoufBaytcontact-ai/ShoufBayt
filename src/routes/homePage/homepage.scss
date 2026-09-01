@@ -493,8 +493,13 @@
 }
 
 @media (max-width: 720px) {
+  .homeCover {
+    min-height: 0;
+  }
+
   .homeCoverCopy {
-    padding: 28px 16px 20px;
+    padding: 24px max(var(--page-pad, 16px), env(safe-area-inset-right, 0px)) 20px
+      max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
   }
 
   .homeCoverCopy h1 {
@@ -528,22 +533,26 @@
   }
 
   .homeCoverArt {
-    min-height: 240px;
-    padding: 0 16px 20px;
+    min-height: 0;
+    padding: 0 max(var(--page-pad, 16px), env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px))
+      max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
   }
 
   .homeMap,
   .homeCoverArt .mapWrapper {
-    min-height: 240px;
-    height: 240px;
-    border-radius: 16px;
+    width: 100%;
+    max-width: 100%;
+    min-height: min(52dvh, 420px);
+    height: min(52dvh, 420px);
+    border-radius: 14px;
   }
 
   .homeLatest,
   .homeInvite,
   .homeBuild {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--page-pad, 16px), env(safe-area-inset-right, 0px));
   }
 }
 

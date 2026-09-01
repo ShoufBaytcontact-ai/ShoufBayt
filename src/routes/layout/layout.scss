@@ -13,12 +13,23 @@
     overflow-x: visible;
   }
 
+  @media (max-width: 768px) {
+    overflow-x: hidden;
+
+    &:has(.adminPage),
+    &:has(.listPage),
+    &:has(.agentOffice) {
+      overflow-x: hidden;
+    }
+  }
+
   .content {
     flex: 1;
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0 var(--page-pad, clamp(14px, 2vw, 32px));
+    padding: 0 max(var(--page-pad, 16px), env(safe-area-inset-right, 0px)) 0
+      max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
     background: transparent;
     box-sizing: border-box;
     overflow-x: hidden;
@@ -40,8 +51,15 @@
       overflow: visible;
     }
 
-    @media (max-width: 480px) {
-      padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+    @media (max-width: 768px) {
+      padding: 0 max(var(--page-pad, 16px), env(safe-area-inset-right, 0px)) 0
+        max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
+      overflow-x: hidden;
+
+      &:has(.listPage) {
+        overflow-x: hidden;
+        overflow-y: visible;
+      }
 
       &:has(.homepage),
       &:has(.adminPage),

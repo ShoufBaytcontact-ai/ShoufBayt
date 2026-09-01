@@ -251,6 +251,10 @@
 }
 
 @media (max-width: 640px) {
+  .accountListings {
+    overflow-x: hidden;
+  }
+
   .homesHero h1 {
     max-width: none;
   }

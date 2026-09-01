@@ -1,5 +1,6 @@
 .propertyPopup {
-  width: 270px;
+  width: min(270px, calc(100vw - 48px));
+  max-width: 100%;
   overflow: hidden;
   background: var(--bg-card);
   color: var(--text-main);

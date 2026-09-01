@@ -1089,7 +1089,8 @@ table {
 
 @include sm {
   .adminPage {
-    padding-top: 18px;
+    padding-top: 16px;
+    padding-bottom: 48px;
   }
 
   .adminQueues,
@@ -1108,11 +1109,4 @@ table {
     grid-template-columns: 1fr;
   }
 
-  .adminSection,
-  .agentCreateHeader,
-  .agentCreateBody,
-  .agentCreateFooter {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
 }

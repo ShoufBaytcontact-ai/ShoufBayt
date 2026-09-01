@@ -52,6 +52,13 @@ textarea:disabled {
     --radius-md: 14px;
   }
 
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     font-size: 15px;
   }
@@ -61,6 +68,46 @@ textarea:disabled {
   textarea,
   button {
     font-size: 16px;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe,
+  svg {
+    max-width: 100%;
+  }
+
+  .aboutPage,
+  .contactPage,
+  .listPage,
+  .billingPage,
+  .livePage,
+  .notificationsPage,
+  .agentPage,
+  .accountListings,
+  .profileUpdatePage,
+  .requestListingPage,
+  .offersPage,
+  .chatPage,
+  .profilePage,
+  .singlePage,
+  .loginPage,
+  .register,
+  .ownerDashboard,
+  .agentDetailsPage,
+  .newPostPage,
+  .adminPage {
+    max-width: 100%;
+    overflow-x: hidden;
+    padding-top: 16px;
+    padding-bottom: 48px;
+  }
+
+  .adminPage {
+    padding-left: max(var(--page-pad), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--page-pad), env(safe-area-inset-right, 0px));
+    box-sizing: border-box;
   }
 }
 

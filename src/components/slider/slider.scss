@@ -88,6 +88,21 @@
   }
 }
 
+@media (max-width: 720px) {
+  .sliderArrow {
+    width: 36px;
+    height: 36px;
+
+    &.isPrev {
+      left: 8px;
+    }
+
+    &.isNext {
+      right: 8px;
+    }
+  }
+}
+
 .sliderThumbs {
   display: flex;
   gap: 8px;

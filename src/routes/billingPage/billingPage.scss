@@ -1011,6 +1011,10 @@
     align-items: flex-start;
   }
 
+  .billingHero h1 {
+    max-width: none;
+  }
+
   .copyBtn {
     position: static;
     width: fit-content;

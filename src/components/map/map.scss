@@ -70,7 +70,9 @@
 
   .leaflet-popup-content {
     margin: 0 !important;
-    min-width: 240px;
+    min-width: 0;
+    width: auto !important;
+    max-width: min(270px, calc(100vw - 48px));
   }
 
   .leaflet-popup-tip {
@@ -254,5 +256,67 @@ body.light .mapWrapper {
 
   .leaflet-container {
     background: var(--bg-soft);
+  }
+}
+
+@media (max-width: 760px) {
+  .mapWrapper {
+    max-width: 100%;
+
+    .leaflet-control-zoom {
+      margin: 8px 8px 0 0 !important;
+
+      a {
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        font-size: 16px;
+      }
+    }
+
+    .leaflet-control-attribution {
+      max-width: calc(100% - 8px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 9px;
+      padding: 3px 6px;
+    }
+
+    .mapTypeSwitch {
+      top: 8px;
+      left: 8px;
+      max-width: calc(100% - 52px);
+
+      button {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+      }
+    }
+
+    .mapInfoBadge {
+      display: none;
+    }
+
+    .mapEmptyOverlay {
+      inset: auto 8px 8px 8px;
+
+      div {
+        max-width: min(280px, calc(100vw - 32px));
+      }
+    }
+  }
+
+  [dir="rtl"] .mapWrapper {
+    .mapTypeSwitch {
+      left: auto;
+      right: 8px;
+    }
+
+    .leaflet-control-zoom {
+      margin: 8px 0 0 8px !important;
+    }
   }
 }
