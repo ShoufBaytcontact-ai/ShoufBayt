@@ -781,31 +781,6 @@ html[dir="rtl"] .mobileMessageButton {
     display: none;
   }
 
-  .navbar .houseMark--nav {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-  }
-
-  .navbar .houseMark--nav .roof {
-    top: 8px;
-    left: 8px;
-    width: 18px;
-    height: 18px;
-  }
-
-  .navbar .houseMark--nav .tower {
-    left: 8px;
-    bottom: 7px;
-    width: 19px;
-    height: 16px;
-  }
-
-  .navbar .houseMark--nav .door {
-    left: 15px;
-    bottom: 7px;
-  }
-
   .navActions {
     flex-shrink: 0;
     gap: 6px;
@@ -865,10 +840,5 @@ html[dir="rtl"] .mobileMessageButton {
 
   .navActions {
     gap: 6px;
-  }
-
-  .navbar .houseMark--nav {
-    width: 34px;
-    height: 34px;
   }
 }

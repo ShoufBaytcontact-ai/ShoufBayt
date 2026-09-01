@@ -1025,7 +1025,7 @@
     justify-items: start;
   }
 
-  .submitBtn {
-    width: 100%;
+  .billingGrid,
+  .billingGrid.planCompare {
+    grid-template-columns: 1fr;
   }
-}
