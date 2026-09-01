@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: shoufbayt
+    runtime: node
+    buildCommand: npm install && CI=false npm run build && cd api && npm install --include=dev && node node_modules/prisma/build/index.js generate
+    startCommand: node --dns-result-order=ipv4first api/app.js

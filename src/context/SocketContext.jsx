@@ -45,7 +45,7 @@ export const SocketContextProvider = ({ children }) => {
   const socketUrl = useMemo(() => SOCKET_URL, []);
 
   useEffect(() => {
-    const newSocket = io(socketUrl, {
+    const newSocket = io(socketUrl || undefined, {
       transports: ["websocket", "polling"],
       withCredentials: true,
       reconnection: true,
