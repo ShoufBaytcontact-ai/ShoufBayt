@@ -52,11 +52,21 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 const app = express();
 const PORT = process.env.PORT || 8800;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+
+const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "");
+
 const CLIENT_URLS = [
   CLIENT_URL,
   "http://localhost:3000",
+  "http://127.0.0.1:3000",
   process.env.RENDER_EXTERNAL_URL,
-].filter((url, index, arr) => url && arr.indexOf(url) === index);
+  "https://shoufbayt.com",
+  "https://www.shoufbayt.com",
+  "https://shoufbayt.onrender.com",
+  ...String(process.env.CLIENT_URLS || "").split(","),
+]
+  .map(normalizeOrigin)
+  .filter((url, index, arr) => url && arr.indexOf(url) === index);
 
 const frontendCandidates = [
   path.join(__dirname, "client-build"),
@@ -78,7 +88,7 @@ if (!serveFrontend) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || CLIENT_URLS.includes(origin)) {
+      if (!origin || CLIENT_URLS.includes(normalizeOrigin(origin))) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked for origin: ${origin}`));
