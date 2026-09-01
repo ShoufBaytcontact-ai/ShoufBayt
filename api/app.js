@@ -162,6 +162,42 @@ app.use("/api/reviews", reviewroute);
 app.use("/api/listing-requests", listingRequestroute);
 app.use("/api/appointments", appointmentroute);
 
+const siteOrigin = String(
+  process.env.PUBLIC_SITE_URL ||
+    (String(CLIENT_URL).includes("onrender.com")
+      ? "https://shoufbayt.com"
+      : CLIENT_URL) ||
+    "https://shoufbayt.com"
+).replace(/\/$/, "");
+const publicPages = ["/", "/list", "/agents", "/about", "/contact"];
+
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain").send(
+    `User-agent: *\nAllow: /\n\nSitemap: ${siteOrigin}/sitemap.xml\n`
+  );
+});
+
+app.get("/sitemap.xml", (_req, res) => {
+  const urls = publicPages
+    .map(
+      (pagePath) => `  <url>
+    <loc>${siteOrigin}${pagePath}</loc>
+    <changefreq>weekly</changefreq>
+  </url>`
+    )
+    .join("\n");
+
+  res
+    .type("application/xml")
+    .send(
+      `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`
+    );
+});
+
 if (serveFrontend) {
   app.use(express.static(frontendDir));
   app.use((req, res, next) => {
@@ -171,7 +207,9 @@ if (serveFrontend) {
     if (
       req.path.startsWith("/api") ||
       req.path.startsWith("/uploads") ||
-      req.path.startsWith("/socket.io")
+      req.path.startsWith("/socket.io") ||
+      req.path === "/robots.txt" ||
+      req.path === "/sitemap.xml"
     ) {
       return next();
     }

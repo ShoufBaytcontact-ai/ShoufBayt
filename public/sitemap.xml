@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://shoufbayt.com/</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://shoufbayt.com/list</loc>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://shoufbayt.com/agents</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://shoufbayt.com/about</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://shoufbayt.com/contact</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+</urlset>
