@@ -85,7 +85,27 @@ const backfillPhoneKeys = async () => {
   }
 };
 
-const dropIndex = async (collection, name) => {
+const listIndexNames = async (collection) => {
+  try {
+    const result = await prisma.$runCommandRaw({
+      listIndexes: collection,
+    });
+    const indexes = result?.cursor?.firstBatch || result?.indexes || [];
+    return indexes.map((index) => String(index?.name || "")).filter(Boolean);
+  } catch (error) {
+    console.warn(
+      `INDEX list failed for ${collection}:`,
+      error?.message || error
+    );
+    return [];
+  }
+};
+
+const dropIndexIfExists = async (collection, name, existingNames) => {
+  if (!existingNames.includes(name)) {
+    return;
+  }
+
   try {
     await prisma.$runCommandRaw({
       dropIndexes: collection,
@@ -93,9 +113,7 @@ const dropIndex = async (collection, name) => {
     });
   } catch (error) {
     const message = String(error?.message || error);
-    if (
-      /index not found|can't find index|IndexNotFound/i.test(message)
-    ) {
+    if (/index not found|can't find index|IndexNotFound/i.test(message)) {
       return;
     }
     console.warn(`INDEX drop failed for ${collection}.${name}:`, message);
@@ -123,9 +141,13 @@ const ensureGoogleIdUniqueIndex = async () => {
     );
   }
 
-  await dropIndex("User", "User_googleId_key");
-  await dropIndex("User", "User_googleId_unique");
-  await dropIndex("User", "User_googleId_partial");
+  const existingNames = await listIndexNames("User");
+  await dropIndexIfExists("User", "User_googleId_key", existingNames);
+  await dropIndexIfExists("User", "User_googleId_unique", existingNames);
+
+  if (existingNames.includes("User_googleId_partial")) {
+    return;
+  }
 
   try {
     await prisma.$runCommandRaw({
