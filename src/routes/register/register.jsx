@@ -142,7 +142,23 @@ function Register() {
       navigate(afterAuthPath(res.data, "/verify-phone"));
     } catch (err) {
       console.log("REGISTER ERROR:", err);
-      setError(err.response?.data?.message || t("register.errors.failed"));
+      const code = err.response?.data?.code;
+      const serverMessage = err.response?.data?.message || "";
+
+      if (
+        code === "GOOGLE_ACCOUNT" ||
+        /google/i.test(serverMessage)
+      ) {
+        setError(
+          t("register.errors.useGoogle", {
+            defaultValue:
+              "This email already has a Google account. Use Continue with Google.",
+          })
+        );
+        return;
+      }
+
+      setError(serverMessage || t("register.errors.failed"));
     } finally {
       setIsLoading(false);
     }

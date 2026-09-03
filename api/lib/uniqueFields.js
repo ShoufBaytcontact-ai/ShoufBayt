@@ -274,8 +274,8 @@ export const uniqueTargetMessage = (error) => {
   if (target.includes("username")) {
     return "Username already exists";
   }
-  if (target.includes("google")) {
-    return "This Google account is already connected to another user";
+  if (target.includes("googleid")) {
+    return "This email already has a Google account. Use Continue with Google.";
   }
   if (target.includes("stripe")) {
     return "This billing customer is already linked to another account";

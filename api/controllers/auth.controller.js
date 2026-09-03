@@ -8,6 +8,7 @@ import {
   sendWelcomeEmail,
 } from "../lib/sendEmail.js";
 import { SESSION_IDLE_JWT, SESSION_IDLE_MS } from "../lib/sessionIdle.js";
+import { unsetEmptyGoogleId } from "../lib/ensureUniqueIndexes.js";
 import {
   UniqueConflictError,
   sendUniqueConflict,
@@ -203,6 +204,19 @@ export const register = async (req, res) => {
     }
 
     await assertUsernameAvailable(cleanUsername);
+
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, googleId: true },
+    });
+
+    if (existingEmail?.googleId) {
+      throw new UniqueConflictError(
+        "This email already has a Google account. Use Continue with Google.",
+        "GOOGLE_ACCOUNT"
+      );
+    }
+
     await assertEmailAvailable(normalizedEmail);
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -215,6 +229,8 @@ export const register = async (req, res) => {
         emailVerified: false,
       },
     });
+
+    await unsetEmptyGoogleId(newUser.id);
 
     await invalidateUnusedCodes(newUser.id, "LOGIN");
     const code = await createLoginCode(newUser.id);
@@ -976,6 +992,12 @@ export const googleAuth = async (req, res) => {
           avatar: user.avatar || profile.picture || null,
         },
       });
+    } else if (user.googleId !== googleId) {
+      return res.status(409).json({
+        message:
+          "This email already has a Google account. Use Continue with Google.",
+        code: "GOOGLE_ACCOUNT",
+      });
     }
 
     if (isNewAccount || !user.welcomeEmailSentAt) {
@@ -987,6 +1009,18 @@ export const googleAuth = async (req, res) => {
     return issueAuthCookie(res, user);
   } catch (error) {
     console.log("GOOGLE AUTH ERROR:", error);
+
+    if (sendUniqueConflict(res, error)) {
+      return;
+    }
+
+    if (error.code === "P2002") {
+      const message = uniqueTargetMessage(error);
+      return res.status(409).json({
+        message,
+        code: /google/i.test(message) ? "GOOGLE_ACCOUNT" : "CONFLICT",
+      });
+    }
 
     if (isDatabaseConnectivityError(error)) {
       return databaseUnavailableResponse(res);

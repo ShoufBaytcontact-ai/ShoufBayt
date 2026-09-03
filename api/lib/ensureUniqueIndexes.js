@@ -85,6 +85,104 @@ const backfillPhoneKeys = async () => {
   }
 };
 
+const dropIndex = async (collection, name) => {
+  try {
+    await prisma.$runCommandRaw({
+      dropIndexes: collection,
+      index: name,
+    });
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (
+      /index not found|can't find index|IndexNotFound/i.test(message)
+    ) {
+      return;
+    }
+    console.warn(`INDEX drop failed for ${collection}.${name}:`, message);
+  }
+};
+
+const ensureGoogleIdUniqueIndex = async () => {
+  try {
+    await prisma.$runCommandRaw({
+      update: "User",
+      updates: [
+        {
+          multi: true,
+          q: {
+            $or: [{ googleId: null }, { googleId: "" }],
+          },
+          u: { $unset: { googleId: true } },
+        },
+      ],
+    });
+  } catch (error) {
+    console.warn(
+      "GOOGLE ID null cleanup failed:",
+      error?.message || error
+    );
+  }
+
+  await dropIndex("User", "User_googleId_key");
+  await dropIndex("User", "User_googleId_unique");
+  await dropIndex("User", "User_googleId_partial");
+
+  try {
+    await prisma.$runCommandRaw({
+      createIndexes: "User",
+      indexes: [
+        {
+          name: "User_googleId_partial",
+          key: { googleId: 1 },
+          unique: true,
+          partialFilterExpression: {
+            googleId: { $type: "string", $gt: "" },
+          },
+        },
+      ],
+    });
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (
+      message.includes("already exists") ||
+      message.includes("IndexOptionsConflict") ||
+      message.includes("IndexKeySpecsConflict")
+    ) {
+      return;
+    }
+
+    if (message.includes("E11000") || message.includes("duplicate key")) {
+      console.warn(
+        "UNIQUE INDEX skipped for User.googleId: existing duplicates must be cleaned first"
+      );
+      return;
+    }
+
+    console.error("UNIQUE INDEX failed for User.googleId:", message);
+  }
+};
+
+export const unsetEmptyGoogleId = async (userId) => {
+  if (!userId) return;
+
+  try {
+    await prisma.$runCommandRaw({
+      update: "User",
+      updates: [
+        {
+          q: { _id: { $oid: userId } },
+          u: { $unset: { googleId: true } },
+        },
+      ],
+    });
+  } catch (error) {
+    console.warn(
+      `GOOGLE ID unset failed for ${userId}:`,
+      error?.message || error
+    );
+  }
+};
+
 export const ensureUniqueIndexes = async () => {
   await backfillPhoneKeys();
 
@@ -97,4 +195,5 @@ export const ensureUniqueIndexes = async () => {
   await createSparseUniqueIndex("Payment", "Payment_transactionId_unique", {
     transactionId: 1,
   });
+  await ensureGoogleIdUniqueIndex();
 };
