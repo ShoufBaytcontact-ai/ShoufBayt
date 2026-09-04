@@ -219,22 +219,28 @@ function SinglePage() {
       ? post.images.filter(Boolean).map((image) => getImageUrl(image))
       : ["/no-image.png"];
 
+  const isLandProperty = String(post?.property || "").toLowerCase() === "land";
+
   const stats = [
     {
       icon: <SizeIcon />,
       value: `${postDetail.size || 0}`,
       label: t("single.features.areaUnit"),
     },
-    {
-      icon: <BedIcon />,
-      value: post?.bedroom || 0,
-      label: t("single.features.bedrooms"),
-    },
-    {
-      icon: <BathIcon />,
-      value: post?.bathroom || 0,
-      label: t("single.features.bathrooms"),
-    },
+    ...(!isLandProperty
+      ? [
+          {
+            icon: <BedIcon />,
+            value: post?.bedroom || 0,
+            label: t("single.features.bedrooms"),
+          },
+          {
+            icon: <BathIcon />,
+            value: post?.bathroom || 0,
+            label: t("single.features.bathrooms"),
+          },
+        ]
+      : []),
   ];
 
   if (!post) {

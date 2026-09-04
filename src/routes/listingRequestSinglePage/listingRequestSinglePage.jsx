@@ -195,22 +195,28 @@ function ListingRequestSinglePage() {
       }
     : null;
 
+  const isLandProperty = String(propertyKey || "").toLowerCase() === "land";
+
   const stats = [
     {
       icon: <SizeIcon />,
       value: `${request.area || 0}`,
       label: t("single.features.areaUnit"),
     },
-    {
-      icon: <BedIcon />,
-      value: request.bedrooms || 0,
-      label: t("single.features.bedrooms"),
-    },
-    {
-      icon: <BathIcon />,
-      value: request.bathrooms || 0,
-      label: t("single.features.bathrooms"),
-    },
+    ...(!isLandProperty
+      ? [
+          {
+            icon: <BedIcon />,
+            value: request.bedrooms || 0,
+            label: t("single.features.bedrooms"),
+          },
+          {
+            icon: <BathIcon />,
+            value: request.bathrooms || 0,
+            label: t("single.features.bathrooms"),
+          },
+        ]
+      : []),
   ];
 
   return (
