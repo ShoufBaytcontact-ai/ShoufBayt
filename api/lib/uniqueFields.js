@@ -213,8 +213,25 @@ export const assertUsernameAvailable = async (username, excludeUserId) => {
   }
 };
 
+export const findPendingEmailOwner = async (email, excludeUserId) => {
+  const value = normalizeEmail(email);
+  if (!value) return null;
+
+  return prisma.user.findFirst({
+    where: {
+      pendingEmail: value,
+      ...(excludeUserId ? { NOT: { id: excludeUserId } } : {}),
+    },
+    select: { id: true },
+  });
+};
+
 export const assertEmailAvailable = async (email, excludeUserId) => {
   if (await findEmailOwner(email, excludeUserId)) {
+    throw new UniqueConflictError("Email already exists", "EMAIL_TAKEN");
+  }
+
+  if (await findPendingEmailOwner(email, excludeUserId)) {
     throw new UniqueConflictError("Email already exists", "EMAIL_TAKEN");
   }
 };

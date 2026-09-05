@@ -23,6 +23,8 @@ const sessionFieldsFromUser = (user) => {
     phone: user.phone || user.agentProfile?.phone || "",
     phoneVerified: Boolean(user.phoneVerified),
     pendingPhone: user.pendingPhone || "",
+    pendingEmail: user.pendingEmail || "",
+    emailVerified: Boolean(user.emailVerified),
     role: user.role,
     status: user.status,
     premiumTrialClaimed: user.premiumTrialClaimed,
@@ -121,6 +123,8 @@ export const AuthProvider = ({ children }) => {
             prev.avatar === next.avatar &&
             prev.phone === next.phone &&
             prev.phoneVerified === next.phoneVerified &&
+            prev.pendingEmail === next.pendingEmail &&
+            prev.emailVerified === next.emailVerified &&
             prev.status === next.status &&
             Boolean(prev.agentProfile) === Boolean(next.agentProfile)
           ) {

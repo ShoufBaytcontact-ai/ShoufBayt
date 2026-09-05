@@ -4,6 +4,9 @@ import {
   getUsers,
   getUser,
   updateUser,
+  verifyEmailChange,
+  resendEmailChangeCode,
+  cancelEmailChange,
   deleteUser,
   savePost,
   profilePosts,
@@ -28,6 +31,9 @@ router.get("/notifications", shouldBeLoggedIN, getNotificationNumber);
 
 router.post("/phone", shouldBeLoggedIN, savePhone);
 router.post("/phone/request", shouldBeLoggedIN, savePhone);
+router.post("/email/verify", shouldBeLoggedIN, verifyEmailChange);
+router.post("/email/resend", shouldBeLoggedIN, resendEmailChangeCode);
+router.post("/email/cancel", shouldBeLoggedIN, cancelEmailChange);
 
 router.post("/save/:id", shouldBeLoggedIN, savePost);
 

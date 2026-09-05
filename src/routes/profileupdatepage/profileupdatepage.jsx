@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./profileupdatepage.scss";
@@ -45,8 +45,15 @@ function ProfileUpdatePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState("form");
+  const [codeDigits, setCodeDigits] = useState(["", "", "", "", "", ""]);
+  const [cooldown, setCooldown] = useState(0);
+  const codeRefs = useRef([]);
 
   const userId = currentUser?.id || currentUser?._id;
+  const savedPhone =
+    currentUser?.phone || currentUser?.agentProfile?.phone || "";
+  const pendingEmail = String(currentUser?.pendingEmail || "").trim();
 
   const passwordChecks = useMemo(() => {
     const password = form.password;
@@ -72,13 +79,17 @@ function ProfileUpdatePage() {
 
     setForm({
       username: currentUser.username || "",
-      email: currentUser.email || "",
+      email: currentUser.pendingEmail || currentUser.email || "",
       phone: currentUser.phone || currentUser.agentProfile?.phone || "",
       password: "",
       confirmPassword: "",
     });
 
     setPreview(getImageUrl(currentUser.avatar));
+
+    if (currentUser.pendingEmail) {
+      setStep("verify");
+    }
   }, [currentUser]);
 
   useEffect(() => {
@@ -88,6 +99,18 @@ function ProfileUpdatePage() {
       }
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const clearMessages = () => {
     setError("");
@@ -158,12 +181,13 @@ function ProfileUpdatePage() {
       return t("profileUpdate.validation.emailRequired");
     }
 
-    if (!form.email.includes("@")) {
+    if (!form.email.includes("@") || !form.email.includes(".")) {
       return t("profileUpdate.validation.emailInvalid");
     }
 
-    if (!isValidPhone(form.phone)) {
-      return t("phoneField.errors.invalid");
+    const phoneChanged = form.phone.trim() !== String(savedPhone).trim();
+    if (phoneChanged && form.phone.trim() && !isValidPhone(form.phone)) {
+      return t("profileUpdate.validation.phoneInvalid");
     }
 
     if (isChangingPassword && !isPasswordValid) {
@@ -179,6 +203,70 @@ function ProfileUpdatePage() {
     }
 
     return "";
+  };
+
+  const profileErrorMessage = (err) => {
+    const code = err.response?.data?.code;
+    if (code === "PHONE_TAKEN") return t("profileUpdate.validation.phoneTaken");
+    if (code === "USERNAME_TAKEN") {
+      return t("profileUpdate.validation.usernameTaken");
+    }
+    if (code === "EMAIL_TAKEN") return t("profileUpdate.validation.emailTaken");
+    return err.response?.data?.message || t("profileUpdate.errors.failed");
+  };
+
+  const resetCode = () => {
+    setCodeDigits(["", "", "", "", "", ""]);
+  };
+
+  const focusCodeInput = (index = 0) => {
+    setTimeout(() => {
+      codeRefs.current[index]?.focus();
+    }, 100);
+  };
+
+  const handleCodeChange = (index, value) => {
+    const cleanValue = value.replace(/\D/g, "").slice(0, 1);
+
+    setCodeDigits((prev) => {
+      const updatedCode = [...prev];
+      updatedCode[index] = cleanValue;
+      return updatedCode;
+    });
+
+    clearMessages();
+
+    if (cleanValue && index < 5) {
+      codeRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleCodeKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !codeDigits[index] && index > 0) {
+      codeRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleCodePaste = (e) => {
+    e.preventDefault();
+    const pastedValue = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+
+    if (!pastedValue) {
+      return;
+    }
+
+    const updatedCode = ["", "", "", "", "", ""];
+    for (let i = 0; i < pastedValue.length; i += 1) {
+      updatedCode[i] = pastedValue[i];
+    }
+
+    setCodeDigits(updatedCode);
+    clearMessages();
+    const nextIndex = pastedValue.length >= 6 ? 5 : pastedValue.length;
+    codeRefs.current[nextIndex]?.focus();
   };
 
   const handleSubmit = async (e) => {
@@ -201,7 +289,11 @@ function ProfileUpdatePage() {
 
       formData.append("username", form.username.trim());
       formData.append("email", form.email.trim().toLowerCase());
-      formData.append("phone", form.phone.trim());
+
+      const phoneChanged = form.phone.trim() !== String(savedPhone).trim();
+      if (phoneChanged && isValidPhone(form.phone)) {
+        formData.append("phone", form.phone.trim());
+      }
 
       if (form.password.trim()) {
         formData.append("password", form.password.trim());
@@ -216,6 +308,16 @@ function ProfileUpdatePage() {
       });
 
       updateUser(res.data);
+
+      if (res.data?.requiresEmailVerification || res.data?.pendingEmail) {
+        setStep("verify");
+        setCooldown(30);
+        resetCode();
+        setSuccess(t("profileUpdate.verify.codeSent"));
+        focusCodeInput(0);
+        return;
+      }
+
       setSuccess(t("profileUpdate.success.updated"));
 
       setTimeout(() => {
@@ -223,7 +325,81 @@ function ProfileUpdatePage() {
       }, 900);
     } catch (err) {
       console.log("UPDATE PROFILE ERROR:", err);
-      setError(err.response?.data?.message || t("profileUpdate.errors.failed"));
+      setError(profileErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+
+    const code = codeDigits.join("");
+    if (code.length !== 6) {
+      setError(t("profileUpdate.verify.codeRequired"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      clearMessages();
+      const res = await apiRequest.post("/users/email/verify", { code });
+      updateUser(res.data);
+      setSuccess(t("profileUpdate.verify.verified"));
+      setStep("form");
+      resetCode();
+      setTimeout(() => {
+        navigate("/profile");
+      }, 900);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || t("profileUpdate.verify.verifyFailed")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendEmailCode = async () => {
+    if (loading || cooldown > 0) return;
+
+    try {
+      setLoading(true);
+      clearMessages();
+      await apiRequest.post("/users/email/resend");
+      setCooldown(30);
+      resetCode();
+      setSuccess(t("profileUpdate.verify.codeSent"));
+      focusCodeInput(0);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || t("profileUpdate.verify.resendFailed")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelEmailChange = async () => {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      clearMessages();
+      const res = await apiRequest.post("/users/email/cancel");
+      updateUser(res.data);
+      setForm((prev) => ({
+        ...prev,
+        email: res.data?.email || prev.email,
+      }));
+      setStep("form");
+      resetCode();
+      setSuccess(t("profileUpdate.verify.cancelled"));
+    } catch (err) {
+      setError(
+        err.response?.data?.message || t("profileUpdate.verify.cancelFailed")
+      );
     } finally {
       setLoading(false);
     }
@@ -261,7 +437,92 @@ function ProfileUpdatePage() {
         </section>
 
         <section className="profileUpdateLayout">
-          <form className="profileUpdateForm" onSubmit={handleSubmit}>
+            {step === "verify" ? (
+              <form className="emailVerifyBox" onSubmit={handleVerifyEmail}>
+                <span>{t("profileUpdate.verify.badge")}</span>
+                <h2>{t("profileUpdate.verify.title")}</h2>
+                <p>
+                  {t("profileUpdate.verify.description")}
+                  <br />
+                  <b>{pendingEmail || form.email}</b>
+                </p>
+                <p className="emailVerifyHint">
+                  {t("profileUpdate.verify.spamHint")}
+                </p>
+
+                <div className="codeInputs" onPaste={handleCodePaste}>
+                  {codeDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        codeRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleCodeChange(index, e.target.value)}
+                      onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                      disabled={loading}
+                      aria-label={t("profileUpdate.verify.digitLabel", {
+                        number: index + 1,
+                      })}
+                    />
+                  ))}
+                </div>
+
+                {error && (
+                  <div className="updateMessage errorMessage">{error}</div>
+                )}
+                {success && (
+                  <div className="updateMessage successMessage">{success}</div>
+                )}
+
+                <div className="formActions">
+                  <button type="submit" disabled={loading}>
+                    {loading
+                      ? t("profileUpdate.verify.verifying")
+                      : t("profileUpdate.verify.verifyCode")}
+                  </button>
+                </div>
+
+                <div className="emailVerifyActions">
+                  <button
+                    type="button"
+                    onClick={handleResendEmailCode}
+                    disabled={loading || cooldown > 0}
+                  >
+                    {cooldown > 0
+                      ? t("profileUpdate.verify.resendIn", { seconds: cooldown })
+                      : t("profileUpdate.verify.resend")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEmailChange}
+                    disabled={loading}
+                  >
+                    {t("profileUpdate.verify.keepCurrent")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("form");
+                      clearMessages();
+                    }}
+                    disabled={loading}
+                  >
+                    {t("profileUpdate.verify.backToForm")}
+                  </button>
+                </div>
+              </form>
+            ) : null}
+
+            <form
+              className="profileUpdateForm"
+              onSubmit={handleSubmit}
+              hidden={step === "verify"}
+            >
             <div className="profileFormHeader">
               <span>{t("profileUpdate.formHeader.badge")}</span>
 
@@ -307,14 +568,16 @@ function ProfileUpdatePage() {
               <PhoneField
                 id="phone"
                 value={form.phone}
-                onChange={(phone) =>
+                onChange={(phone) => {
                   setForm((prev) => ({
                     ...prev,
                     phone,
-                  }))
-                }
+                  }));
+                  clearMessages();
+                }}
                 disabled={loading}
-                required
+                required={false}
+                allowEmpty
               />
               <small>{t("profileUpdate.form.phoneHelp")}</small>
             </div>

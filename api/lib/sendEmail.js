@@ -489,6 +489,41 @@ export const sendLoginCodeEmail = async (email, code) => {
   });
 };
 
+export const sendEmailChangeCodeEmail = async (email, code) => {
+  if (!email) {
+    throw new Error("Recipient email is required");
+  }
+
+  const siteUrl = getClientUrl();
+  const payload = {
+    preheader: `Your ShoufBayt email confirmation code is ${code}. It expires in 10 minutes.`,
+    eyebrow: "Account security",
+    title: "Confirm your new email",
+    greeting: "Hello,",
+    paragraphs: [
+      "Use this code to confirm this address as the new email for your ShoufBayt account. Your current email stays active until you enter the code.",
+    ],
+    highlightHtml: codeHighlight(code),
+    details: [{ label: "Expires", value: "In 10 minutes" }],
+    ctaLabel: siteUrl ? "Open ShoufBayt" : undefined,
+    ctaUrl: siteUrl || undefined,
+    note: "If you did not request an email change, you can ignore this message. Do not share this code with anyone.",
+  };
+
+  return sendMail({
+    to: email,
+    subject: "Confirm your new ShoufBayt email",
+    text: wrapEmailText({
+      ...payload,
+      paragraphs: [
+        ...payload.paragraphs,
+        `Your confirmation code is ${code}.`,
+      ],
+    }),
+    html: wrapEmailHtml(payload),
+  });
+};
+
 export const sendPasswordResetCodeEmail = async (email, code) => {
   if (!email) {
     throw new Error("Recipient email is required");

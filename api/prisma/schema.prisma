@@ -180,6 +180,7 @@ model User {
   phoneKey      String?
   phoneVerified Boolean @default(false)
   pendingPhone  String?
+  pendingEmail  String?
   googleId      String? @unique
 
   role   Role          @default(USER)
@@ -322,6 +323,8 @@ model ListingRequest {
   title   String
   price   Int
   images  String[] @default([])
+  /** Private ownership proof + إفادة عقارية. Admin only — never shown on the public listing. */
+  verificationImages String[] @default([])
   address String
   city    String
   latitude  Float
@@ -416,6 +419,8 @@ model Property {
   title  String
   price  Int
   images String[] @default([])
+  /** Private ownership proof + إفادة عقارية. Admin only — never shown on the public listing. */
+  verificationImages String[] @default([])
 
   address   String
   city      String

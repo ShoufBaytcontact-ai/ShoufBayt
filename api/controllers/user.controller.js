@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import prisma from "../lib/prisma.js";
 import { cleanPhone, isValidPhone, phoneUpdateFields } from "../lib/phone.js";
 import {
-  UniqueConflictError,
   sendUniqueConflict,
   uniqueTargetMessage,
   assertUsernameAvailable,
@@ -11,6 +11,7 @@ import {
   normalizeEmail,
   normalizeUsername,
 } from "../lib/uniqueFields.js";
+import { sendEmailChangeCodeEmail } from "../lib/sendEmail.js";
 import { sendAgentStatusEmail } from "../lib/Email.js";
 import {
   grantPremiumTrialAfterVerification,
@@ -23,6 +24,50 @@ import { getStoredFileUrl } from "../lib/cloudStorage.js";
 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+
+const EMAIL_CODE_TTL_MS = 10 * 60 * 1000;
+const MAX_EMAIL_CODE_ATTEMPTS = 5;
+
+const isValidEmailAddress = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+
+const issueEmailChangeCode = async (userId) => {
+  await prisma.verificationCode.updateMany({
+    where: {
+      userId,
+      type: "EMAIL_VERIFICATION",
+      used: false,
+    },
+    data: {
+      used: true,
+    },
+  });
+
+  const code = String(crypto.randomInt(100000, 1000000));
+  const codeHash = await bcrypt.hash(code, 10);
+
+  await prisma.verificationCode.create({
+    data: {
+      userId,
+      type: "EMAIL_VERIFICATION",
+      codeHash,
+      expiresAt: new Date(Date.now() + EMAIL_CODE_TTL_MS),
+    },
+  });
+
+  return code;
+};
+
+const sendEmailChangeCodeInBackground = (email, code) => {
+  Promise.resolve(sendEmailChangeCodeEmail(email, code)).catch((error) => {
+    console.error("EMAIL CHANGE CODE ERROR:", error?.message || error);
+  });
+};
+
+const publicUserPayload = (user, extras = {}) => ({
+  ...removePassword(user),
+  ...extras,
+});
 
 const isValidObjectId = (id) => {
   return typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
@@ -45,8 +90,10 @@ const formatProperty = (property) => {
   const agent = property.user || {};
   const profile = agent.agentProfile || {};
 
+  const { verificationImages, ...safeProperty } = property;
+
   return {
-    ...property,
+    ...safeProperty,
     postDetail: property.detail || null,
     bedroom: property.bedrooms,
     bathroom: property.bathrooms,
@@ -161,16 +208,46 @@ export const updateUser = async (req, res) => {
   const { username, email, password, phone } = req.body;
 
   try {
+    const existing = await prisma.user.findUnique({
+      where: { id },
+      include: { agentProfile: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
     const updatedData = {};
+    let emailChange = null;
 
     if (username && username.trim()) {
-      updatedData.username = normalizeUsername(username);
-      await assertUsernameAvailable(updatedData.username, id);
+      const nextUsername = normalizeUsername(username);
+      if (nextUsername && nextUsername !== existing.username) {
+        await assertUsernameAvailable(nextUsername, id);
+        updatedData.username = nextUsername;
+      }
     }
 
     if (email && email.trim()) {
-      updatedData.email = normalizeEmail(email);
-      await assertEmailAvailable(updatedData.email, id);
+      const nextEmail = normalizeEmail(email);
+
+      if (!isValidEmailAddress(nextEmail)) {
+        return res.status(400).json({
+          message: "Please enter a valid email address",
+        });
+      }
+
+      if (nextEmail === existing.email) {
+        if (existing.pendingEmail) {
+          updatedData.pendingEmail = null;
+        }
+      } else if (nextEmail !== existing.pendingEmail) {
+        await assertEmailAvailable(nextEmail, id);
+        updatedData.pendingEmail = nextEmail;
+        emailChange = nextEmail;
+      }
     }
 
     if (password) {
@@ -188,15 +265,20 @@ export const updateUser = async (req, res) => {
 
     if (phone !== undefined) {
       const nextPhone = cleanPhone(phone);
+      const currentPhone = existing.phone || existing.agentProfile?.phone || "";
 
       if (!nextPhone) {
-        Object.assign(updatedData, phoneUpdateFields(""));
-      } else if (!isValidPhone(nextPhone)) {
-        return res.status(400).json({
-          message:
-            "Enter the required digits for the selected country, without the country code",
-        });
-      } else {
+        if (currentPhone) {
+          Object.assign(updatedData, phoneUpdateFields(""));
+        }
+      } else if (nextPhone !== currentPhone) {
+        if (!isValidPhone(nextPhone)) {
+          return res.status(400).json({
+            message:
+              "Enter the required digits for the selected country, without the country code",
+          });
+        }
+
         await assertPhoneAvailable(nextPhone, id);
         Object.assign(updatedData, phoneUpdateFields(nextPhone));
       }
@@ -229,7 +311,16 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    return res.status(200).json(removePassword(updatedUser));
+    if (emailChange) {
+      const code = await issueEmailChangeCode(id);
+      sendEmailChangeCodeInBackground(emailChange, code);
+    }
+
+    return res.status(200).json(
+      publicUserPayload(updatedUser, {
+        requiresEmailVerification: Boolean(emailChange),
+      })
+    );
   } catch (error) {
     console.log("UPDATE USER ERROR:", error);
 
@@ -251,6 +342,168 @@ export const updateUser = async (req, res) => {
 
     return res.status(500).json({
       message: "Failed to update user",
+    });
+  }
+};
+
+export const verifyEmailChange = async (req, res) => {
+  const userId = req.userId;
+  const cleanCode = String(req.body?.code || "").trim();
+
+  if (!/^\d{6}$/.test(cleanCode)) {
+    return res.status(400).json({
+      message: "Enter the 6-digit code sent to your new email",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { agentProfile: true },
+    });
+
+    if (!user?.pendingEmail) {
+      return res.status(400).json({
+        message: "No email change is waiting to be confirmed",
+      });
+    }
+
+    const pendingEmail = normalizeEmail(user.pendingEmail);
+    await assertEmailAvailable(pendingEmail, userId);
+
+    const emailCode = await prisma.verificationCode.findFirst({
+      where: {
+        userId,
+        type: "EMAIL_VERIFICATION",
+        used: false,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (!emailCode) {
+      return res.status(400).json({
+        message: "Code expired or invalid",
+      });
+    }
+
+    if (emailCode.attempts >= MAX_EMAIL_CODE_ATTEMPTS) {
+      await prisma.verificationCode.update({
+        where: { id: emailCode.id },
+        data: { used: true },
+      });
+
+      return res.status(429).json({
+        message: "Too many wrong attempts. Request a new code.",
+      });
+    }
+
+    const isCodeValid = await bcrypt.compare(cleanCode, emailCode.codeHash);
+
+    if (!isCodeValid) {
+      await prisma.verificationCode.update({
+        where: { id: emailCode.id },
+        data: { attempts: { increment: 1 } },
+      });
+
+      return res.status(400).json({
+        message: "Invalid verification code",
+      });
+    }
+
+    await prisma.verificationCode.update({
+      where: { id: emailCode.id },
+      data: { used: true },
+    });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: pendingEmail,
+        emailVerified: true,
+        pendingEmail: null,
+      },
+      include: { agentProfile: true },
+    });
+
+    return res.status(200).json(removePassword(updatedUser));
+  } catch (error) {
+    console.log("VERIFY EMAIL CHANGE ERROR:", error);
+
+    if (sendUniqueConflict(res, error)) {
+      return;
+    }
+
+    if (error.code === "P2002") {
+      return res.status(400).json({
+        message: uniqueTargetMessage(error),
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to verify email",
+    });
+  }
+};
+
+export const resendEmailChangeCode = async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, pendingEmail: true },
+    });
+
+    if (!user?.pendingEmail) {
+      return res.status(400).json({
+        message: "No email change is waiting to be confirmed",
+      });
+    }
+
+    const code = await issueEmailChangeCode(userId);
+    sendEmailChangeCodeInBackground(user.pendingEmail, code);
+
+    return res.status(200).json({
+      message: "Verification code sent to your new email",
+      pendingEmail: user.pendingEmail,
+    });
+  } catch (error) {
+    console.log("RESEND EMAIL CHANGE ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to resend verification code",
+    });
+  }
+};
+
+export const cancelEmailChange = async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    await prisma.verificationCode.updateMany({
+      where: {
+        userId,
+        type: "EMAIL_VERIFICATION",
+        used: false,
+      },
+      data: { used: true },
+    });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { pendingEmail: null },
+      include: { agentProfile: true },
+    });
+
+    return res.status(200).json(removePassword(updatedUser));
+  } catch (error) {
+    console.log("CANCEL EMAIL CHANGE ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to cancel email change",
     });
   }
 };
