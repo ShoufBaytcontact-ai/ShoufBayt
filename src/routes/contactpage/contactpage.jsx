@@ -146,7 +146,7 @@ function ContactPage() {
           <div className="contactInfoGrid">
             <div className="contactInfoBox">
               <span>{t("contact.info.email")}</span>
-              <b>farhathamza633@gmail.com</b>
+              <b>shoufbayt@gmail.com</b>
             </div>
 
             <div className="contactInfoBox">
