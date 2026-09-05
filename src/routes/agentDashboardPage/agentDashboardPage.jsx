@@ -16,6 +16,7 @@ import {
   toApiPropertyStatus,
   toUiPropertyStatus,
 } from "../../lib/propertyStatus";
+import { isLandListing } from "../../lib/propertyKind";
 import "./agentDashboardPage.scss";
 
 function getImageUrl(image, fallback = "/no-image.png") {
@@ -1008,12 +1009,20 @@ function AgentDashboardPage() {
                     </p>
 
                     <ul className="leadBriefFacts">
-                      <li>
-                        {t("agentHub.leads.beds", { count: request.bedrooms || 0 })}
-                      </li>
-                      <li>
-                        {t("agentHub.leads.baths", { count: request.bathrooms || 0 })}
-                      </li>
+                      {!isLandListing(request) && (
+                        <>
+                          <li>
+                            {t("agentHub.leads.beds", {
+                              count: request.bedrooms || 0,
+                            })}
+                          </li>
+                          <li>
+                            {t("agentHub.leads.baths", {
+                              count: request.bathrooms || 0,
+                            })}
+                          </li>
+                        </>
+                      )}
                       {propertyType ? <li>{propertyType}</li> : null}
                     </ul>
 
@@ -1148,7 +1157,7 @@ function AgentDashboardPage() {
               <p>
                 {t("agentHub.listings.count", {
                   count: listings.length,
-                  defaultValue: "{{count}} homes on your desk",
+                  defaultValue: "{{count}} properties on your desk",
                 })}
               </p>
             </div>
@@ -1248,12 +1257,16 @@ function AgentDashboardPage() {
                     </div>
 
                     <div className="officeListingMeta">
-                      <span>
-                        {beds} {t("card.features.bedrooms")}
-                      </span>
-                      <span>
-                        {baths} {t("card.features.bathrooms")}
-                      </span>
+                      {!isLandListing(item) && (
+                        <>
+                          <span>
+                            {beds} {t("card.features.bedrooms")}
+                          </span>
+                          <span>
+                            {baths} {t("card.features.bathrooms")}
+                          </span>
+                        </>
+                      )}
                       {area ? (
                         <span>
                           {area} {t("card.features.area")}

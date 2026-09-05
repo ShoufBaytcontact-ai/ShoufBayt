@@ -184,12 +184,21 @@
   }
 }
 
-.singleCopy div {
+.singleCopy .singleCopyBody {
   max-width: 68ch;
   color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.8;
   overflow-wrap: anywhere;
+
+  p,
+  div,
+  span,
+  li,
+  strong,
+  em {
+    color: inherit;
+  }
 
   p {
     margin: 0 0 12px;
@@ -197,6 +206,49 @@
 
   a {
     color: var(--accent-2);
+  }
+}
+
+.singleProof {
+  padding: 20px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border-color));
+  border-radius: 18px;
+  background: var(--bg-elevated);
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.15rem;
+  }
+
+  p {
+    margin: 0 0 14px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+}
+
+.singleProofBadge {
+  margin: 0 0 8px !important;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.singleProofGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  a,
+  img {
+    display: block;
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: var(--bg-soft);
   }
 }
 

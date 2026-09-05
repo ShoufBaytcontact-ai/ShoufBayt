@@ -6,6 +6,7 @@ import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import StatusBadge from "../statusBadge/statusBadge";
 import { getListingPhone, toCallHref } from "../../lib/listingContact";
+import { isLandListing } from "../../lib/propertyKind";
 import {
   canViewPropertyDetails,
   isPropertyUnavailable,
@@ -176,7 +177,8 @@ function Card({ item }) {
   const address = post.address || t("card.fallback.noAddress");
   const bedroom = post.bedroom ?? 0;
   const bathroom = post.bathroom ?? 0;
-  const propertySize = post.postDetail?.size || post.size || 0;
+  const propertySize = post.postDetail?.size || post.size || post.area || 0;
+  const hideRooms = isLandListing(post);
 
   const images = Array.isArray(post.images) ? post.images : [];
   const mainImage = getImageUrl(images[0], "/no-image.png");
@@ -342,19 +344,23 @@ function Card({ item }) {
         )}
 
         <div className="propertyFeatures">
-          <div>
-            <BedIcon />
-            <span>
-              {bedroom} {t("card.features.bedrooms")}
-            </span>
-          </div>
+          {!hideRooms && (
+            <>
+              <div>
+                <BedIcon />
+                <span>
+                  {bedroom} {t("card.features.bedrooms")}
+                </span>
+              </div>
 
-          <div>
-            <BathIcon />
-            <span>
-              {bathroom} {t("card.features.bathrooms")}
-            </span>
-          </div>
+              <div>
+                <BathIcon />
+                <span>
+                  {bathroom} {t("card.features.bathrooms")}
+                </span>
+              </div>
+            </>
+          )}
 
           <div>
             <SizeIcon />

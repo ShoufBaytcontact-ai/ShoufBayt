@@ -134,6 +134,46 @@ function normalizePost(data) {
   return data?.data || data || null;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getDescriptionHtml(post) {
+  const detail = post?.postDetail || post?.detail || {};
+  const raw = [
+    detail.description,
+    detail.desc,
+    post?.description,
+    post?.desc,
+  ].find((value) => String(value || "").trim());
+
+  if (!raw) {
+    return "";
+  }
+
+  const source = String(raw);
+  const text = source
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) {
+    return "";
+  }
+
+  if (/<[a-z][\s\S]*>/i.test(source)) {
+    return source;
+  }
+
+  return `<p>${escapeHtml(source).replace(/\n/g, "<br />")}</p>`;
+}
+
 function SinglePage() {
   const loaderData = useLoaderData();
   const post = normalizePost(loaderData);
@@ -149,7 +189,8 @@ function SinglePage() {
 
   const sendingMessageRef = useRef(false);
 
-  const postDetail = post?.postDetail || {};
+  const postDetail = post?.postDetail || post?.detail || {};
+  const descriptionHtml = getDescriptionHtml(post);
   const listingAgent = post?.user || {};
   const listingAgentProfile = listingAgent.agentProfile || {};
 
@@ -219,12 +260,19 @@ function SinglePage() {
       ? post.images.filter(Boolean).map((image) => getImageUrl(image))
       : ["/no-image.png"];
 
-  const isLandProperty = String(post?.property || "").toLowerCase() === "land";
+  const verificationImages =
+    currentUserRole === "ADMIN" && Array.isArray(post?.verificationImages)
+      ? post.verificationImages.filter(Boolean).map((image) => getImageUrl(image))
+      : [];
+
+  const isLandProperty =
+    String(post?.property || post?.propertyType || "").toLowerCase() ===
+    "land";
 
   const stats = [
     {
       icon: <SizeIcon />,
-      value: `${postDetail.size || 0}`,
+      value: `${postDetail.size || post?.size || post?.area || 0}`,
       label: t("single.features.areaUnit"),
     },
     ...(!isLandProperty
@@ -443,13 +491,39 @@ ${t("single.chatMessage.closing")}`;
             </p>
           )}
 
+          {verificationImages.length > 0 && (
+            <article className="singleProof">
+              <p className="singleProofBadge">{t("single.verification.badge")}</p>
+              <h2>{t("single.verification.title")}</h2>
+              <p>{t("single.verification.description")}</p>
+              <div className="singleProofGrid">
+                {verificationImages.map((image, index) => (
+                  <a
+                    key={`${image}-${index}`}
+                    href={image}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      src={image}
+                      alt={t("single.verification.title")}
+                    />
+                  </a>
+                ))}
+              </div>
+            </article>
+          )}
+
           <article className="singleCopy">
             <h2>{t("single.sections.propertyDescription")}</h2>
-            <div
-              dangerouslySetInnerHTML={{
-                __html: postDetail.desc || t("single.fallback.noDescription"),
-              }}
-            />
+            {descriptionHtml ? (
+              <div
+                className="singleCopyBody"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            ) : (
+              <p className="singleCopyBody">{t("single.fallback.noDescription")}</p>
+            )}
           </article>
 
           <article className="singleMap">

@@ -92,9 +92,19 @@ const formatProperty = (property) => {
 
   const { verificationImages, ...safeProperty } = property;
 
+  const descriptionText = String(
+    property.detail?.description || property.detail?.desc || ""
+  );
+
   return {
     ...safeProperty,
-    postDetail: property.detail || null,
+    description: descriptionText,
+    postDetail: {
+      ...(property.detail || {}),
+      description: descriptionText,
+      desc: descriptionText,
+      size: property.detail?.size ?? property.area ?? null,
+    },
     bedroom: property.bedrooms,
     bathroom: property.bathrooms,
     type:

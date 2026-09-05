@@ -7,6 +7,7 @@ import {
   toApiPropertyStatus,
   toUiPropertyStatus,
 } from "../../lib/propertyStatus";
+import { isLandListing } from "../../lib/propertyKind";
 import "./profilePostCard.scss";
 
 function LocationIcon() {
@@ -103,6 +104,7 @@ function ProfilePostCard({
   const bedroom = post.bedroom ?? post.bedrooms ?? 0;
   const bathroom = post.bathroom ?? post.bathrooms ?? 0;
   const size = post.size || post.area || post.postDetail?.size || 0;
+  const hideRooms = isLandListing(post);
   const managedBy = post.managedBy || null;
   const managerName = managedBy?.name || "";
   const showManager =
@@ -208,18 +210,22 @@ function ProfilePostCard({
         </div>
 
         <div className="profilePostFeatures">
-          <div>
-            <BedIcon />
-            <span>
-              {bedroom} {t("profilePostCard.features.bedroom")}
-            </span>
-          </div>
-          <div>
-            <BathIcon />
-            <span>
-              {bathroom} {t("profilePostCard.features.bathroom")}
-            </span>
-          </div>
+          {!hideRooms && (
+            <>
+              <div>
+                <BedIcon />
+                <span>
+                  {bedroom} {t("profilePostCard.features.bedroom")}
+                </span>
+              </div>
+              <div>
+                <BathIcon />
+                <span>
+                  {bathroom} {t("profilePostCard.features.bathroom")}
+                </span>
+              </div>
+            </>
+          )}
           {Number(size) > 0 && (
             <div>
               <SizeIcon />
