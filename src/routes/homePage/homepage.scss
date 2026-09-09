@@ -36,12 +36,13 @@
 
 .homeCoverCopy h1 {
   margin: 0;
-  max-width: 18ch;
+  max-width: 28ch;
   color: var(--text-main);
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 6vw, 5rem);
-  line-height: 1.02;
-  letter-spacing: -0.04em;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 650;
+  line-height: 1.22;
+  letter-spacing: -0.03em;
 }
 
 .homeCoverCopy > span {
@@ -644,7 +645,7 @@
 
   .homeCoverCopy h1 {
     max-width: none;
-    font-size: clamp(2rem, 10vw, 2.6rem);
+    font-size: clamp(1.25rem, 5.2vw, 1.55rem);
   }
 
   .homeCoverLinks a,
