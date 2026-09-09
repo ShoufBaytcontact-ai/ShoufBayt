@@ -855,7 +855,7 @@ const resources = {
           title: "Property photos",
           description: "Clear photos help people decide. At least one image is required.",
           upload: "Click to upload images",
-          hint: "JPG, PNG or WEBP · up to 20 photos",
+          hint: "JPG, PNG or WEBP · up to 20 photos · 20MB each",
           remove: "Remove",
         },
         verification: {
@@ -1267,7 +1267,7 @@ const resources = {
           title: "Property photos",
           description: "Clear photos help agents respond. At least one image is required.",
           upload: "Click to upload images",
-          hint: "JPG, PNG or WEBP · up to 20 photos",
+          hint: "JPG, PNG or WEBP · up to 20 photos · 20MB each",
           remove: "Remove",
         },
         verification: {
@@ -2166,7 +2166,7 @@ const resources = {
           title: "صور العقار",
           description: "الصور الواضحة تساعد الناس على القرار. صورة واحدة على الأقل مطلوبة.",
           upload: "انقر لرفع الصور",
-          hint: "JPG أو PNG أو WEBP · حتى 20 صورة",
+          hint: "JPG أو PNG أو WEBP · حتى 20 صورة · 20MB للصورة",
           remove: "إزالة",
         },
         verification: {
@@ -2533,7 +2533,7 @@ const resources = {
           title: "صور العقار",
           description: "الصور الواضحة تساعد الوكلاء على الرد. صورة واحدة على الأقل مطلوبة.",
           upload: "انقر لرفع الصور",
-          hint: "JPG أو PNG أو WEBP · حتى 20 صورة",
+          hint: "JPG أو PNG أو WEBP · حتى 20 صورة · 20MB للصورة",
           remove: "إزالة",
         },
         verification: {

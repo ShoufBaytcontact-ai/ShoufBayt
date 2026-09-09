@@ -189,6 +189,10 @@ export const formatStorageError = (error) => {
   const code = String(error?.name || error?.Code || error?.code || "");
   const message = String(error?.message || error || "");
 
+  if (code === "LIMIT_FILE_SIZE" || /file too large/i.test(message)) {
+    return "Each photo must be 20MB or smaller. Compress the image and try again.";
+  }
+
   if (/access.?denied/i.test(message) || /AccessDenied/i.test(code)) {
     return "Cloudflare storage rejected the upload. In api/.env, set CLOUDFLARE_R2_BUCKET to the exact lowercase bucket name from the R2 dashboard, and use an R2 API token with Object Read & Write on that bucket.";
   }
