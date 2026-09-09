@@ -307,7 +307,7 @@ function NewPostPage() {
     if (images.length === 0) {
       return t("newPost.validation.images");
     }
-    if (verificationImages.length !== 2) {
+    if (isSelfList && verificationImages.length !== 2) {
       return t("newPost.validation.verificationImages");
     }
     return "";
@@ -375,7 +375,11 @@ function NewPostPage() {
       data.append("postData", JSON.stringify(postData));
       data.append("postDetail", JSON.stringify(postDetail));
       images.forEach((file) => data.append("images", file));
-      verificationImages.forEach((file) => data.append("verificationImages", file));
+      if (isSelfList) {
+        verificationImages.forEach((file) =>
+          data.append("verificationImages", file)
+        );
+      }
 
       const res = await apiRequest.post("/posts", data, {
         withCredentials: true,
@@ -833,45 +837,43 @@ function NewPostPage() {
             )}
           </section>
 
-          <section className="requestCard">
-            <header className="requestCardHeader">
-              <p className="requestEyebrow">{t("newPost.verification.badge")}</p>
-              <h2>{t("newPost.verification.title")}</h2>
-              <p>
-                {isSelfList
-                  ? t("newPost.verification.userDescription")
-                  : t("newPost.verification.agentDescription")}
-              </p>
-            </header>
+          {isSelfList && (
+            <section className="requestCard">
+              <header className="requestCardHeader">
+                <p className="requestEyebrow">{t("newPost.verification.badge")}</p>
+                <h2>{t("newPost.verification.title")}</h2>
+                <p>{t("newPost.verification.userDescription")}</p>
+              </header>
 
-            <label className="requestDrop">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleVerificationImages}
-              />
-              <strong>{t("newPost.verification.upload")}</strong>
-              <span>{t("newPost.verification.hint")}</span>
-            </label>
+              <label className="requestDrop">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleVerificationImages}
+                />
+                <strong>{t("newPost.verification.upload")}</strong>
+                <span>{t("newPost.verification.hint")}</span>
+              </label>
 
-            {verificationImages.length > 0 && (
-              <div className="requestThumbs">
-                {verificationImages.map((file, index) => (
-                  <figure key={`${file.name}-${index}`}>
-                    <img src={verificationPreviews[index]} alt={file.name} />
-                    <button
-                      type="button"
-                      onClick={() => removeVerificationImage(index)}
-                      aria-label={t("newPost.media.remove")}
-                    >
-                      {t("newPost.media.remove")}
-                    </button>
-                  </figure>
-                ))}
-              </div>
-            )}
-          </section>
+              {verificationImages.length > 0 && (
+                <div className="requestThumbs">
+                  {verificationImages.map((file, index) => (
+                    <figure key={`${file.name}-${index}`}>
+                      <img src={verificationPreviews[index]} alt={file.name} />
+                      <button
+                        type="button"
+                        onClick={() => removeVerificationImage(index)}
+                        aria-label={t("newPost.media.remove")}
+                      >
+                        {t("newPost.media.remove")}
+                      </button>
+                    </figure>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {error && <div className="requestAlert error">{error}</div>}
 

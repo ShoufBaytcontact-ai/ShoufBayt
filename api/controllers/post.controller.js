@@ -1513,15 +1513,19 @@ export const addPost = async (req, res) => {
     }
 
     let verificationImages = [];
-    try {
-      verificationImages = requireVerificationImages(
-        getUploadedVerificationImages(req)
-      );
-    } catch (verificationError) {
-      return res.status(verificationError.status || 400).json({
-        message: verificationError.message,
-        code: verificationError.code,
-      });
+    if (user.role === "USER") {
+      try {
+        verificationImages = requireVerificationImages(
+          getUploadedVerificationImages(req)
+        );
+      } catch (verificationError) {
+        return res.status(verificationError.status || 400).json({
+          message: verificationError.message,
+          code: verificationError.code,
+        });
+      }
+    } else {
+      verificationImages = getUploadedVerificationImages(req);
     }
 
     const slug = await createUniqueSlug(title);
