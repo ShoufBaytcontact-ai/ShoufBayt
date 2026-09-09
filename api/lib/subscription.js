@@ -44,16 +44,24 @@ export const getPeriodEnd = (subscription) => {
   return subscription.endDate || subscription.trialEnd || null;
 };
 
+/** Complimentary Premium lasts through the end of September 2026. */
+export const DEFAULT_PREMIUM_FREE_UNTIL = new Date(
+  "2026-09-30T23:59:59.000+03:00"
+);
+
 /**
- * First month after launch: Premium is free for everyone.
- * Set PREMIUM_FREE_UNTIL (ISO date) or SITE_LAUNCH_AT (+ 30 days).
+ * Complimentary launch window. PREMIUM_FREE_UNTIL / SITE_LAUNCH_AT may extend
+ * this date, but cannot end it earlier — a stale env date was sending
+ * "complimentary period ended" emails every hour.
  */
 export const getPremiumFreeUntil = () => {
+  let until = DEFAULT_PREMIUM_FREE_UNTIL;
+
   const untilRaw = String(process.env.PREMIUM_FREE_UNTIL || "").trim();
   if (untilRaw) {
-    const until = new Date(untilRaw);
-    if (!Number.isNaN(until.getTime())) {
-      return until;
+    const parsed = new Date(untilRaw);
+    if (!Number.isNaN(parsed.getTime()) && parsed > until) {
+      until = parsed;
     }
   }
 
@@ -61,11 +69,14 @@ export const getPremiumFreeUntil = () => {
   if (launchRaw) {
     const launch = new Date(launchRaw);
     if (!Number.isNaN(launch.getTime())) {
-      return addDays(launch, PLAN_DURATION_DAYS.PREMIUM);
+      const fromLaunch = addDays(launch, PLAN_DURATION_DAYS.PREMIUM);
+      if (fromLaunch > until) {
+        until = fromLaunch;
+      }
     }
   }
 
-  return new Date("2026-10-02T23:59:59.000+03:00");
+  return until;
 };
 
 export const isLaunchPremiumFree = () => new Date() < getPremiumFreeUntil();

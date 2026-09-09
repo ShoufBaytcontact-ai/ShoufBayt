@@ -180,7 +180,7 @@ function OwnerDashboardPage() {
       <header className="ownerDashHeader">
         <div>
           <span>Owner</span>
-          <h1>Your homes</h1>
+          <h1>{t("accountListings.ownerTitle")}</h1>
           <p>{t("profile.requests.dashboardHint")}</p>
         </div>
 

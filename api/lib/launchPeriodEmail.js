@@ -308,10 +308,21 @@ export const processLaunchPeriodEmails = async ({
     };
   }
 
+  const alreadyNotified = await prisma.notification.findMany({
+    where: {
+      type: "GENERAL",
+      link: LAUNCH_PERIOD_LINK,
+    },
+    select: { userId: true, metadata: true },
+  });
+
+  const sentUserIds = [...new Set(alreadyNotified.map((item) => item.userId))];
+
   const users = await prisma.user.findMany({
     where: {
       email: { not: "" },
       status: { notIn: ["BANNED", "SUSPENDED"] },
+      ...(sentUserIds.length ? { id: { notIn: sentUserIds } } : {}),
     },
     select: {
       id: true,
@@ -327,35 +338,17 @@ export const processLaunchPeriodEmails = async ({
     return { skipped: false, sent: 0, failed: 0, pending: 0 };
   }
 
-  const existing = await prisma.notification.findMany({
-    where: {
-      userId: { in: users.map((user) => user.id) },
-      type: "GENERAL",
-      link: LAUNCH_PERIOD_LINK,
-    },
-    select: { userId: true, metadata: true },
-  });
-
-  const sentByUser = new Map();
-  for (const item of existing) {
-    const list = sentByUser.get(item.userId) || [];
-    list.push(item);
-    sentByUser.set(item.userId, list);
-  }
-
   let sent = 0;
   let failed = 0;
-  let skippedExisting = 0;
+  const skippedExisting = 0;
 
   for (const user of users) {
-    if (alreadySentCampaign(sentByUser.get(user.id) || [])) {
-      skippedExisting += 1;
-      continue;
-    }
-
     const copy = getLaunchPeriodCopy(normalizeRole(user.role), {
       username: user.username,
     });
+
+    await createCampaignNotification(user, copy);
+
     const mailed = await sendLaunchPeriodEndedEmail({
       to: user.email,
       username: user.username,
@@ -367,7 +360,6 @@ export const processLaunchPeriodEmails = async ({
       continue;
     }
 
-    await createCampaignNotification(user, copy);
     sent += 1;
   }
 

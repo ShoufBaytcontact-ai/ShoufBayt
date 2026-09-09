@@ -280,7 +280,7 @@ function BillingPage() {
       isApplicant
         ? "Payment received. An admin will review your agent request next."
         : isRegularUser
-          ? "Premium activated. You can list homes yourself without the free-listing limit."
+          ? "Premium activated. You can list properties yourself without the free-listing limit."
           : "Premium activated. Your agent account and listings are restored."
     );
     setCardFormKey((key) => key + 1);

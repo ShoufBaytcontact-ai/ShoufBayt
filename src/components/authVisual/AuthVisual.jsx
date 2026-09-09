@@ -1,3 +1,4 @@
+import HouseMark from "../houseMark/houseMark";
 import "./authVisual.scss";
 
 const icons = {
@@ -106,11 +107,7 @@ function AuthVisual({
 
       <div className="authVisualBody">
         <div className="authVisualBrand">
-          <div className="authBrandIcon">
-            <span className="roof" />
-            <span className="tower" />
-            <span className="door" />
-          </div>
+          <HouseMark size="sm" />
           <span>ShoufBayt</span>
         </div>
 

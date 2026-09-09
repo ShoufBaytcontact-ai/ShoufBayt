@@ -36,7 +36,7 @@
 
 .homeCoverCopy h1 {
   margin: 0;
-  max-width: 16ch;
+  max-width: 18ch;
   color: var(--text-main);
   font-family: var(--font-display);
   font-size: clamp(2.4rem, 6vw, 5rem);
@@ -158,6 +158,33 @@
   box-shadow: 0 12px 24px var(--glow-gold);
 }
 
+.homePropertyChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.homePropertyChips button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.homePropertyChips button:hover,
+.homePropertyChips button.isActive {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+  background: var(--accent-2-soft);
+}
+
 .homeCities {
   display: flex;
   flex-wrap: wrap;
@@ -235,6 +262,110 @@
 
 .homeMapPending {
   background: var(--bg-soft);
+}
+
+.homeTypes {
+  padding: clamp(36px, 6vw, 72px) clamp(20px, 5vw, 72px);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+}
+
+.homeTypesHead p {
+  margin: 0 0 10px;
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.homeTypesHead h2 {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.homeTypesHead span {
+  display: block;
+  max-width: 54ch;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.homeTypesGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.homeTypeCard {
+  display: grid;
+  gap: 8px;
+  min-height: 168px;
+  padding: 16px 14px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: var(--bg-main);
+  color: inherit;
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+
+.homeTypeCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-2);
+  background: var(--bg-elevated);
+}
+
+.homeTypeIcon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--accent-2-soft);
+  color: var(--accent-2);
+}
+
+.homeTypeIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.homeTypeCard strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.homeTypeCard em {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.homeTypeCard--house .homeTypeIcon,
+.homeTypeCard--villa .homeTypeIcon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.homeTypeCard--land .homeTypeIcon {
+  background: var(--accent-4-soft);
+  color: var(--accent-4);
+}
+
+.homeTypeCard--office .homeTypeIcon,
+.homeTypeCard--shop .homeTypeIcon,
+.homeTypeCard--warehouse .homeTypeIcon {
+  background: var(--accent-3-soft);
+  color: var(--accent-3);
 }
 
 .homeLatest {
@@ -486,6 +617,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .homeTypesGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .homeLatestHead {
     align-items: start;
     flex-direction: column;
@@ -521,8 +656,9 @@
     grid-template-columns: 1fr;
   }
 
-  .homeLatestGrid {
-    grid-template-columns: 1fr;
+  .homeLatestGrid,
+  .homeTypesGrid {
+    grid-template-columns: 1fr 1fr;
     gap: 14px;
   }
 
@@ -550,7 +686,8 @@
 
   .homeLatest,
   .homeInvite,
-  .homeBuild {
+  .homeBuild,
+  .homeTypes {
     padding-left: max(var(--page-pad, 16px), env(safe-area-inset-left, 0px));
     padding-right: max(var(--page-pad, 16px), env(safe-area-inset-right, 0px));
   }

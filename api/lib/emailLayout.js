@@ -11,7 +11,21 @@ export const LOGO_PATH = path.join(__dirname, "../assets/email-logo.png");
 export const getClientUrl = () =>
   String(process.env.CLIENT_URL || "http://localhost:3000").replace(/\/$/, "");
 
-export const getPublicClientUrl = () => getClientUrl();
+export const getPublicClientUrl = () => {
+  const url = getClientUrl();
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.hostname === "shoufbayt.com" ||
+      parsed.hostname === "www.shoufbayt.com"
+    ) {
+      return "https://shoufbayt.com";
+    }
+  } catch {
+    // keep the raw CLIENT_URL for local / invalid values
+  }
+  return url;
+};
 
 export const getLogoUrl = () => {
   const custom = String(process.env.EMAIL_LOGO_URL || "").trim();

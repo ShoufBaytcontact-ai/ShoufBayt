@@ -1392,6 +1392,7 @@ e.target.reset();
                   <th>{t("admin.posts.table.type")}</th>
                   <th>{t("admin.posts.table.category")}</th>
                   <th>{t("admin.posts.table.status")}</th>
+                  <th>{t("admin.posts.table.verification")}</th>
                   <th>{t("admin.posts.table.actions")}</th>
                 </tr>
               </thead>
@@ -1453,6 +1454,34 @@ e.target.reset();
                             }
                           )}
                         </span>
+                      </td>
+
+                      <td>
+                        {Array.isArray(post.verificationImages) &&
+                        post.verificationImages.length > 0 ? (
+                          <div className="proofCell">
+                            {post.verificationImages.slice(0, 2).map((image, index) => (
+                              <a
+                                key={`${post.id}-proof-${index}`}
+                                href={getImageUrl(image, "/no-image.png")}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <img
+                                  src={getImageUrl(image, "/no-image.png")}
+                                  alt={t("admin.posts.table.verification")}
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/no-image.png";
+                                  }}
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="mutedCell">
+                            {t("admin.posts.table.none")}
+                          </span>
+                        )}
                       </td>
 
                       <td>
@@ -1526,7 +1555,7 @@ e.target.reset();
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8">
+                    <td colSpan="9">
                       <div className="emptyState">{t("admin.posts.noPosts")}</div>
                     </td>
                   </tr>

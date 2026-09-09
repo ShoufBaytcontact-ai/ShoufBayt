@@ -52,6 +52,33 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 const app = express();
 const PORT = process.env.PORT || 8800;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const forceHttps =
+  process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
+
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  if (!forceHttps) return next();
+
+  const host = String(req.get("host") || "");
+  if (host.startsWith("localhost") || host.startsWith("127.0.0.1")) {
+    return next();
+  }
+
+  const proto = String(req.get("x-forwarded-proto") || req.protocol || "")
+    .split(",")[0]
+    .trim();
+
+  if (proto !== "https") {
+    return res.redirect(301, `https://${host}${req.originalUrl}`);
+  }
+
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+  next();
+});
 
 const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "");
 
@@ -172,13 +199,30 @@ app.use("/api/reviews", reviewroute);
 app.use("/api/listing-requests", listingRequestroute);
 app.use("/api/appointments", appointmentroute);
 
-const siteOrigin = String(
+const toPublicHttpsOrigin = (value) => {
+  const raw = String(value || "").trim().replace(/\/+$/, "");
+  try {
+    const parsed = new URL(raw);
+    if (
+      parsed.hostname === "shoufbayt.com" ||
+      parsed.hostname === "www.shoufbayt.com" ||
+      parsed.hostname.endsWith(".onrender.com")
+    ) {
+      return "https://shoufbayt.com";
+    }
+    return parsed.origin;
+  } catch {
+    return raw;
+  }
+};
+
+const siteOrigin = toPublicHttpsOrigin(
   process.env.PUBLIC_SITE_URL ||
     (String(CLIENT_URL).includes("onrender.com")
       ? "https://shoufbayt.com"
       : CLIENT_URL) ||
     "https://shoufbayt.com"
-).replace(/\/$/, "");
+) || "https://shoufbayt.com";
 const publicPages = ["/", "/list", "/agents", "/about", "/contact"];
 
 app.get("/robots.txt", (_req, res) => {

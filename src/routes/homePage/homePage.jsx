@@ -15,6 +15,16 @@ const HOME_CITIES = [
   { id: "byblos", name: "Byblos" },
 ];
 
+const PROPERTY_TYPES = [
+  "apartment",
+  "house",
+  "villa",
+  "land",
+  "office",
+  "shop",
+  "warehouse",
+];
+
 const LISTED_STATUSES = ["PUBLISHED", "SOLD", "RENTED"];
 
 function unwrapPosts(payload) {
@@ -34,16 +44,99 @@ function listingKind(post) {
   return "";
 }
 
+function listingProperty(post) {
+  return String(post?.property || post?.propertyType || "").toLowerCase();
+}
+
 function isListed(post) {
   const status = String(post?.status || "").toUpperCase();
   return !status || LISTED_STATUSES.includes(status);
 }
 
-function HomeSearch({ type, city, onTypeChange, onCityChange }) {
+function TypeIcon({ type }) {
+  const common = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.7",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  };
+
+  if (type === "apartment") {
+    return (
+      <svg {...common}>
+        <path d="M5 20V6h8v14" />
+        <path d="M13 10h6v10" />
+        <path d="M8 9h2M8 13h2M8 17h2M16 14h1.5M16 17h1.5" />
+      </svg>
+    );
+  }
+
+  if (type === "villa") {
+    return (
+      <svg {...common}>
+        <path d="M3 20V11l9-7 9 7v9" />
+        <path d="M9 20v-6h6v6" />
+        <path d="M7 11h10" />
+      </svg>
+    );
+  }
+
+  if (type === "land") {
+    return (
+      <svg {...common}>
+        <path d="M3 17h18" />
+        <path d="M5 17 9 9l4 5 3-3 3 6" />
+        <path d="M16 8.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+      </svg>
+    );
+  }
+
+  if (type === "office") {
+    return (
+      <svg {...common}>
+        <path d="M4 20V5h10v15" />
+        <path d="M14 9h6v11" />
+        <path d="M7 8h4M7 12h4M7 16h4M17 13h1M17 16h1" />
+      </svg>
+    );
+  }
+
+  if (type === "shop") {
+    return (
+      <svg {...common}>
+        <path d="M4 10h16v10H4z" />
+        <path d="M4 10 6.2 5h11.6L20 10" />
+        <path d="M10 20v-5h4v5" />
+      </svg>
+    );
+  }
+
+  if (type === "warehouse") {
+    return (
+      <svg {...common}>
+        <path d="M3 20V10l9-6 9 6v10" />
+        <path d="M8 20v-6h8v6" />
+        <path d="M3 10h18" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M4 20V11l8-7 8 7v9" />
+      <path d="M9 20v-6h6v6" />
+    </svg>
+  );
+}
+
+function HomeSearch({ type, city, property, onTypeChange, onCityChange, onPropertyChange }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const buildPath = (nextCity = city, nextType = type) => {
+  const buildPath = (nextCity = city, nextType = type, nextProperty = property) => {
     const params = new URLSearchParams();
 
     if (nextType) {
@@ -52,6 +145,10 @@ function HomeSearch({ type, city, onTypeChange, onCityChange }) {
 
     if (String(nextCity || "").trim()) {
       params.set("city", String(nextCity).trim());
+    }
+
+    if (nextProperty) {
+      params.set("property", nextProperty);
     }
 
     const query = params.toString();
@@ -96,6 +193,26 @@ function HomeSearch({ type, city, onTypeChange, onCityChange }) {
         <button type="submit">{t("home.hero.searchButton")}</button>
       </div>
 
+      <div className="homePropertyChips" role="group" aria-label={t("home.types.label")}>
+        <button
+          type="button"
+          className={!property ? "isActive" : ""}
+          onClick={() => onPropertyChange("")}
+        >
+          {t("home.search.all")}
+        </button>
+        {PROPERTY_TYPES.map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={property === item ? "isActive" : ""}
+            onClick={() => onPropertyChange(property === item ? "" : item)}
+          >
+            {t(`home.types.${item}`)}
+          </button>
+        ))}
+      </div>
+
       <div className="homeCities">
         <span>{t("home.hero.popular")}</span>
         {HOME_CITIES.map((item) => (
@@ -120,6 +237,7 @@ function HomePage() {
 
   const [type, setType] = useState("");
   const [city, setCity] = useState("");
+  const [property, setProperty] = useState("");
   const [posts, setPosts] = useState([]);
   const [mapReady, setMapReady] = useState(false);
 
@@ -161,6 +279,10 @@ function HomePage() {
         if (kind !== type) return false;
       }
 
+      if (property) {
+        if (listingProperty(post) !== property) return false;
+      }
+
       if (cityQuery) {
         const postCity = String(post?.city || "").toLowerCase();
         if (!postCity.includes(cityQuery)) return false;
@@ -168,14 +290,14 @@ function HomePage() {
 
       return true;
     });
-  }, [posts, type, city]);
+  }, [posts, type, city, property]);
 
   const mapItems = useMemo(
     () => filteredPosts.filter((post) => getMapCoordinates(post)),
     [filteredPosts]
   );
 
-  const latestHomes = useMemo(() => filteredPosts.slice(0, 6), [filteredPosts]);
+  const latestListings = useMemo(() => filteredPosts.slice(0, 6), [filteredPosts]);
 
   return (
     <main className="homepage">
@@ -192,8 +314,10 @@ function HomePage() {
           <HomeSearch
             type={type}
             city={city}
+            property={property}
             onTypeChange={setType}
             onCityChange={setCity}
+            onPropertyChange={setProperty}
           />
           <div className="homeCoverLinks">
             <Link to={listPath}>{t("home.hero.listProperty")}</Link>
@@ -205,6 +329,29 @@ function HomePage() {
           ) : (
             <div className="homeMap homeMapPending" />
           )}
+        </div>
+      </section>
+
+      <section className="homeTypes">
+        <div className="homeTypesHead">
+          <p>{t("home.types.label")}</p>
+          <h2>{t("home.types.title")}</h2>
+          <span>{t("home.types.description")}</span>
+        </div>
+        <div className="homeTypesGrid">
+          {PROPERTY_TYPES.map((item) => (
+            <Link
+              key={item}
+              to={`/list?property=${item}`}
+              className={`homeTypeCard homeTypeCard--${item}`}
+            >
+              <span className="homeTypeIcon">
+                <TypeIcon type={item} />
+              </span>
+              <strong>{t(`home.types.${item}`)}</strong>
+              <em>{t(`home.types.hint.${item}`)}</em>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -220,15 +367,39 @@ function HomePage() {
 
         {!mapReady ? (
           <div className="homeLatestEmpty">{t("home.latest.loading")}</div>
-        ) : latestHomes.length === 0 ? (
+        ) : latestListings.length === 0 ? (
           <div className="homeLatestEmpty">{t("home.latest.empty")}</div>
         ) : (
           <div className="homeLatestGrid">
-            {latestHomes.map((post) => (
+            {latestListings.map((post) => (
               <Card key={post.id} item={post} />
             ))}
           </div>
         )}
+      </section>
+
+      <section className="homeBuild">
+        <header>
+          <p>{t("home.build.label")}</p>
+          <h2>{t("home.build.title")}</h2>
+        </header>
+        <div className="homeBuildGrid">
+          <article>
+            <b>01</b>
+            <h3>{t("home.build.oneTitle")}</h3>
+            <p>{t("home.build.oneText")}</p>
+          </article>
+          <article>
+            <b>02</b>
+            <h3>{t("home.build.twoTitle")}</h3>
+            <p>{t("home.build.twoText")}</p>
+          </article>
+          <article>
+            <b>03</b>
+            <h3>{t("home.build.threeTitle")}</h3>
+            <p>{t("home.build.threeText")}</p>
+          </article>
+        </div>
       </section>
 
       <section className="homeRoles">

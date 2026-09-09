@@ -132,6 +132,7 @@ function RequestListingPage() {
   const [listingPath, setListingPath] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [images, setImages] = useState([]);
+  const [verificationImages, setVerificationImages] = useState([]);
   const [location, setLocation] = useState(null);
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -139,6 +140,7 @@ function RequestListingPage() {
   const [success, setSuccess] = useState("");
   const [resultMeta, setResultMeta] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [verificationPreviews, setVerificationPreviews] = useState([]);
   const [mapType, setMapType] = useState("map");
 
   const isLandProperty = form.property === "land";
@@ -148,6 +150,12 @@ function RequestListingPage() {
     setImagePreviews(urls);
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
   }, [images]);
+
+  useEffect(() => {
+    const urls = verificationImages.map((file) => URL.createObjectURL(file));
+    setVerificationPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [verificationImages]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -211,6 +219,18 @@ function RequestListingPage() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleVerificationImages = (e) => {
+    const files = Array.from(e.target.files || []).filter((file) =>
+      String(file.type || "").startsWith("image/")
+    );
+    setVerificationImages((prev) => [...prev, ...files].slice(0, 2));
+    e.target.value = "";
+  };
+
+  const removeVerificationImage = (index) => {
+    setVerificationImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSelectLocation = (nextLocation) => {
     setLocation(nextLocation);
     setError("");
@@ -262,6 +282,9 @@ function RequestListingPage() {
     }
     if (images.length === 0) {
       return t("requestListing.validation.images");
+    }
+    if (verificationImages.length !== 2) {
+      return t("requestListing.validation.verificationImages");
     }
     if (form.contactPhone.trim() && !isValidPhone(form.contactPhone, { allowEmpty: true })) {
       return t("phoneField.errors.invalid");
@@ -321,6 +344,9 @@ function RequestListingPage() {
         JSON.stringify({ description: form.description, size: form.size })
       );
       images.forEach((file) => formData.append("images", file));
+      verificationImages.forEach((file) =>
+        formData.append("verificationImages", file)
+      );
 
       const res = await listingRequestApi.create(formData);
       setResultMeta({
@@ -332,8 +358,13 @@ function RequestListingPage() {
       setStep("done");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
+      const apiMessage = err.response?.data?.message;
+      const offline = !err.response || err.code === "ERR_NETWORK";
       setError(
-        err.response?.data?.message || t("requestListing.errors.submit")
+        apiMessage ||
+          (offline
+            ? t("requestListing.errors.apiOffline")
+            : t("requestListing.errors.submit"))
       );
     } finally {
       setLoading(false);
@@ -760,6 +791,42 @@ function RequestListingPage() {
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
+                      aria-label={t("requestListing.media.remove")}
+                    >
+                      {t("requestListing.media.remove")}
+                    </button>
+                  </figure>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="requestCard">
+            <header className="requestCardHeader">
+              <p className="requestEyebrow">{t("requestListing.verification.badge")}</p>
+              <h2>{t("requestListing.verification.title")}</h2>
+              <p>{t("requestListing.verification.description")}</p>
+            </header>
+
+            <label className="requestDrop">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleVerificationImages}
+              />
+              <strong>{t("requestListing.verification.upload")}</strong>
+              <span>{t("requestListing.verification.hint")}</span>
+            </label>
+
+            {verificationImages.length > 0 && (
+              <div className="requestThumbs">
+                {verificationImages.map((file, index) => (
+                  <figure key={`${file.name}-${index}`}>
+                    <img src={verificationPreviews[index]} alt={file.name} />
+                    <button
+                      type="button"
+                      onClick={() => removeVerificationImage(index)}
                       aria-label={t("requestListing.media.remove")}
                     >
                       {t("requestListing.media.remove")}

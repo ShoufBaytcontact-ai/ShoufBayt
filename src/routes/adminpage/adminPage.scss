@@ -525,6 +525,27 @@ table {
   height: 40px;
 }
 
+.proofCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  a,
+  img {
+    width: 48px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--bg-soft);
+    display: block;
+  }
+}
+
+.mutedCell {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .actionGroup,
 .replyActions,
 .messageActions {

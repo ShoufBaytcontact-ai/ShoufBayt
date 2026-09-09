@@ -902,7 +902,11 @@ const resources = {
           locationFailed: "Could not get your location.",
         },
         success: { added: "Property added successfully." },
-        errors: { addFailed: "Failed to add property." },
+        errors: {
+          addFailed: "Failed to add property.",
+          apiOffline:
+            "Cannot reach the server. Start the API on port 8800 and try again.",
+        },
         moderation: {
           badge: "List yourself",
           title: "List this property yourself.",
@@ -1309,7 +1313,11 @@ const resources = {
           locationFailed: "Could not get your location.",
         },
         success: { submitted: "Property submitted. Matching verified agents can send proposals (max 10)." },
-        errors: { submit: "Failed to send listing request." },
+        errors: {
+          submit: "Failed to send listing request.",
+          apiOffline:
+            "Cannot reach the server. Start the API on port 8800 and try again.",
+        },
       },
       chatPage: {
         hero: { badge: "Messages", title: "Real-time conversations.", description: "Chat with listing agents about properties from one clean ShoufBayt inbox.", totalConversations: "Total Conversations", unreadChats: "Unread Chats" },
@@ -2205,7 +2213,11 @@ const resources = {
           locationFailed: "تعذر الحصول على موقعك.",
         },
         success: { added: "تمت إضافة العقار بنجاح." },
-        errors: { addFailed: "فشل إضافة العقار." },
+        errors: {
+          addFailed: "فشل إضافة العقار.",
+          apiOffline:
+            "تعذر الوصول إلى الخادم. شغّل واجهة الـ API على المنفذ 8800 ثم أعد المحاولة.",
+        },
         moderation: {
           badge: "أدرج بنفسك",
           title: "أدرج هذا العقار بنفسك.",
@@ -2567,7 +2579,11 @@ const resources = {
           locationFailed: "تعذر الحصول على موقعك.",
         },
         success: { submitted: "تم إرسال العقار. يمكن للوكلاء الموثوقين المناسبين إرسال عروض (الحد الأقصى 10)." },
-        errors: { submit: "فشل إرسال طلب الإعلان." },
+        errors: {
+          submit: "فشل إرسال طلب الإعلان.",
+          apiOffline:
+            "تعذر الوصول إلى الخادم. شغّل واجهة الـ API على المنفذ 8800 ثم أعد المحاولة.",
+        },
       },
       chatPage: { hero: { badge: "الرسائل", title: "محادثات فورية.", description: "تحدث مباشرة مع وكلاء العقارات حول الإعلانات من صندوق رسائل ShoufBayt المنظم.", totalConversations: "إجمالي المحادثات", unreadChats: "محادثات غير مقروءة" }, sidebar: { badge: "صندوق الوارد", title: "المحادثات", startNewConversation: "بدء محادثة جديدة", searchPlaceholder: "ابحث في المحادثات...", noMessagesYet: "لا توجد رسائل بعد" }, userPicker: { title: "اختر وكيلاً", description: "ابحث عن الوكلاء المعتمدين حسب الاسم أو البريد الإلكتروني.", searchPlaceholder: "ابحث عن الوكلاء...", loading: "جارٍ تحميل الوكلاء...", noUsers: "لم يتم العثور على وكلاء.", opening: "جارٍ الفتح...", open: "فتح", new: "جديد" }, emptyChats: { title: "لا توجد محادثات", message: "ستظهر محادثاتك هنا عندما تراسل شخصاً ما." }, chatMain: { activeConversation: "محادثة نشطة", secureChat: "محادثة آمنة", loadingMessages: "جارٍ تحميل الرسائل...", messagePlaceholder: "اكتب رسالتك...", sending: "جارٍ الإرسال...", send: "إرسال", clearChat: "مسح المحادثة", clearing: "جارٍ المسح…", backToInbox: "الوارد", attach: "إرفاق صورة أو PDF", recordVoice: "تسجيل ملاحظة صوتية", stopRecording: "إيقاف التسجيل", recording: "جارٍ التسجيل…", deleteVoice: "حذف الملاحظة الصوتية", sendVoice: "إرسال الملاحظة الصوتية", voiceNote: "ملاحظة صوتية", downloadFile: "تنزيل الملف", deleteMessage: "خيارات الرسالة", deleteForMe: "حذف لدي", deleteForEveryone: "حذف لدى الجميع", messageDeleted: "تم حذف هذه الرسالة" }, emptyMessages: { title: "لا توجد رسائل بعد", message: "أرسل رسالة لبدء المحادثة." }, noChat: { title: "اختر أو ابدأ محادثة", message: "اختر محادثة من صندوق الوارد أو ابدأ محادثة جديدة مع مستخدم." }, fallback: { user: "المستخدم", receiver: "المستلم", noEmail: "لا يوجد بريد إلكتروني" }, confirms: { clearChat: "هل تريد مسح كل الرسائل في هذه المحادثة؟ لا يمكن التراجع عن ذلك.", deleteForEveryone: "هل تريد حذف هذه الرسالة لدى الجميع؟ سيظهر لهم أنها حُذفت." }, errors: { openChat: "فشل فتح المحادثة.", loadChats: "فشل تحميل المحادثات.", loadUsers: "فشل تحميل المستخدمين.", openSelectedChat: "فشل فتح المحادثة المحددة.", chatNotCreated: "لم يتم إنشاء المحادثة.", startConversation: "فشل بدء المحادثة.", sendMessage: "فشل إرسال الرسالة.", sendAttachment: "فشل إرسال المرفق.", clearChat: "فشل مسح المحادثة.", microphone: "يلزم الوصول إلى الميكروفون للملاحظات الصوتية.", voiceTooShort: "سجّل ثانية أخرى، ثم أرسل أو احذف الملاحظة الصوتية.", deleteMessage: "فشل حذف الرسالة." } },
       notificationsPage: { hero: { badge: "التنبيهات", title: "ابقَ على اطلاع بحسابك.", description: "الموافقات والمدفوعات وتحديثات الإعلانات ونشاط الحساب في صندوق واحد." }, stats: { total: "الإجمالي", unread: "غير مقروء" }, actions: { markAll: "تحديد الكل كمقروء", deleteAll: "حذف الكل", confirmDeleteAll: "تأكيد الحذف", cancel: "إلغاء", openChat: "فتح الوارد", open: "فتح", markRead: "تحديد كمقروء", delete: "حذف" }, empty: { title: "لا توجد تنبيهات جديدة", message: "ستظهر هنا التحديثات الجديدة عن الإعلانات والمدفوعات والمحادثات.", filteredTitle: "لا يوجد شيء في هذا العرض", filteredMessage: "جرّب تصفية أخرى لعرض بقية التنبيهات." }, states: { loading: "جارٍ تحميل الإشعارات…", deletingAll: "جارٍ الحذف..." }, errors: { load: "فشل تحميل الإشعارات", markAll: "فشل تحديد الكل كمقروء", update: "فشل تحديث الإشعار", delete: "فشل حذف الإشعار", deleteAll: "فشل حذف الإشعارات" }, inbox: { title: "الإشعارات", live: "مباشر", empty: "لا توجد إشعارات بعد", viewAll: "عرض كل الإشعارات", newAlert: "إشعار جديد" }, filters: { all: "الكل", unread: "غير مقروء", messages: "الرسائل", account: "الحساب" }, groups: { today: "اليوم", yesterday: "أمس", earlier: "سابقاً" }, types: { NEW_MESSAGE: "رسالة", CONTACT_REPLY: "الدعم", PROPERTY_APPROVED: "تمت الموافقة على الإعلان", PROPERTY_REJECTED: "تحديث الإعلان", AGENT_APPLICATION_APPROVED: "طلب الوكيل", AGENT_APPLICATION_REJECTED: "طلب الوكيل", PAYMENT_CONFIRMED: "الدفع", PAYMENT_FAILED: "الدفع", SUBSCRIPTION_EXPIRING: "الاشتراك", SUBSCRIPTION_EXPIRED: "الاشتراك", LISTING_REQUEST: "طلب إعلان", LISTING_REQUEST_ACCEPTED: "طلب إعلان", LISTING_REQUEST_REJECTED: "طلب إعلان", LISTING_LEAD: "عميل محتمل", LISTING_PROPOSAL: "عرض", LISTING_PROPOSAL_ACCEPTED: "عرض", LISTING_PROPOSAL_REJECTED: "عرض", APPOINTMENT_SCHEDULED: "زيارة", APPOINTMENT_UPDATED: "زيارة", APPOINTMENT_REQUESTED: "زيارة", APPOINTMENT_REMINDER: "زيارة", GENERAL: "تحديث" } },

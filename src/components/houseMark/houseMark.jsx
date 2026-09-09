@@ -6,9 +6,14 @@ function HouseMark({ className = "", size = "nav" }) {
       className={`houseMark houseMark--${size}${className ? ` ${className}` : ""}`}
       aria-hidden="true"
     >
-      <span className="roof" />
-      <span className="tower" />
-      <span className="door" />
+      <svg viewBox="0 0 48 48" className="houseMarkSvg">
+        <path
+          className="houseMarkShape"
+          fill="currentColor"
+          fillRule="evenodd"
+          d="M24 6 42 21v3H36v18H12V24H6v-3L24 6ZM21 42V31h6v11H21Z"
+        />
+      </svg>
     </div>
   );
 }

@@ -74,6 +74,21 @@ function AboutPage() {
         </div>
       </section>
 
+      <section className="aboutTypesSection">
+        <div className="aboutSectionHeader">
+          <p className="aboutEyebrow">{t("home.types.label")}</p>
+          <h2>{t("home.types.title")}</h2>
+          <p>{t("home.types.description")}</p>
+        </div>
+        <div className="aboutTypesGrid">
+          {["apartment", "house", "villa", "land", "office", "shop", "warehouse"].map((item) => (
+            <Link key={item} to={`/list?property=${item}`} className="aboutTypeChip">
+              {t(`home.types.${item}`)}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="aboutFeaturesSection">
         <div className="aboutSectionHeader">
           <p className="aboutEyebrow">{t("about.values.title")}</p>

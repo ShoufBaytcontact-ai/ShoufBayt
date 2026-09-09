@@ -121,6 +121,24 @@ const getUploadedImages = (req) => {
     .slice(0, 20);
 };
 
+const getUploadedVerificationImages = (req) => {
+  const files = Array.isArray(req.files) ? req.files : [];
+  return [
+    ...new Set(
+      files
+        .filter((file) => file.fieldname === "verificationImages")
+        .map((file) => getImageUrl(req, file))
+        .filter(Boolean)
+    ),
+  ].slice(0, 2);
+};
+
+const omitVerification = (request) => {
+  if (!request || typeof request !== "object") return request;
+  const { verificationImages, ...safe } = request;
+  return safe;
+};
+
 const isMongoDuplicate = (error) =>
   error?.code === 11000 ||
   error?.errorResponse?.code === 11000 ||
@@ -389,6 +407,16 @@ export const createListingRequest = async (req, res) => {
       });
     }
 
+    const verificationImages = getUploadedVerificationImages(req);
+
+    if (verificationImages.length !== 2) {
+      return res.status(400).json({
+        message:
+          "Upload a proof of ownership and an إفادة عقارية. These are not shown on the public listing.",
+        code: "VERIFICATION_IMAGES_REQUIRED",
+      });
+    }
+
     const eligibleAgents = (await findEligibleLeadAgents()).filter(
       (agent) => agent.userId !== requesterId
     );
@@ -399,6 +427,7 @@ export const createListingRequest = async (req, res) => {
         title,
         price,
         images,
+        verificationImages,
         address,
         city,
         latitude,
@@ -534,7 +563,9 @@ export const getListingRequestById = async (req, res) => {
       return res.status(403).json({ message: "Not allowed to view this request" });
     }
 
-    return res.status(200).json(request);
+    return res.status(200).json(
+      isRequester ? request : omitVerification(request)
+    );
   } catch (error) {
     return handleError(res, error, "Failed to load listing request");
   }
@@ -661,7 +692,7 @@ export const getAgentLeads = async (req, res) => {
         id: listingRequest.id,
         status: isActiveProposal ? "PROPOSED" : "NOTIFIED",
         canProposeAgain: !isActiveProposal,
-        listingRequest,
+        listingRequest: omitVerification(listingRequest),
       };
     });
 
@@ -1043,6 +1074,19 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
     fail(400, "This listing request has no images to publish");
   }
 
+  const verificationImages = (
+    Array.isArray(request.verificationImages) ? request.verificationImages : []
+  )
+    .filter((image) => typeof image === "string" && image.trim())
+    .slice(0, 2);
+
+  if (verificationImages.length !== 2) {
+    fail(
+      400,
+      "This listing request is missing the proof of ownership and إفادة عقارية required for admin review"
+    );
+  }
+
   const latitude = Number(request.latitude);
   const longitude = Number(request.longitude);
 
@@ -1059,6 +1103,7 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
       title: request.title,
       price: toSafeInt(request.price),
       images,
+      verificationImages,
       address: request.address,
       city: request.city,
       latitude,
@@ -1071,8 +1116,8 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
           : toSafeInt(request.area),
       propertyType,
       listingType,
-      status: "PUBLISHED",
-      publishedAt: new Date(),
+      status: "PENDING",
+      publishedAt: null,
       userId: agentUserId,
       requestedByUserId: request.requesterId,
       detail: {
@@ -1099,12 +1144,12 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
       notify({
         userId: admin.id,
         type: "GENERAL",
-        title: "New listing published",
-        message: `"${property.title}" is now live on ShoufBayt.`,
+        title: "Listing waiting for review",
+        message: `"${property.title}" was submitted by an owner through an agent and needs approval before it goes live.`,
         link: "/admin",
         metadata: {
           propertyId: property.id,
-          kind: "PUBLISHED_LISTING",
+          kind: "PENDING_LISTING",
         },
       })
     )
@@ -1327,8 +1372,11 @@ export const acceptListingProposal = async (req, res) => {
 
     return res.status(200).json({
       message: "Proposal accepted",
-      property: result.property,
-      request: result.updatedRequest,
+      property: (() => {
+        const { verificationImages, ...safeProperty } = result.property || {};
+        return safeProperty;
+      })(),
+      request: omitVerification(result.updatedRequest),
     });
   } catch (error) {
     return handleError(res, error, "Failed to accept proposal");

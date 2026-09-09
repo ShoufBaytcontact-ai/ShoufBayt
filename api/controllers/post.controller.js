@@ -419,6 +419,29 @@ const getUploadedImages = (
     .filter(Boolean);
 };
 
+const getUploadedVerificationImages = (req) => {
+  const files = Array.isArray(req.files) ? req.files : [];
+
+  return sanitizeImageArray(
+    files
+      .filter((file) => file.fieldname === "verificationImages")
+      .map((file) => getImageUrl(req, file))
+  ).slice(0, 2);
+};
+
+const requireVerificationImages = (images) => {
+  if (sanitizeImageArray(images).length !== 2) {
+    const error = new Error(
+      "Upload a proof of ownership and an إفادة عقارية. These are not shown on the public listing."
+    );
+    error.status = 400;
+    error.code = "VERIFICATION_IMAGES_REQUIRED";
+    throw error;
+  }
+
+  return sanitizeImageArray(images).slice(0, 2);
+};
+
 const sanitizeImageArray = (
   images
 ) => {
@@ -788,13 +811,17 @@ const handleControllerError = (
     });
   }
 
-  return res
-    .status(error.status || 500)
-    .json({
-      message: error.status
-        ? error.message
-        : fallbackMessage,
-    });
+  const status = error.status || (error?.name === "PrismaClientValidationError" ? 400 : 500);
+  const prismaHint =
+    error?.name === "PrismaClientValidationError"
+      ? " Listing data could not be saved. Try again after refreshing, or contact support if it continues."
+      : "";
+
+  return res.status(status).json({
+    message: error.status
+      ? error.message
+      : `${fallbackMessage}${prismaHint}`,
+  });
 };
 
 /* =========================================================
@@ -918,13 +945,24 @@ const formatPropertyResponse = (property, extras = {}) => {
   }
 
   const listingPhone = pickListingPhone(property.user);
+  const { includeVerification = false, ...publicExtras } = extras;
+  const { verificationImages, ...safeProperty } = property;
+  const descriptionText = String(
+    property.detail?.description || property.detail?.desc || ""
+  );
 
   return {
-    ...property,
+    ...safeProperty,
     listingPhone,
+    description: descriptionText,
 
     // Compatibility aliases for older frontend
-    postDetail: property.detail || null,
+    postDetail: {
+      ...(property.detail || {}),
+      description: descriptionText,
+      desc: descriptionText,
+      size: property.detail?.size ?? property.area ?? null,
+    },
     bedroom: property.bedrooms,
     bathroom: property.bathrooms,
     size: property.area,
@@ -934,7 +972,13 @@ const formatPropertyResponse = (property, extras = {}) => {
         : property.listingType?.toLowerCase(),
     property: property.propertyType?.toLowerCase(),
 
-    ...extras,
+    ...(includeVerification
+      ? {
+          verificationImages: sanitizeImageArray(verificationImages || []),
+        }
+      : {}),
+
+    ...publicExtras,
   };
 };
 
@@ -1229,6 +1273,7 @@ export const getPost = async (req, res) => {
     }
 
     const tokenUserId = getOptionalAuthenticatedUserId(req);
+    const viewer = tokenUserId ? await getLoggedUser(tokenUserId) : null;
     const statusUpper = String(property.status || "").toUpperCase();
     const isPubliclyListed = ["PUBLISHED", "SOLD", "RENTED"].includes(
       statusUpper
@@ -1239,7 +1284,6 @@ export const getPost = async (req, res) => {
         tokenUserId === property.requestedByUserId);
 
     if (!isPubliclyListed && !canViewPrivateListing) {
-      const viewer = tokenUserId ? await getLoggedUser(tokenUserId) : null;
       if (viewer?.role !== "ADMIN") {
         return res.status(404).json({
           message:
@@ -1286,6 +1330,7 @@ export const getPost = async (req, res) => {
       formatPropertyResponse(property, {
         isSaved,
         views: (property.views || 0) + 1,
+        includeVerification: viewer?.role === "ADMIN",
       })
     );
   } catch (error) {
@@ -1467,6 +1512,18 @@ export const addPost = async (req, res) => {
       });
     }
 
+    let verificationImages = [];
+    try {
+      verificationImages = requireVerificationImages(
+        getUploadedVerificationImages(req)
+      );
+    } catch (verificationError) {
+      return res.status(verificationError.status || 400).json({
+        message: verificationError.message,
+        code: verificationError.code,
+      });
+    }
+
     const slug = await createUniqueSlug(title);
 
     const initialStatus = canPublishImmediately(user)
@@ -1479,6 +1536,7 @@ export const addPost = async (req, res) => {
         title,
         price,
         images,
+        verificationImages,
         address,
         city,
         latitude,
