@@ -342,14 +342,13 @@ function HomePage() {
           {PROPERTY_TYPES.map((item) => (
             <Link
               key={item}
-              to={`/list?property=${item}`}
+              to={`/list?property=${item}${type ? `&type=${type}` : ""}`}
               className={`homeTypeCard homeTypeCard--${item}`}
             >
               <span className="homeTypeIcon">
                 <TypeIcon type={item} />
               </span>
               <strong>{t(`home.types.${item}`)}</strong>
-              <em>{t(`home.types.hint.${item}`)}</em>
             </Link>
           ))}
         </div>

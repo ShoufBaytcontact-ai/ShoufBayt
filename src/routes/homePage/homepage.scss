@@ -79,42 +79,48 @@
 }
 
 .homeSearchTypes {
-  display: flex;
-  gap: 0;
-  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
 }
 
 .homeSearchTypes button {
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 30px;
+  padding: 0 12px;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .homeSearchTypes button:hover {
   color: var(--text-main);
 }
 
-.homeSearchTypes button.all.isActive {
-  border-bottom-color: var(--accent);
-  color: var(--accent);
+.homeSearchTypes button.all.isActive,
+.homeSearchTypes button.buy.isActive,
+.homeSearchTypes button.rent.isActive {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  box-shadow: var(--shadow-soft);
 }
 
 .homeSearchTypes button.buy.isActive {
-  border-bottom-color: var(--accent);
   color: var(--accent);
 }
 
 .homeSearchTypes button.rent.isActive {
-  border-bottom-color: var(--accent-2);
   color: var(--accent-2);
 }
 
@@ -166,13 +172,13 @@
 }
 
 .homePropertyChips button {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 28px;
+  padding: 0 10px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--bg-card);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
@@ -265,89 +271,89 @@
 }
 
 .homeTypes {
-  padding: clamp(36px, 6vw, 72px) clamp(20px, 5vw, 72px);
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 5vw, 72px);
   background: var(--bg-card);
   border-top: 1px solid var(--border-color);
 }
 
 .homeTypesHead p {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   color: var(--accent-2);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .homeTypesHead h2 {
   margin: 0;
-  max-width: 22ch;
+  max-width: 28ch;
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
-  line-height: 1.08;
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+  line-height: 1.15;
   letter-spacing: -0.03em;
 }
 
 .homeTypesHead span {
   display: block;
   max-width: 54ch;
-  margin-top: 10px;
+  margin-top: 6px;
   color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .homeTypesGrid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 28px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .homeTypeCard {
-  display: grid;
-  gap: 8px;
-  min-height: 168px;
-  padding: 16px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--bg-main);
   color: inherit;
-  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .homeTypeCard:hover {
-  transform: translateY(-3px);
+  transform: none;
   border-color: var(--accent-2);
   background: var(--bg-elevated);
 }
 
 .homeTypeIcon {
-  width: 42px;
-  height: 42px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--accent-2-soft);
   color: var(--accent-2);
 }
 
 .homeTypeIcon svg {
-  width: 22px;
-  height: 22px;
+  width: 15px;
+  height: 15px;
 }
 
 .homeTypeCard strong {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .homeTypeCard em {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-style: normal;
-  line-height: 1.45;
+  display: none;
 }
 
 .homeTypeCard--house .homeTypeIcon,
@@ -448,15 +454,15 @@
 
 .homeRoles a {
   display: grid;
-  gap: 10px;
-  min-height: 220px;
-  padding: clamp(22px, 3vw, 36px);
+  gap: 6px;
+  min-height: 0;
+  padding: clamp(16px, 2vw, 22px);
   color: inherit;
   background: var(--bg-card);
   border-right: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
-  transition: transform 0.25s var(--ease-out), background 0.25s ease;
+  transition: background 0.25s ease;
 }
 
 .homeRoles a::before {
@@ -481,7 +487,6 @@
 
 .homeRoles a:hover {
   background: var(--bg-elevated);
-  transform: translateY(-2px);
 }
 
 .homeRoles a.roleBuyer {
@@ -509,7 +514,7 @@
 
 .homeRoles strong {
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
 }
 
 .homeRoles span {
@@ -718,7 +723,6 @@ body.light .homeCover {
 }
 
 body.light .homeSearchTypes button.all.isActive {
-  border-bottom-color: var(--accent-3);
   color: var(--accent-3);
 }
 

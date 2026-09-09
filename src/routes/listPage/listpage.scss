@@ -64,35 +64,39 @@
 }
 
 .listTabs {
-  display: flex;
-  gap: 0;
-  margin-top: 22px;
-  border-bottom: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 16px;
+  padding: 3px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
 }
 
 .listTabs button {
-  min-height: 46px;
-  padding: 0 18px;
+  min-height: 30px;
+  padding: 0 12px;
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  border-radius: 8px;
+  margin-bottom: 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
 }
 
-.listTabs button:hover,
-.listTabs .isActive {
+.listTabs button:hover {
   color: var(--text-main);
 }
 
 .listTabs .isActive {
+  background: var(--bg-elevated);
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  box-shadow: var(--shadow-soft);
 }
 
 .filterSection {
