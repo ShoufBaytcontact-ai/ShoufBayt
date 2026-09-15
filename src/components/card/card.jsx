@@ -424,14 +424,6 @@ function Card({ item }) {
               >
                 <PhoneIcon />
               </a>
-            ) : ownerId ? (
-              <Link
-                className="iconBtn callBtn"
-                to={`/agents/${ownerId}`}
-                title={t("card.titles.callAgent", { defaultValue: "Call agent" })}
-              >
-                <PhoneIcon />
-              </Link>
             ) : null)}
         </div>
       </div>

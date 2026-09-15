@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import Layout, { RequireAuth } from "./routes/layout/layout";
@@ -17,8 +17,6 @@ import OffersPage from "./routes/offersPage/offersPage";
 import LivePage from "./routes/livePage/livePage";
 import AboutPage from "./routes/aboutpage/aboutpage";
 import ContactPage from "./routes/contactpage/contactpage";
-import AgentPage from "./routes/agentpage/agentpage";
-import AgentDetailsPage from "./routes/agentDetailsPage/agentDetailsPage";
 import AdminPage from "./routes/adminpage/adminPage";
 import EditPostPage from "./routes/editPostPage/editPostPage";
 import ChatPage from "./routes/chatPage/chatPage";
@@ -85,11 +83,11 @@ const router = createBrowserRouter([
       },
       {
         path: "agents",
-        element: <AgentPage />,
+        element: <Navigate to="/list" replace />,
       },
       {
         path: "agents/:id",
-        element: <AgentDetailsPage />,
+        element: <Navigate to="/list" replace />,
       },
       {
         path: "register",

@@ -562,11 +562,6 @@ ${t("single.chatMessage.closing")}`;
                     <PhoneIcon />
                     {callLabel}
                   </a>
-                ) : canViewAgentProfile ? (
-                  <Link className="soft" to={`/agents/${listingAgent.id}`}>
-                    <PhoneIcon />
-                    {callLabel}
-                  </Link>
                 ) : null)}
 
               <button
@@ -591,13 +586,7 @@ ${t("single.chatMessage.closing")}`;
             />
             <div>
               <small>{t("single.owner.listedBy")}</small>
-              {canViewAgentProfile ? (
-                <Link className="ownerNameLink" to={`/agents/${listingAgent.id}`}>
-                  <b>{listingAgentName}</b>
-                </Link>
-              ) : (
-                <b>{listingAgentName}</b>
-              )}
+              <b>{listingAgentName}</b>
               <span>{t("single.owner.listingAgent")}</span>
             </div>
           </div>

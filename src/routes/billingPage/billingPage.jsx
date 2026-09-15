@@ -494,7 +494,7 @@ function BillingPage() {
           </p>
         </div>
         <Link
-          to={applyJourney ? "/agents" : "/profile"}
+          to="/profile"
           className="ghostBtn heroBack"
         >
           {applyJourney

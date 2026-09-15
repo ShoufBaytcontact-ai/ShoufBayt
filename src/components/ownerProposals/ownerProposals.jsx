@@ -195,11 +195,6 @@ export default function OwnerProposals({
                             ) : null}
                           </p>
                           {proposal.message && <span>{proposal.message}</span>}
-                          {agent.userId && (
-                            <Link to={`/agents/${agent.userId}`}>
-                              {t("profile.requests.viewAgent")}
-                            </Link>
-                          )}
                         </div>
 
                         <div className="ownerOfferBtns">

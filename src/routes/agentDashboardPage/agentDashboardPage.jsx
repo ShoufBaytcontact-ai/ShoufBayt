@@ -1479,11 +1479,6 @@ function AgentDashboardPage() {
                     ? t("agentHub.profile.saving")
                     : t("agentHub.profile.save")}
                 </button>
-                {card.id && (
-                  <Link to={`/agents/${card.id}`} className="hubGhostBtn">
-                    {t("agentHub.profile.viewPublic")}
-                  </Link>
-                )}
               </div>
             </form>
           )}

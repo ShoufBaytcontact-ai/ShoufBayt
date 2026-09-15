@@ -198,11 +198,6 @@ function ProfilePostCard({
                       agency: managedBy.agencyName,
                     })
                   : t("profilePostCard.managedBy", { name: managerName })}
-                {(managedBy.profileId || managedBy.id) && (
-                  <Link to={`/agents/${managedBy.profileId || managedBy.id}`}>
-                    {t("profilePostCard.viewAgent")}
-                  </Link>
-                )}
               </p>
             )}
           </div>

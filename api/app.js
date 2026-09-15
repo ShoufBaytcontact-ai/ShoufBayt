@@ -223,7 +223,7 @@ const siteOrigin = toPublicHttpsOrigin(
       : CLIENT_URL) ||
     "https://shoufbayt.com"
 ) || "https://shoufbayt.com";
-const publicPages = ["/", "/list", "/agents", "/about", "/contact"];
+const publicPages = ["/", "/list", "/about", "/contact"];
 
 app.get("/robots.txt", (_req, res) => {
   res.type("text/plain").send(

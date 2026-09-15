@@ -59,7 +59,6 @@ function Navbar() {
   const navLinks = useMemo(() => {
     const links = [
       { labelKey: "nav.properties", path: "/list" },
-      { labelKey: "nav.agents", path: "/agents" },
       { labelKey: "nav.live", path: "/live" },
     ];
 

@@ -9,10 +9,6 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://shoufbayt.com/agents</loc>
-    <changefreq>weekly</changefreq>
-  </url>
-  <url>
     <loc>https://shoufbayt.com/about</loc>
     <changefreq>monthly</changefreq>
   </url>

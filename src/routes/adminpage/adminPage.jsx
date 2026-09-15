@@ -921,10 +921,6 @@ e.target.reset();
     }
   };
 
-  const handleViewAgent = (id) => {
-    navigate(`/agents/${id}`);
-  };
-
   const pendingPaymentsCount = Number(stats?.pendingPaymentsCount || 0);
   const pendingReportsCount = Number(stats?.pendingReportsCount || 0);
   const unlockQueue = agentRequestsCount;
@@ -1815,14 +1811,6 @@ e.target.reset();
                     </div>
 
                     <div className="actionGroup">
-                      <button
-                        type="button"
-                        className="viewBtn"
-                        onClick={() => handleViewAgent(agent.id)}
-                      >
-                        {t("admin.buttons.view")}
-                      </button>
-
                       <button
                         type="button"
                         className="dangerBtn"

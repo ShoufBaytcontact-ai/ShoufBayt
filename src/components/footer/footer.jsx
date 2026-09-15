@@ -22,7 +22,6 @@ function Footer() {
 
         <nav className="footerNav" aria-label={t("footer.explore.title")}>
           <Link to="/list">{t("footer.explore.properties")}</Link>
-          <Link to="/agents">{t("footer.explore.agents")}</Link>
           <Link to="/about">{t("footer.explore.about")}</Link>
           <Link to="/contact">{t("footer.explore.contact")}</Link>
         </nav>
