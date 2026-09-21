@@ -138,7 +138,10 @@ export default function OwnerProposals({
             <article key={request.id} className="ownerOfferCard">
               <header>
                 <div>
-                  <strong>{request.title}</strong>
+                  <strong>
+                    {request.number ? `#${request.number} · ` : ""}
+                    {request.title}
+                  </strong>
                   <span>
                     {request.city} · {formatMoney(request.price)}
                   </span>

@@ -24,3 +24,14 @@ export const upload = multer({
     files: 24,
   },
 });
+
+const ticketStorage = createUploadStorage("tickets");
+
+export const ticketImageUpload = multer({
+  storage: ticketStorage,
+  fileFilter,
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+    files: 8,
+  },
+});

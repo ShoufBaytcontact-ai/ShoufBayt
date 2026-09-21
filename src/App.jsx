@@ -20,12 +20,14 @@ import ContactPage from "./routes/contactpage/contactpage";
 import AdminPage from "./routes/adminpage/adminPage";
 import EditPostPage from "./routes/editPostPage/editPostPage";
 import ChatPage from "./routes/chatPage/chatPage";
-import BillingPage from "./routes/billingPage/billingPage";
 import NotificationsPage from "./routes/notificationsPage/notificationsPage";
 import RequestListingPage from "./routes/requestListingPage/requestListingPage";
 import ListingRequestSinglePage from "./routes/listingRequestSinglePage/listingRequestSinglePage";
 import AgentDashboardPage from "./routes/agentDashboardPage/agentDashboardPage";
 import OwnerDashboardPage from "./routes/ownerDashboardPage/ownerDashboardPage";
+import TicketsPage, { NewTicketPage } from "./routes/ticketsPage/ticketsPage";
+import TicketDetailPage from "./routes/ticketsPage/ticketDetailPage";
+import LawyerDashboardPage from "./routes/lawyerDashboardPage/lawyerDashboardPage";
 
 import {
   listPageLoader,
@@ -154,11 +156,11 @@ const router = createBrowserRouter([
           },
           {
             path: "billing",
-            element: <BillingPage />,
+            element: <Navigate to="/profile" replace />,
           },
           {
             path: "subscription",
-            element: <BillingPage />,
+            element: <Navigate to="/profile" replace />,
           },
           {
             path: "notifications",
@@ -171,6 +173,22 @@ const router = createBrowserRouter([
           {
             path: "listing-requests/:id",
             element: <ListingRequestSinglePage />,
+          },
+          {
+            path: "tickets",
+            element: <TicketsPage />,
+          },
+          {
+            path: "tickets/new",
+            element: <NewTicketPage />,
+          },
+          {
+            path: "tickets/:number",
+            element: <TicketDetailPage />,
+          },
+          {
+            path: "lawyer",
+            element: <LawyerDashboardPage />,
           },
           {
             path: "agent",

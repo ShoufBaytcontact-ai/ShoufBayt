@@ -2,8 +2,13 @@
 
 .adminPage {
   width: 100%;
-  padding: 28px 0 72px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 28px max(24px, env(safe-area-inset-right, 0px)) 72px
+    max(24px, env(safe-area-inset-left, 0px));
   color: var(--text-main);
+  overflow-x: hidden;
+  box-sizing: border-box;
 
   * {
     box-sizing: border-box;
@@ -419,11 +424,32 @@
   font-weight: 700;
 }
 
+.sectionHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+
+  .countPill {
+    margin: 0;
+  }
+
+  .dangerBtn {
+    min-height: 36px;
+  }
+}
+
 .filtersGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 200px;
   gap: 10px;
   margin-bottom: 18px;
+
+  &:has(> :only-child) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .postFilters,
@@ -467,8 +493,126 @@ table select,
 
 .tableWrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border-color);
+}
+
+.adminRequestList {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.adminRequestRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-sizing: border-box;
+
+  > img {
+    width: 72px;
+    height: 56px;
+    object-fit: cover;
+    background: var(--bg-soft);
+    flex: 0 0 72px;
+  }
+}
+
+.adminRequestBody {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    color: var(--text-main);
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  p {
+    color: var(--text-muted);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.adminRequestNumber {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.adminRequestSide {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+}
+
+.adminRequestMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 7.5rem;
+
+  > span:last-child {
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+
+.adminRequestActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+
+  .viewBtn {
+    min-height: 36px;
+    padding: 0 12px;
+    position: static;
+  }
+}
+
+@media (max-width: 1100px) {
+  .adminRequestRow {
+    flex-wrap: wrap;
+  }
+
+  .adminRequestBody {
+    flex: 1 1 calc(100% - 88px);
+  }
+
+  .adminRequestSide {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .adminRequestMeta {
+    align-items: flex-start;
+  }
 }
 
 table {
@@ -517,6 +661,8 @@ table {
   span {
     color: var(--text-main);
     font-weight: 700;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -850,7 +996,7 @@ table {
 
 .agentField.full,
 .agentField.bioField {
-  grid-column: 1 / -1;
+  grid-column: 1 / span 2;
 }
 
 .agentField label {

@@ -17,7 +17,7 @@ import {
 } from "./emailLayout.js";
 
 export const LAUNCH_PERIOD_CAMPAIGN = "launch_period_ended";
-export const LAUNCH_PERIOD_LINK = "/billing?src=launch-end";
+export const LAUNCH_PERIOD_LINK = "/profile?src=launch-end";
 
 const formatWhen = (value) => {
   if (!value) return "the launch date";
@@ -61,9 +61,9 @@ export const getLaunchPeriodCopy = (role, { username, test = false } = {}) => {
   const name = username || "there";
   const price = PLAN_PRICES.PREMIUM;
   const until = formatWhen(getPremiumFreeUntil());
-  const billingUrl = `${getClientUrl()}/billing`;
+  const billingUrl = `${getClientUrl()}/profile`;
   const publicBillingUrl = getPublicClientUrl()
-    ? `${getPublicClientUrl()}/billing`
+    ? `${getPublicClientUrl()}/profile`
     : "";
   const testNote = test
     ? "This is a test preview sent by an administrator. Live members receive this after the complimentary month ends."

@@ -13,8 +13,9 @@ import {
 } from "../lib/uniqueFields.js";
 import { sendListingModerationEmail } from "../lib/Email.js";
 import { isValidPhone, normalizePhone } from "../lib/phone.js";
+import { purgeListingRequests } from "../lib/purgeListingRequests.js";
 
-const roles = ["USER", "AGENT", "ADMIN"];
+const roles = ["USER", "AGENT", "ADMIN", "LAWYER"];
 
 const accountStatuses = [
   "ACTIVE",
@@ -806,6 +807,237 @@ export const getAdminProperties = async (req, res) => {
 // Keep this temporarily if your old routes still use getAdminPosts
 export const getAdminPosts = getAdminProperties;
 
+const listingNoteAuthor = {
+  select: {
+    id: true,
+    username: true,
+    role: true,
+  },
+};
+
+const listingNoteWhere = async ({ listingRequestId, propertyId }) => {
+  const requestId = cleanText(listingRequestId);
+  const propId = cleanText(propertyId);
+  const or = [];
+
+  if (requestId) {
+    or.push({ listingRequestId: requestId });
+    const request = await prisma.listingRequest.findUnique({
+      where: { id: requestId },
+      select: { propertyId: true },
+    });
+    if (request?.propertyId) {
+      or.push({ propertyId: request.propertyId });
+    }
+  }
+
+  if (propId) {
+    or.push({ propertyId: propId });
+    const linked = await prisma.listingRequest.findMany({
+      where: { propertyId: propId },
+      select: { id: true },
+    });
+    linked.forEach((item) => {
+      or.push({ listingRequestId: item.id });
+    });
+  }
+
+  return or;
+};
+
+export const getAdminListingRequests = async (req, res) => {
+  try {
+    const requests = await prisma.listingRequest.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        requester: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
+        },
+        acceptedByAgent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        property: {
+          select: {
+            id: true,
+            slug: true,
+            status: true,
+          },
+        },
+        _count: {
+          select: {
+            adminComments: true,
+            proposals: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json(
+      requests.map((request) => ({
+        id: request.id,
+        number: request.number,
+        title: request.title,
+        city: request.city,
+        address: request.address,
+        price: request.price,
+        status: request.status,
+        createdAt: request.createdAt,
+        cover: Array.isArray(request.images) ? request.images[0] || null : null,
+        requester: request.requester,
+        property: request.property,
+        acceptedByAgent: request.acceptedByAgent,
+        commentCount: request._count?.adminComments || 0,
+        proposalCount: request._count?.proposals || 0,
+      }))
+    );
+  } catch (error) {
+    return handleError(res, error, "Failed to load listing requests");
+  }
+};
+
+export const clearAdminListingRequests = async (req, res) => {
+  try {
+    const deleted = await purgeListingRequests();
+
+    return res.status(200).json({
+      message: "Listing requests cleared",
+      deleted,
+    });
+  } catch (error) {
+    return handleError(res, error, "Failed to clear listing requests");
+  }
+};
+
+export const getListingNotes = async (req, res) => {
+  const listingRequestId = cleanText(req.query.listingRequestId);
+  const propertyId = cleanText(req.query.propertyId);
+
+  try {
+    if (!listingRequestId && !propertyId) {
+      return res.status(400).json({
+        message: "listingRequestId or propertyId is required",
+      });
+    }
+
+    if (listingRequestId && !validateMongoId(res, listingRequestId, "request ID")) {
+      return;
+    }
+
+    if (propertyId && !validateMongoId(res, propertyId, "property ID")) {
+      return;
+    }
+
+    const or = await listingNoteWhere({ listingRequestId, propertyId });
+
+    if (or.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const notes = await prisma.listingAdminComment.findMany({
+      where: { OR: or },
+      include: { author: listingNoteAuthor },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const seen = new Set();
+    const unique = notes.filter((note) => {
+      if (seen.has(note.id)) return false;
+      seen.add(note.id);
+      return true;
+    });
+
+    return res.status(200).json(unique);
+  } catch (error) {
+    return handleError(res, error, "Failed to load listing notes");
+  }
+};
+
+export const addListingNote = async (req, res) => {
+  const listingRequestId = cleanText(
+    req.body.listingRequestId || req.query.listingRequestId
+  );
+  const propertyId = cleanText(req.body.propertyId || req.query.propertyId);
+  const body = cleanText(req.body.body || req.body.comment);
+
+  try {
+    if (!body) {
+      return res.status(400).json({ message: "Comment is required" });
+    }
+
+    if (body.length > 4000) {
+      return res.status(400).json({ message: "Comment is too long" });
+    }
+
+    if (!listingRequestId && !propertyId) {
+      return res.status(400).json({
+        message: "listingRequestId or propertyId is required",
+      });
+    }
+
+    let requestId = listingRequestId || null;
+    let propId = propertyId || null;
+
+    if (requestId) {
+      if (!validateMongoId(res, requestId, "request ID")) {
+        return;
+      }
+      const request = await prisma.listingRequest.findUnique({
+        where: { id: requestId },
+        select: { id: true, propertyId: true },
+      });
+      if (!request) {
+        return res.status(404).json({ message: "Listing request not found" });
+      }
+      if (!propId && request.propertyId) {
+        propId = request.propertyId;
+      }
+    }
+
+    if (propId) {
+      if (!validateMongoId(res, propId, "property ID")) {
+        return;
+      }
+      const property = await prisma.property.findUnique({
+        where: { id: propId },
+        select: { id: true },
+      });
+      if (!property) {
+        return res.status(404).json({ message: "Listing not found" });
+      }
+      if (!requestId) {
+        const linked = await prisma.listingRequest.findFirst({
+          where: { propertyId: propId },
+          select: { id: true },
+        });
+        if (linked) {
+          requestId = linked.id;
+        }
+      }
+    }
+
+    const note = await prisma.listingAdminComment.create({
+      data: {
+        body,
+        authorId: req.userId,
+        listingRequestId: requestId,
+        propertyId: propId,
+      },
+      include: { author: listingNoteAuthor },
+    });
+
+    return res.status(201).json(note);
+  } catch (error) {
+    return handleError(res, error, "Failed to save listing comment");
+  }
+};
+
 export const updatePropertyStatus = async (req, res) => {
   const { id } = req.params;
   const status = cleanText(req.body.status).toUpperCase();
@@ -1022,6 +1254,31 @@ export const deleteAdminProperty = async (req, res) => {
       where: {
         propertyId: id,
       },
+    });
+
+    await prisma.appointment.deleteMany({
+      where: {
+        propertyId: id,
+      },
+    });
+
+    await prisma.listingAdminComment.deleteMany({
+      where: {
+        propertyId: id,
+      },
+    });
+
+    await prisma.ticket.updateMany({
+      where: {
+        propertyId: id,
+      },
+      data: {
+        propertyId: null,
+      },
+    });
+
+    await purgeListingRequests({
+      propertyId: id,
     });
 
     await prisma.chat.updateMany({

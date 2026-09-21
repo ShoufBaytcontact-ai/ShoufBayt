@@ -51,7 +51,7 @@ export const sendSubscriptionExpiringEmail = async ({
   const name = username || "valued partner";
   const when = formatWhen(endDate);
   const price = PLAN_PRICES.PREMIUM;
-  const billingUrl = `${getPublicClientUrl()}/billing`;
+  const billingUrl = `${getPublicClientUrl()}/profile`;
   const periodLabel = isTrial ? "complimentary Premium trial" : "Premium agent subscription";
   const subject = isTrial
     ? "Your ShoufBayt Premium trial is ending soon"
@@ -92,7 +92,7 @@ export const sendAgentDowngradedEmail = async ({ to, username }) => {
 
   const name = username || "valued partner";
   const price = PLAN_PRICES.PREMIUM;
-  const billingUrl = `${getPublicClientUrl()}/billing`;
+  const billingUrl = `${getPublicClientUrl()}/profile`;
   const subject = "Your ShoufBayt agent access has been paused";
 
   const payload = {
@@ -124,7 +124,7 @@ export const sendAgentRestoredEmail = async ({ to, username, endDate }) => {
 
   const name = username || "valued partner";
   const when = formatWhen(endDate);
-  const billingUrl = `${getPublicClientUrl()}/billing`;
+  const billingUrl = `${getPublicClientUrl()}/profile`;
   const subject = "Welcome back: your ShoufBayt agent account is active";
 
   const payload = {
@@ -146,7 +146,7 @@ export const sendAgentRestoredEmail = async ({ to, username, endDate }) => {
     ctaLabel: "Open your dashboard",
     ctaUrl: `${getPublicClientUrl()}/agent`,
     note: getPublicClientUrl()
-      ? `You can review invoices and renewal settings at any time from Billing: ${getPublicClientUrl()}/billing`
+      ? `You can review invoices and renewal settings at any time from Billing: ${getPublicClientUrl()}/profile`
       : "You can review invoices and renewal settings from Billing in your ShoufBayt account.",
   };
 
@@ -197,7 +197,7 @@ export const sendPremiumActivatedEmail = async ({
       },
     ],
     ctaLabel: pendingReview ? "View billing" : "Open your dashboard",
-    ctaUrl: pendingReview ? `${siteUrl}/billing` : `${siteUrl}/agent`,
+    ctaUrl: pendingReview ? `${siteUrl}/profile` : `${siteUrl}/agent`,
     note: "This is an automated receipt from ShoufBayt. Keep this email for your records.",
   };
 
@@ -232,7 +232,7 @@ export const sendPaymentSubmittedEmail = async ({
       { label: "Status", value: "Awaiting confirmation" },
     ],
     ctaLabel: "View billing",
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "If you sent the wrong receipt, submit a new one after this payment is reviewed, or contact ShoufBayt.",
   };
 
@@ -273,7 +273,7 @@ export const sendPaymentRejectedEmail = async ({
       { label: "Amount due", value: `$${PLAN_PRICES.PREMIUM} USD` },
     ],
     ctaLabel: "Return to billing",
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "If you believe this is a mistake, reply to this email or use the contact page.",
   };
 
@@ -305,7 +305,7 @@ export const sendGraceStartedEmail = async ({ to, username, graceEndsAt }) => {
       ...payeeEmailDetails(price),
     ],
     ctaLabel: `Renew Premium · $${price}`,
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "This is an automated account notice from ShoufBayt.",
   };
 
@@ -344,7 +344,7 @@ export const sendSubscriptionCancelledEmail = async ({
       ...payeeEmailDetails(price),
     ],
     ctaLabel: "Open billing",
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "You can resume this period from Billing, or send a new payment and upload the receipt to start a fresh Premium month.",
   };
 
@@ -377,7 +377,7 @@ export const sendSubscriptionResumedEmail = async ({
       { label: "Active until", value: when },
     ],
     ctaLabel: "Open billing",
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "You can cancel again at any time from Billing. Access then continues until the period end date.",
   };
 
@@ -407,7 +407,7 @@ export const sendAutoRenewFailedEmail = async ({ to, username }) => {
       { label: "Auto-renew", value: "Turned off" },
     ],
     ctaLabel: "Update billing",
-    ctaUrl: `${getPublicClientUrl()}/billing`,
+    ctaUrl: `${getPublicClientUrl()}/profile`,
     note: "Your listings stay online until the current period and courtesy window end.",
   };
 

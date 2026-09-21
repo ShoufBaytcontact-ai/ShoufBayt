@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import prisma from "../lib/prisma.js";
 import { SESSION_IDLE_JWT } from "../lib/sessionIdle.js";
 
 export const shouldBeLoggedIN = (req, res, next) => {
@@ -19,7 +20,7 @@ export const shouldBeLoggedIN = (req, res, next) => {
     token,
     process.env.JWT_SECRET_KEY,
     { maxAge: SESSION_IDLE_JWT },
-    (err, payload) => {
+    async (err, payload) => {
       if (err) {
         const expired =
           err.name === "TokenExpiredError" || /maxAge/i.test(err.message || "");
@@ -32,10 +33,35 @@ export const shouldBeLoggedIN = (req, res, next) => {
         });
       }
 
-      req.userId = payload.id;
-      req.userRole = payload.role;
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: payload.id },
+          select: { id: true, role: true, status: true },
+        });
 
-      next();
+        if (!user) {
+          return res.status(401).json({
+            code: "INVALID_TOKEN",
+            message: "Token is not valid!",
+          });
+        }
+
+        if (user.status !== "ACTIVE") {
+          return res.status(401).json({
+            code: "SESSION_EXPIRED",
+            message: "Session expired. Please sign in again.",
+          });
+        }
+
+        req.userId = user.id;
+        req.userRole = user.role;
+        return next();
+      } catch (error) {
+        console.error("AUTH CHECK ERROR:", error);
+        return res.status(500).json({
+          message: "Failed to verify session",
+        });
+      }
     }
   );
 };

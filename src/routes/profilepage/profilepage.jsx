@@ -37,8 +37,6 @@ function ProfilePage() {
   const userEmail = currentUser?.email || t("profile.fallback.noEmail");
   const userAvatar = getImageUrl(currentUser?.avatar);
   const roleKey = getRoleKey(currentUser?.role);
-  const canSeeBilling = Boolean(currentUser);
-
   const handleLogout = async () => {
     try {
       await apiRequest.post("/auth/logout");
@@ -83,17 +81,6 @@ function ProfilePage() {
             {currentUser.phone || currentUser.agentProfile.phone}
           </p>
         ) : null}
-
-        {canSeeBilling && (
-          <dl className="profileRows">
-            <div>
-              <dt>{t("nav.billing")}</dt>
-              <dd>
-                <Link to="/billing">{t("profile.fields.manageBilling")}</Link>
-              </dd>
-            </div>
-          </dl>
-        )}
 
         <div className="profileActions">
           <Link to="/profile/update" className="editBtn">

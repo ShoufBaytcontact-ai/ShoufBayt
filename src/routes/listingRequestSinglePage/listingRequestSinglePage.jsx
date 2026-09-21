@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Slider from "../../components/slider/slider";
 import Map from "../../components/map/map";
 import PageState from "../../components/pageState/pageState";
+import AdminListingNotes from "../../components/adminListingNotes/adminListingNotes";
+import { AuthContext } from "../../context/AuthContext.jsx";
 import { listingRequestApi } from "../../lib/services";
 import "../singlePage/singlePage.scss";
 
@@ -104,6 +106,8 @@ function ListingRequestSinglePage() {
   const { id } = useParams();
   const location = useLocation();
   const { t } = useTranslation();
+  const { currentUser } = useContext(AuthContext);
+  const isAdmin = String(currentUser?.role || "").toUpperCase() === "ADMIN";
   const seeded = location.state?.listingRequest;
   const [request, setRequest] = useState(
     seeded && String(seeded.id) === String(id) ? seeded : null
@@ -222,7 +226,11 @@ function ListingRequestSinglePage() {
   return (
     <main className="singlePage pageFade">
       <div className="singleBar">
-        <Link to="/agent?tab=leads">{t("agentHub.leads.backToLeads")}</Link>
+        <Link to={isAdmin ? "/admin?section=listings&pane=requests" : "/agent?tab=leads"}>
+          {isAdmin
+            ? t("admin.listingRequests.back")
+            : t("agentHub.leads.backToLeads")}
+        </Link>
       </div>
 
       <section className="singleGallery">
@@ -233,6 +241,9 @@ function ListingRequestSinglePage() {
         <div className="singleMain">
           <header className="singleIntro">
             <div className="singleTags">
+              {request.number ? (
+                <span className="tag">#{request.number}</span>
+              ) : null}
               <span className={isRent ? "tag rent" : "tag sale"}>
                 {propertyDeal}
               </span>
@@ -284,6 +295,13 @@ function ListingRequestSinglePage() {
               )}
             </div>
           </article>
+
+          {isAdmin ? (
+            <AdminListingNotes
+              listingRequestId={request.id}
+              propertyId={request.propertyId || request.property?.id}
+            />
+          ) : null}
         </div>
 
         <aside className="singleAside">
@@ -295,9 +313,21 @@ function ListingRequestSinglePage() {
               {request.requester?.username || t("single.fallback.unknownUser")}
             </p>
             <div className="singleActions">
-              <Link className="primary" to="/agent?tab=leads">
-                {t("agentHub.leads.propose")}
-              </Link>
+              {isAdmin ? (
+                request.property?.id ? (
+                  <Link className="primary" to={`/properties/${request.property.id}`}>
+                    {t("admin.listingRequests.openListing")}
+                  </Link>
+                ) : (
+                  <Link className="primary" to="/admin?section=listings&pane=requests">
+                    {t("admin.listingRequests.back")}
+                  </Link>
+                )
+              ) : (
+                <Link className="primary" to="/agent?tab=leads">
+                  {t("agentHub.leads.propose")}
+                </Link>
+              )}
             </div>
           </div>
         </aside>

@@ -611,7 +611,7 @@ export const reviewPayment = async (req, res) => {
           (status === "REFUNDED"
             ? "Your payment was refunded."
             : "Your payment could not be verified."),
-        link: "/billing",
+        link: "/profile",
         metadata: {
           paymentId,
           status,

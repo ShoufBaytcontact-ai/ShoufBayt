@@ -2,8 +2,10 @@ import prisma from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import {
   assertAgentSubscriptionAccess,
-  getSelfListingQuota,
 } from "../lib/subscription.js";
+import { nextListingNumber } from "../lib/listingNumber.js";
+import { purgeListingRequests } from "../lib/purgeListingRequests.js";
+import { publishAgentInventoryListings, publishAllAgentInventoryListings } from "../lib/publishAgentInventory.js";
 import { SESSION_IDLE_JWT } from "../lib/sessionIdle.js";
 import { createNotification } from "../lib/notify.js";
 import { findPropertyIdsByTextSearch } from "../lib/ensureSearchIndexes.js";
@@ -429,19 +431,6 @@ const getUploadedVerificationImages = (req) => {
   ).slice(0, 2);
 };
 
-const requireVerificationImages = (images) => {
-  if (sanitizeImageArray(images).length !== 2) {
-    const error = new Error(
-      "Upload a proof of ownership and an إفادة عقارية. These are not shown on the public listing."
-    );
-    error.status = 400;
-    error.code = "VERIFICATION_IMAGES_REQUIRED";
-    throw error;
-  }
-
-  return sanitizeImageArray(images).slice(0, 2);
-};
-
 const sanitizeImageArray = (
   images
 ) => {
@@ -551,7 +540,7 @@ const canCreateProperty = (
     return true;
   }
 
-  return user.role === "USER";
+  return false;
 };
 
 const canPublishImmediately = (user) => {
@@ -1107,8 +1096,26 @@ const buildPropertyFilters = (query) => {
    GET PROPERTIES (PUBLIC)
 ========================================================= */
 
+let agentInventorySynced = false;
+
+const syncPublishedAgentInventory = async () => {
+  if (agentInventorySynced) {
+    return;
+  }
+
+  agentInventorySynced = true;
+
+  try {
+    await publishAllAgentInventoryListings();
+  } catch (error) {
+    agentInventorySynced = false;
+    console.log("PUBLISH AGENT INVENTORY ERROR:", error);
+  }
+};
+
 export const getPosts = async (req, res) => {
   try {
+    await syncPublishedAgentInventory();
     const { page, limit, skip } = getPagination(req.query);
     const where = buildPropertyFilters(req.query);
     const orderBy = getSortOrder(req.query.sort);
@@ -1379,18 +1386,10 @@ export const addPost = async (req, res) => {
     }
 
     if (user.role === "USER") {
-      const listingQuota = await getSelfListingQuota(tokenUserId);
-
-      if (!listingQuota.allowed) {
-        return res.status(403).json({
-          message:
-            "You've used your free self-listing. Subscribe to Premium ($" +
-            listingQuota.priceMonthly +
-            "/month) to list again yourself, or ask an agent to list for you.",
-          code: "SELF_LISTING_LIMIT",
-          listingQuota,
-        });
-      }
+      return res.status(403).json({
+        message: "Users list through an agent request. Submit a listing request instead.",
+        code: "USE_LISTING_REQUEST",
+      });
     }
 
     const { propertyData, detailData } = getPropertyPayload(req);
@@ -1512,23 +1511,10 @@ export const addPost = async (req, res) => {
       });
     }
 
-    let verificationImages = [];
-    if (user.role === "USER") {
-      try {
-        verificationImages = requireVerificationImages(
-          getUploadedVerificationImages(req)
-        );
-      } catch (verificationError) {
-        return res.status(verificationError.status || 400).json({
-          message: verificationError.message,
-          code: verificationError.code,
-        });
-      }
-    } else {
-      verificationImages = getUploadedVerificationImages(req);
-    }
+    const verificationImages = getUploadedVerificationImages(req);
 
     const slug = await createUniqueSlug(title);
+    const listingNo = await nextListingNumber();
 
     const initialStatus = canPublishImmediately(user)
       ? "PUBLISHED"
@@ -1537,6 +1523,9 @@ export const addPost = async (req, res) => {
     const property = await prisma.property.create({
       data: {
         slug,
+        number: listingNo.number,
+        year: listingNo.year,
+        seq: listingNo.seq,
         title,
         price,
         images,
@@ -1579,6 +1568,8 @@ export const addPost = async (req, res) => {
 
     if (initialStatus === "PENDING") {
       await notifyAdminsOfPendingListing(property);
+    } else if (user.role === "AGENT") {
+      await publishAgentInventoryListings(tokenUserId);
     }
 
     return res.status(201).json(formatPropertyResponse(property));
@@ -1973,6 +1964,10 @@ export const deletePost = async (req, res) => {
       },
     });
 
+    await purgeListingRequests({
+      propertyId,
+    });
+
     await prisma.property.delete({
       where: {
         id: propertyId,
@@ -2049,17 +2044,6 @@ export const updatePostStatus = async (req, res) => {
     if (!isAdmin && !listingManagerAllowed.includes(status)) {
       return res.status(403).json({
         message: "You can mark a listing as available, sold, rented, or archived",
-      });
-    }
-
-    if (
-      !isAdmin &&
-      status === "PUBLISHED" &&
-      ["PENDING", "REJECTED"].includes(String(property.status || "").toUpperCase())
-    ) {
-      return res.status(403).json({
-        message: "This listing is waiting for admin approval before it can go live",
-        code: "ADMIN_APPROVAL_REQUIRED",
       });
     }
 

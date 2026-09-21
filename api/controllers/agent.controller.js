@@ -19,6 +19,7 @@ import {
   assertLicenseAvailable,
   assertFullNameAvailable,
 } from "../lib/uniqueFields.js";
+import { publishAgentInventoryListings } from "../lib/publishAgentInventory.js";
 
 const applicationStatuses = [
   "PENDING",
@@ -500,6 +501,19 @@ export const getMyAgentListings = async (req, res) => {
         where: { userId },
         orderBy: { createdAt: "desc" },
       });
+    }
+
+    const publishedCount = await publishAgentInventoryListings(userId);
+    if (publishedCount > 0) {
+      listings = listings.map((item) =>
+        item.status === "PENDING"
+          ? {
+              ...item,
+              status: "PUBLISHED",
+              publishedAt: item.publishedAt || new Date(),
+            }
+          : item
+      );
     }
 
     return res.status(200).json({
@@ -1360,7 +1374,7 @@ export const approveAgentRequest = async (req, res) => {
               ? `You're verified. Your ${TRIAL_DAYS}-day Premium trial has started — then $${PLAN_PRICES.PREMIUM}/month. No commission on sales.`
               : `You're verified. Subscribe to Premium ($${PLAN_PRICES.PREMIUM}/month) in Billing to publish listings.`,
 
-            link: "/billing",
+            link: "/profile",
 
             metadata: {
               applicationId,

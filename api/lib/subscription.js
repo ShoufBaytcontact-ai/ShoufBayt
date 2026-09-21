@@ -235,7 +235,7 @@ const notifyUser = async ({ userId, type, title, message, metadata }) => {
         type,
         title,
         message,
-        link: "/billing",
+        link: "/profile",
         metadata: metadata || undefined,
       },
     });

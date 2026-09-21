@@ -1,3 +1,4 @@
+import { MongoClient } from "mongodb";
 import prisma from "./prisma.js";
 import { toPhoneKey } from "./phone.js";
 
@@ -86,11 +87,17 @@ const backfillPhoneKeys = async () => {
 };
 
 const listIndexNames = async (collection) => {
+  const url = String(process.env.DATABASE_URL || "").trim();
+  if (!url) {
+    return [];
+  }
+
+  // Prisma $runCommandRaw(listIndexes) cannot decode some Mongo index
+  // BSON types ("Unknown tagged value"). Use the native driver instead.
+  const client = new MongoClient(url);
   try {
-    const result = await prisma.$runCommandRaw({
-      listIndexes: collection,
-    });
-    const indexes = result?.cursor?.firstBatch || result?.indexes || [];
+    await client.connect();
+    const indexes = await client.db().collection(collection).indexes();
     return indexes.map((index) => String(index?.name || "")).filter(Boolean);
   } catch (error) {
     console.warn(
@@ -98,6 +105,8 @@ const listIndexNames = async (collection) => {
       error?.message || error
     );
     return [];
+  } finally {
+    await client.close().catch(() => {});
   }
 };
 

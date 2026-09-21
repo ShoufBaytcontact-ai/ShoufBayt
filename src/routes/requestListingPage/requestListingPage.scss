@@ -513,6 +513,15 @@
   margin-top: 28px;
 }
 
+.requestNumber {
+  margin: 8px 0 0;
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 [dir="rtl"] .requestStats div {
   border-right: none;
   border-left: 1px solid var(--border-color);

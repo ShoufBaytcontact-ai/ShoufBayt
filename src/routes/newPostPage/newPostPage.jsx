@@ -124,7 +124,13 @@ function NewPostPage() {
   const { t } = useTranslation();
 
   const role = String(currentUser?.role || "").toUpperCase();
-  const isSelfList = role === "USER";
+  const isSelfList = false;
+
+  useEffect(() => {
+    if (role === "USER") {
+      navigate("/request-listing", { replace: true });
+    }
+  }, [role, navigate]);
 
   const [step, setStep] = useState("details");
   const [form, setForm] = useState(initialForm);
@@ -410,6 +416,10 @@ function NewPostPage() {
     return null;
   }
 
+  if (role === "USER") {
+    return null;
+  }
+
   return (
     <main className="requestListingPage pageFade">
       <section className="requestHero">
@@ -523,7 +533,7 @@ function NewPostPage() {
             </p>
           </header>
           <div className="requestActions">
-            <Link to="/billing" className="requestPrimaryBtn">
+            <Link to="/contact" className="requestPrimaryBtn">
               {t("listingPlan.upgrade")}
             </Link>
             <Link to="/request-listing" className="requestTextLink">

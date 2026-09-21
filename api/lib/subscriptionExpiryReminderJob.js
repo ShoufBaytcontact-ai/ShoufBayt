@@ -28,7 +28,7 @@ const notifyAgent = async ({ userId, title, message, metadata }) => {
         type: "SUBSCRIPTION_EXPIRING",
         title,
         message,
-        link: "/billing",
+        link: "/profile",
         metadata: metadata || undefined,
       },
     });

@@ -57,6 +57,10 @@ function AdminAnalytics({
         label: t("adminAnalytics.roles.users"),
         value: countFromLists(safeUsers, (user) => user.role === "USER"),
       },
+      {
+        label: t("adminAnalytics.roles.lawyers", { defaultValue: "Lawyers" }),
+        value: countFromLists(safeUsers, (user) => user.role === "LAWYER"),
+      },
     ];
 
     const postsByType = [

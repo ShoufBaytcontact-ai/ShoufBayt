@@ -681,7 +681,7 @@ export const updateAgentStatus = async (req, res) => {
           message: subscription
             ? `You're verified. Your ${TRIAL_DAYS}-day Premium trial has started — then $${PLAN_PRICES.PREMIUM}/month. No commission on sales.`
             : `You're verified. Subscribe to Premium ($${PLAN_PRICES.PREMIUM}/month) in Billing to publish listings.`,
-          link: "/billing",
+          link: "/profile",
           metadata: {
             applicationId: application?.id || null,
             subscriptionId: subscription?.id || null,

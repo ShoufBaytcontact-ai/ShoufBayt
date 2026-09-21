@@ -8,6 +8,7 @@ import StatusBadge from "../../components/statusBadge/statusBadge";
 import RecommendedProperties from "../../components/recommendedProperties/recommendedProperties";
 import PageState from "../../components/pageState/pageState";
 import ReportModal from "../../components/reportModal/reportModal";
+import AdminListingNotes from "../../components/adminListingNotes/adminListingNotes";
 import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { getListingPhone, toCallHref } from "../../lib/listingContact";
@@ -455,6 +456,7 @@ ${t("single.chatMessage.closing")}`;
         <div className="singleMain">
           <header className="singleIntro">
             <div className="singleTags">
+              {post.number ? <span className="tag">#{post.number}</span> : null}
               <span className={isRent ? "tag rent" : "tag sale"}>
                 {propertyDeal}
               </span>
@@ -513,6 +515,8 @@ ${t("single.chatMessage.closing")}`;
               </div>
             </article>
           )}
+
+          {isAdmin ? <AdminListingNotes propertyId={post.id} /> : null}
 
           <article className="singleCopy">
             <h2>{t("single.sections.propertyDescription")}</h2>

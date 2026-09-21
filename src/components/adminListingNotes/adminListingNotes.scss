@@ -1,0 +1,120 @@
+.adminListingNotes {
+  margin-top: 28px;
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.adminListingNotesBadge {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminListingNotes h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.adminListingNotes > p {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.adminListingNotesEmpty {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.adminListingNotesList {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.adminListingNotesList li {
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-page, transparent);
+}
+
+.adminListingNotesList div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.adminListingNotesList b {
+  font-size: 13px;
+}
+
+.adminListingNotesList small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.adminListingNotesList p {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.adminListingNotes form {
+  display: grid;
+  gap: 10px;
+}
+
+.adminListingNotes label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.adminListingNotes textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-input, var(--bg-page));
+  color: var(--text-main);
+  font: inherit;
+  resize: vertical;
+}
+
+.adminListingNotes button {
+  justify-self: start;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adminListingNotes button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.adminListingNotesError {
+  margin: 0;
+  color: var(--danger, #c0392b);
+  font-size: 13px;
+}

@@ -160,7 +160,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       lastRefreshRef.current = now;
-      apiRequest.post("/auth/refresh").catch(() => {});
+      apiRequest
+        .post("/auth/refresh")
+        .then((res) => {
+          if (!res.data?.id) return;
+          const next = sessionFieldsFromUser(res.data);
+          setCurrentUser((prev) => {
+            if (!prev) return prev;
+            const merged = { ...prev, ...next };
+            sessionStorage.setItem("user", JSON.stringify(merged));
+            return merged;
+          });
+        })
+        .catch(() => {});
     };
 
     let activityTick = 0;

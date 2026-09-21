@@ -109,6 +109,9 @@ const folderFor = (kind, file) => {
   if (kind === "chat") {
     return `${root}/chat`;
   }
+  if (kind === "tickets") {
+    return `${root}/tickets`;
+  }
 
   const field = String(file?.fieldname || "");
   if (field === "avatar") {

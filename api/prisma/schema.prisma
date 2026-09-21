@@ -12,6 +12,7 @@ enum Role {
   USER
   AGENT
   ADMIN
+  LAWYER
 }
 
 enum AccountStatus {
@@ -124,6 +125,9 @@ enum NotificationType {
   APPOINTMENT_UPDATED
   APPOINTMENT_REQUESTED
   APPOINTMENT_REMINDER
+  TICKET_NEW
+  TICKET_REPLY
+  TICKET_STATUS
   GENERAL
 }
 
@@ -228,6 +232,11 @@ model User {
   reviewedReports PropertyReport[] @relation("ReportReviewer")
 
   listingRequests ListingRequest[] @relation("ListingRequester")
+  listingAdminComments ListingAdminComment[]
+
+  ticketsAuthored Ticket[] @relation("TicketAuthor")
+  ticketsAssigned Ticket[] @relation("TicketLawyer")
+  ticketMessages  TicketMessage[]
 
   ownerAppointments Appointment[] @relation("AppointmentOwner")
   agentAppointments Appointment[] @relation("AppointmentAgent")
@@ -314,8 +323,18 @@ model AgentProfile {
 
 // ─── User → Agent listing handoff ────────────────────────────────────────────
 
+model ListingSequence {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  year       Int    @unique
+  nextNumber Int    @default(1)
+}
+
 model ListingRequest {
   id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  number String?
+  year   Int?
+  seq    Int?
 
   requesterId String @db.ObjectId
   requester   User   @relation("ListingRequester", fields: [requesterId], references: [id], onDelete: Cascade)
@@ -355,6 +374,7 @@ model ListingRequest {
 
   invites   ListingRequestInvite[]
   proposals ListingProposal[]
+  adminComments ListingAdminComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -364,6 +384,7 @@ model ListingRequest {
   @@index([acceptedByAgentId])
   @@index([city])
   @@index([propertyId])
+  @@index([number])
 }
 
 model ListingRequestInvite {
@@ -385,6 +406,27 @@ model ListingRequestInvite {
   @@unique([listingRequestId, agentProfileId])
   @@index([agentProfileId, status])
   @@index([listingRequestId, status])
+}
+
+model ListingAdminComment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  body String
+
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  listingRequestId String?         @db.ObjectId
+  listingRequest   ListingRequest? @relation(fields: [listingRequestId], references: [id], onDelete: Cascade)
+
+  propertyId String?   @db.ObjectId
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([listingRequestId, createdAt])
+  @@index([propertyId, createdAt])
+  @@index([authorId])
 }
 
 model ListingProposal {
@@ -415,6 +457,10 @@ model ListingProposal {
 model Property {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
   slug String @unique
+
+  number String?
+  year   Int?
+  seq    Int?
 
   title  String
   price  Int
@@ -459,11 +505,13 @@ model Property {
   requestedByUser   User?   @relation("PropertyRequester", fields: [requestedByUserId], references: [id], onDelete: SetNull)
 
   listingRequests ListingRequest[] @relation("RequestToProperty")
+  adminComments ListingAdminComment[]
 
   detail  PropertyDetail?
   savedBy SavedProperty[]
   reports PropertyReport[]
   reviews PropertyReview[]
+  tickets Ticket[]
 
   chats Chat[]
   appointments Appointment[]
@@ -489,6 +537,7 @@ model Property {
   @@index([status, views])
   @@index([status, city, createdAt])
   @@index([userId, status, createdAt])
+  @@index([number])
 }
 
 // ─── Appointments / property visits ───────────────────────────────────────────
@@ -840,4 +889,81 @@ model VerificationCode {
 
   @@index([userId])
   @@index([userId, type, used])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_REVIEW
+  WAITING_USER
+  WAITING_OTHER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketCategory {
+  CONTRACT
+  PAYMENT
+  CONSTRUCTION
+  NEIGHBOR
+  DELAY
+  OTHER
+}
+
+model TicketSequence {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  year       Int    @unique
+  nextNumber Int    @default(1)
+}
+
+model Ticket {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  number String @unique
+  year   Int
+  seq    Int
+
+  title       String
+  description String
+  category    TicketCategory @default(OTHER)
+  status      TicketStatus   @default(OPEN)
+
+  propertyId String?   @db.ObjectId
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  authorId String @db.ObjectId
+  author   User   @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  lawyerId String? @db.ObjectId
+  lawyer   User?   @relation("TicketLawyer", fields: [lawyerId], references: [id], onDelete: SetNull)
+
+  phone  String?
+  images String[] @default([])
+
+  messages TicketMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId, createdAt])
+  @@index([lawyerId, status])
+  @@index([status, createdAt])
+  @@index([propertyId])
+  @@index([year, seq])
+}
+
+model TicketMessage {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  ticketId String @db.ObjectId
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([authorId])
 }

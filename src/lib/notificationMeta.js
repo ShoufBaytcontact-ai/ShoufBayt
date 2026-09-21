@@ -22,6 +22,9 @@ const TYPE_TONE = {
   APPOINTMENT_UPDATED: "calendar",
   APPOINTMENT_REQUESTED: "calendar",
   APPOINTMENT_REMINDER: "calendar",
+  TICKET_NEW: "listing",
+  TICKET_REPLY: "message",
+  TICKET_STATUS: "listing",
   GENERAL: "neutral",
 };
 
@@ -61,6 +64,10 @@ export function resolveNotificationLink(link = "") {
 
   if (link.startsWith("/property/")) {
     return `/properties/${link.slice("/property/".length)}`;
+  }
+
+  if (link.startsWith("/billing") || link.startsWith("/subscription")) {
+    return "/profile";
   }
 
   if (link === "/") {

@@ -334,7 +334,7 @@ function AgentRequestBox({ compact = false }) {
     );
 
   const goToPremium = () => {
-    navigate("/billing?apply=1");
+    navigate("/profile");
   };
 
   const handoffOverlay =
@@ -430,7 +430,7 @@ function AgentRequestBox({ compact = false }) {
               </p>
             </div>
 
-            <Link to="/billing?apply=1">
+            <Link to="/profile">
               {waitingReview
                 ? t("agentRequest.pending.viewBilling")
                 : t("agentRequest.pending.completePayment")}

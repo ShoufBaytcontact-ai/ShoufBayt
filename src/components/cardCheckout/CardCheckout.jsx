@@ -27,7 +27,7 @@ function CardPayForm({ amount, onSuccess, onError }) {
         elements,
         redirect: "if_required",
         confirmParams: {
-          return_url: `${window.location.origin}/billing`,
+          return_url: `${window.location.origin}/profile`,
         },
       });
 

@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma.js";
+import { nextListingNumber } from "../lib/listingNumber.js";
 import { assertAgentSubscriptionAccess, ensureAgentProfile } from "../lib/subscription.js";
 import {
   findEligibleLeadAgents,
@@ -421,8 +421,13 @@ export const createListingRequest = async (req, res) => {
       (agent) => agent.userId !== requesterId
     );
 
+    const listingNo = await nextListingNumber();
+
     const request = await prisma.listingRequest.create({
       data: {
+        number: listingNo.number,
+        year: listingNo.year,
+        seq: listingNo.seq,
         requesterId,
         title,
         price,
@@ -456,7 +461,7 @@ export const createListingRequest = async (req, res) => {
       userId: requesterId,
       type: "LISTING_REQUEST",
       title: "Listing request submitted",
-      message: `We received “${title}”. Please wait while verified agents submit proposals.`,
+      message: `We received “${title}”${listingNo.number ? ` (#${listingNo.number})` : ""}. Please wait while verified agents submit proposals.`,
       link: "/owner",
       requireRole: ["USER", "ADMIN"],
       metadata: {
@@ -558,13 +563,18 @@ export const getListingRequestById = async (req, res) => {
     const isRequester = request.requesterId === req.userId;
     const isLeadAgent =
       Boolean(agent) && request.requesterId !== req.userId;
+    const viewer = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true },
+    });
+    const isAdmin = String(viewer?.role || "").toUpperCase() === "ADMIN";
 
-    if (!isRequester && !isLeadAgent) {
+    if (!isRequester && !isLeadAgent && !isAdmin) {
       return res.status(403).json({ message: "Not allowed to view this request" });
     }
 
     return res.status(200).json(
-      isRequester ? request : omitVerification(request)
+      isRequester || isAdmin ? request : omitVerification(request)
     );
   } catch (error) {
     return handleError(res, error, "Failed to load listing request");
@@ -1096,10 +1106,17 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
 
   const slug = await uniquePropertySlug(db, request.title);
   const description = cleanText(request.description) || request.title;
+  const listingNo =
+    request.number && request.year && request.seq
+      ? { number: request.number, year: request.year, seq: request.seq }
+      : await nextListingNumber(db);
 
   const property = await db.property.create({
     data: {
       slug,
+      number: listingNo.number,
+      year: listingNo.year,
+      seq: listingNo.seq,
       title: request.title,
       price: toSafeInt(request.price),
       images,
@@ -1116,8 +1133,8 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
           : toSafeInt(request.area),
       propertyType,
       listingType,
-      status: "PENDING",
-      publishedAt: null,
+      status: "PUBLISHED",
+      publishedAt: new Date(),
       userId: agentUserId,
       requestedByUserId: request.requesterId,
       detail: {
@@ -1128,32 +1145,6 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
       },
     },
   });
-
-  const admins = await db.user.findMany({
-    where: {
-      role: "ADMIN",
-      status: "ACTIVE",
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  await Promise.all(
-    admins.map((admin) =>
-      notify({
-        userId: admin.id,
-        type: "GENERAL",
-        title: "Listing waiting for review",
-        message: `"${property.title}" was submitted by an owner through an agent and needs approval before it goes live.`,
-        link: "/admin",
-        metadata: {
-          propertyId: property.id,
-          kind: "PENDING_LISTING",
-        },
-      })
-    )
-  );
 
   await db.listingProposal.update({
     where: { id: proposal.id },

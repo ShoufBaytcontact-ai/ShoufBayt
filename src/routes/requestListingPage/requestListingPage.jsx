@@ -125,11 +125,7 @@ function RequestListingPage() {
   const { currentUser } = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const role = String(currentUser?.role || "").toUpperCase();
-  const isRegularUser = role === "USER";
-
   const [step, setStep] = useState("details");
-  const [listingPath, setListingPath] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [images, setImages] = useState([]);
   const [verificationImages, setVerificationImages] = useState([]);
@@ -353,6 +349,7 @@ function RequestListingPage() {
         notifiedCount: res.data?.notifiedCount ?? 0,
         maxProposals: res.data?.maxProposals ?? 10,
         id: res.data?.id,
+        number: res.data?.number,
       });
       setSuccess(t("requestListing.success.submitted"));
       setStep("done");
@@ -373,72 +370,22 @@ function RequestListingPage() {
 
   if (!currentUser) return null;
 
-  const showPathChoice = isRegularUser && !listingPath && step !== "done";
-
   return (
     <main className="requestListingPage pageFade">
       <section className="requestHero">
         <div>
-          <p className="requestEyebrow">
-            {t(showPathChoice ? "requestListing.path.badge" : "requestListing.hero.badge")}
-          </p>
-          <h1>
-            {t(showPathChoice ? "requestListing.path.title" : "requestListing.hero.title")}
-          </h1>
-          <span>
-            {t(
-              showPathChoice
-                ? "requestListing.path.description"
-                : "requestListing.hero.description"
-            )}
-          </span>
+          <p className="requestEyebrow">{t("requestListing.hero.badge")}</p>
+          <h1>{t("requestListing.hero.title")}</h1>
+          <span>{t("requestListing.hero.description")}</span>
         </div>
 
         <div className="requestHeroActions">
-          {showPathChoice ? (
-            <Link to="/my-homes" className="requestGhostBtn">
-              {t("newPost.hero.myListings")}
-            </Link>
-          ) : (
-            <Link to="/offers" className="requestGhostBtn">
-              {t("requestListing.hero.myRequests")}
-            </Link>
-          )}
+          <Link to="/offers" className="requestGhostBtn">
+            {t("requestListing.hero.myRequests")}
+          </Link>
         </div>
       </section>
 
-      {showPathChoice && (
-        <section className="listingPathGrid" aria-label={t("requestListing.path.badge")}>
-          <button
-            type="button"
-            className="listingPathCard"
-            onClick={() => {
-              setListingPath("agent");
-              setStep("details");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          >
-            <p className="requestEyebrow">{t("requestListing.path.agentBadge")}</p>
-            <h2>{t("requestListing.path.agentTitle")}</h2>
-            <p>{t("requestListing.path.agentText")}</p>
-            <span>{t("requestListing.path.agentCta")}</span>
-          </button>
-
-          <button
-            type="button"
-            className="listingPathCard"
-            onClick={() => navigate("/newPostPage")}
-          >
-            <p className="requestEyebrow">{t("requestListing.path.selfBadge")}</p>
-            <h2>{t("requestListing.path.selfTitle")}</h2>
-            <p>{t("requestListing.path.selfText")}</p>
-            <span>{t("requestListing.path.selfCta")}</span>
-          </button>
-        </section>
-      )}
-
-      {!showPathChoice && (
-        <>
       <section className="requestStats">
         <div>
           <span>{t("requestListing.stats.brief")}</span>
@@ -473,18 +420,6 @@ function RequestListingPage() {
               <p className="requestEyebrow">{t("requestListing.details.badge")}</p>
               <h2>{t("requestListing.details.title")}</h2>
               <p>{t("requestListing.details.description")}</p>
-              {isRegularUser && (
-                <button
-                  type="button"
-                  className="listingPathSwitch"
-                  onClick={() => {
-                    setListingPath(null);
-                    setStep("details");
-                  }}
-                >
-                  {t("requestListing.path.back")}
-                </button>
-              )}
             </header>
 
             <div className="requestGrid">
@@ -938,6 +873,9 @@ function RequestListingPage() {
           <header className="requestCardHeader">
             <p className="requestEyebrow">{t("requestListing.done.badge")}</p>
             <h2>{t("requestListing.done.title")}</h2>
+            {resultMeta?.number ? (
+              <p className="requestNumber">#{resultMeta.number}</p>
+            ) : null}
             <p>
               {t("requestListing.done.description", {
                 count: resultMeta?.notifiedCount ?? 0,
@@ -960,8 +898,6 @@ function RequestListingPage() {
             </button>
           </div>
         </section>
-      )}
-        </>
       )}
     </main>
   );

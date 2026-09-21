@@ -261,7 +261,12 @@ function Login() {
       const userData = res.data?.user || res.data;
 
       updateUser(userData);
-      navigate(afterAuthPath(userData));
+      const nextPath =
+        location.state?.from?.pathname &&
+        location.state.from.pathname.startsWith("/")
+          ? location.state.from.pathname
+          : "/";
+      navigate(afterAuthPath(userData, nextPath));
     } catch (err) {
       console.log("VERIFY LOGIN CODE ERROR:", err);
       setError(err.response?.data?.message || t("login.errors.invalidCode"));
@@ -323,7 +328,12 @@ function Login() {
                 disabled={isLoading}
                 onSuccess={(user) => {
                   updateUser(user);
-                  navigate(afterAuthPath(user));
+                  const nextPath =
+                    location.state?.from?.pathname &&
+                    location.state.from.pathname.startsWith("/")
+                      ? location.state.from.pathname
+                      : "/";
+                  navigate(afterAuthPath(user, nextPath));
                 }}
                 onError={(message) => {
                   setSuccess("");

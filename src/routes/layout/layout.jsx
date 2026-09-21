@@ -27,7 +27,7 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (

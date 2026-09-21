@@ -26,6 +26,7 @@ import reportroute from "./routes/report.route.js";
 import reviewroute from "./routes/review.route.js";
 import listingRequestroute from "./routes/listingRequest.route.js";
 import appointmentroute from "./routes/appointment.route.js";
+import ticketroute from "./routes/ticket.route.js";
 import { startVisitReminderJob } from "./lib/visitReminderJob.js";
 import { startAutoRenewJob } from "./lib/autoRenewJob.js";
 import { startSubscriptionExpiryReminderJob } from "./lib/subscriptionExpiryReminderJob.js";
@@ -198,6 +199,7 @@ app.use("/api/reports", reportroute);
 app.use("/api/reviews", reviewroute);
 app.use("/api/listing-requests", listingRequestroute);
 app.use("/api/appointments", appointmentroute);
+app.use("/api/tickets", ticketroute);
 
 const toPublicHttpsOrigin = (value) => {
   const raw = String(value || "").trim().replace(/\/+$/, "");
@@ -223,7 +225,7 @@ const siteOrigin = toPublicHttpsOrigin(
       : CLIENT_URL) ||
     "https://shoufbayt.com"
 ) || "https://shoufbayt.com";
-const publicPages = ["/", "/list", "/about", "/contact"];
+const publicPages = ["/", "/list", "/tickets", "/about", "/contact"];
 
 app.get("/robots.txt", (_req, res) => {
   res.type("text/plain").send(

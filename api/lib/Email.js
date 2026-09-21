@@ -55,7 +55,7 @@ export const sendAgentApplicationReceivedEmail = async ({
       { label: "After payment", value: "Admin review" },
     ],
     ctaLabel: `Pay $${price} now`,
-    ctaUrl: `${siteUrl}/billing?apply=1`,
+    ctaUrl: `${siteUrl}/profile`,
     note: "This is an automated confirmation from ShoufBayt.",
   };
 
@@ -155,7 +155,7 @@ export const sendAgentStatusEmail = async ({
             { label: "Next step", value: `Pay $${price} USD` },
           ],
           ctaLabel: `Subscribe · $${price}`,
-          ctaUrl: `${siteUrl}/billing`,
+          ctaUrl: `${siteUrl}/profile`,
           note: "Your profile is saved. Paying Premium restores full publishing access.",
         };
 

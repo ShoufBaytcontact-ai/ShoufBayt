@@ -15,6 +15,10 @@ import {
   updateUserRole,
   updateUserStatus,
   updatePropertyStatus,
+  getAdminListingRequests,
+  clearAdminListingRequests,
+  getListingNotes,
+  addListingNote,
   getAdminContactMessages,
   updateContactMessageStatus,
   deleteContactMessage,
@@ -73,6 +77,12 @@ router.delete("/properties/:id", deleteAdminProperty);
 
 router.get("/posts", getAdminPosts);
 router.delete("/posts/:id", deleteAdminPost);
+
+router.get("/listing-requests", getAdminListingRequests);
+router.post("/listing-requests/clear", clearAdminListingRequests);
+router.delete("/listing-requests", clearAdminListingRequests);
+router.get("/listing-notes", getListingNotes);
+router.post("/listing-notes", addListingNote);
 
 /* Agents */
 router.get("/agents", getAdminAgents);

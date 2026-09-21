@@ -287,7 +287,10 @@ function OwnerDashboardPage() {
                           }}
                         />
                         <div className="ownerPropertyMeta">
-                          <strong>{property.title}</strong>
+                          <strong>
+                            {property.number ? `#${property.number} · ` : ""}
+                            {property.title}
+                          </strong>
                           <span>
                             {property.city} · {formatStatus(property.status)}
                           </span>

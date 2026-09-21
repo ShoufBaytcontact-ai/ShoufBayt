@@ -38,6 +38,7 @@ function Navbar() {
 
   const isAdmin = currentUser?.role?.toUpperCase() === "ADMIN";
   const isAgent = currentUser?.role?.toUpperCase() === "AGENT";
+  const isLawyer = currentUser?.role?.toUpperCase() === "LAWYER";
   const currentLanguage = (i18n.resolvedLanguage || i18n.language || "en").split("-")[0];
 
   const SERVER_URL = (
@@ -59,6 +60,7 @@ function Navbar() {
   const navLinks = useMemo(() => {
     const links = [
       { labelKey: "nav.properties", path: "/list" },
+      { labelKey: "nav.tickets", path: "/tickets" },
       { labelKey: "nav.live", path: "/live" },
     ];
 
@@ -79,12 +81,19 @@ function Navbar() {
       });
     }
 
+    if (isLawyer) {
+      links.push({
+        labelKey: "nav.lawyerDesk",
+        path: "/lawyer",
+      });
+    }
+
     if (isAdmin) {
       links.push({ labelKey: "nav.dashboard", path: "/admin", admin: true });
     }
 
     return links;
-  }, [currentUser, isAdmin, isAgent]);
+  }, [currentUser, isAdmin, isAgent, isLawyer]);
 
   useEffect(() => {
     document.body.classList.remove("light", "dark");

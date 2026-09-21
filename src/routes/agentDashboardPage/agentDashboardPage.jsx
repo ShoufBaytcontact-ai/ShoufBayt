@@ -790,9 +790,6 @@ function AgentDashboardPage() {
           <Link to="/newPostPage" className="hubPrimaryBtn">
             {t("agentHub.links.addListing")}
           </Link>
-          <Link to="/billing" className="hubGhostBtn">
-            {t("agentHub.links.billing")}
-          </Link>
           <Link to="/chat" className="hubGhostBtn">
             {t("agentHub.links.messages")}
           </Link>
@@ -872,6 +869,9 @@ function AgentDashboardPage() {
                       to={leadDetailPath(openLeads[0].listingRequest)}
                       state={{ listingRequest: openLeads[0].listingRequest }}
                     >
+                      {openLeads[0].listingRequest?.number
+                        ? `#${openLeads[0].listingRequest.number} · `
+                        : ""}
                       {openLeads[0].listingRequest?.title || t("agentHub.tabs.leads")}
                     </Link>
                   </h3>
@@ -996,6 +996,7 @@ function AgentDashboardPage() {
                       to={detailPath}
                       state={{ listingRequest: request }}
                     >
+                      {request.number ? `#${request.number} · ` : ""}
                       {request.title || t("agentHub.tabs.leads")}
                     </Link>
 

@@ -322,6 +322,7 @@ function Card({ item }) {
 
       <div className="propertyContent">
         <div className="propertyTop">
+          {post.number ? <span className="listingNo">#{post.number}</span> : null}
           <span className="cityBadge">{city}</span>
           <StatusBadge status={status} />
         </div>

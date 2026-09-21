@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./adminPage.scss";
 import apiRequest from "../../lib/apiRequest";
@@ -49,8 +49,9 @@ function getImageUrl(image, fallback = "/no-avatar.png") {
 }
 
 function AdminPage() {
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
 
   const previousSnapshotRef = useRef(null);
@@ -78,6 +79,11 @@ function AdminPage() {
   const [propertyFilter, setPropertyFilter] = useState("ALL");
   const [listingStatusFilter, setListingStatusFilter] = useState("ALL");
   const [listingActionId, setListingActionId] = useState("");
+  const [listingPane, setListingPane] = useState("properties");
+  const [listingRequests, setListingRequests] = useState([]);
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestError, setRequestError] = useState("");
+  const [clearingRequests, setClearingRequests] = useState(false);
 
   const [messageSearch, setMessageSearch] = useState("");
   const [messageTypeFilter, setMessageTypeFilter] = useState("ALL");
@@ -147,6 +153,19 @@ function AdminPage() {
           ? messagesRes.data
           : [];
         const nextAgents = Array.isArray(agentsRes.data) ? agentsRes.data : [];
+        let nextListingRequests = [];
+        let nextRequestError = "";
+
+        try {
+          const listingReqRes = await apiRequest.get("/admin/listing-requests");
+          nextListingRequests = Array.isArray(listingReqRes.data)
+            ? listingReqRes.data
+            : [];
+        } catch (listingErr) {
+          nextRequestError =
+            listingErr.response?.data?.message ||
+            tRef.current("admin.listingRequests.errors.load");
+        }
 
         let nextAgentRequestsCount = 0;
 
@@ -217,6 +236,8 @@ function AdminPage() {
         setPosts(nextPosts);
         setContactMessages(nextMessages);
         setAgents(nextAgents);
+        setListingRequests(nextListingRequests);
+        setRequestError(nextRequestError);
         setAgentRequestsCount(nextAgentRequestsCount);
       } catch (err) {
         console.log("ADMIN PAGE ERROR:", err);
@@ -257,6 +278,29 @@ function AdminPage() {
     bootstrappedRef.current = true;
     fetchAdminData(true);
   }, [currentUser, isAdmin, navigate, fetchAdminData]);
+
+  useEffect(() => {
+    const sectionParam = searchParams.get("section");
+    const paneParam = searchParams.get("pane");
+    if (!sectionParam) {
+      return;
+    }
+
+    setSection(sectionParam);
+
+    if (sectionParam === "listings") {
+      setListingPane(paneParam === "requests" ? "requests" : "properties");
+    }
+    if (sectionParam === "people" && paneParam) {
+      setPeoplePane(paneParam);
+    }
+    if (sectionParam === "billing" && paneParam) {
+      setBillingPane(paneParam);
+    }
+    if (sectionParam === "support" && paneParam) {
+      setSupportPane(paneParam === "live" ? "inbox" : paneParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!currentUser || !isAdmin) {
@@ -353,6 +397,7 @@ function AdminPage() {
         read: false,
         system: true,
         actionSection: "listings",
+        actionPane: "properties",
       });
     }
 
@@ -394,7 +439,26 @@ function AdminPage() {
       setSupportPane(pane === "live" ? "inbox" : pane);
     }
 
+    if (nextSection === "listings") {
+      setListingPane(pane === "requests" ? "requests" : "properties");
+    }
+
     setShowNotifications(false);
+
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextSection && nextSection !== "desk") {
+      nextParams.set("section", nextSection);
+    } else {
+      nextParams.delete("section");
+    }
+    if (nextSection === "listings") {
+      nextParams.set("pane", pane === "requests" ? "requests" : "properties");
+    } else if (pane) {
+      nextParams.set("pane", pane);
+    } else {
+      nextParams.delete("pane");
+    }
+    setSearchParams(nextParams, { replace: true });
   };
 
   const handleNotificationClick = (notification) => {
@@ -462,6 +526,27 @@ function AdminPage() {
       return aPending ? -1 : 1;
     });
   }, [posts, postSearch, typeFilter, propertyFilter, listingStatusFilter]);
+
+  const filteredListingRequests = useMemo(() => {
+    const search = requestSearch.toLowerCase().trim();
+    const list = Array.isArray(listingRequests) ? listingRequests : [];
+
+    return list.filter((item) => {
+      const searchText = `${item.title || ""} ${item.city || ""} ${
+        item.address || ""
+      } ${item.number || ""} ${item.requester?.username || ""}`
+        .toLowerCase()
+        .trim();
+
+      return !search || searchText.includes(search);
+    });
+  }, [listingRequests, requestSearch]);
+
+  const openListingRequestCount = (
+    Array.isArray(listingRequests) ? listingRequests : []
+  ).filter((item) =>
+    ["OPEN", "PENDING"].includes(String(item.status || "").toUpperCase())
+  ).length;
 
   const filteredContactMessages = useMemo(() => {
     const search = messageSearch.toLowerCase().trim();
@@ -583,6 +668,36 @@ function AdminPage() {
     }
   };
 
+  const handleClearListingRequests = async () => {
+    if (!listingRequests.length || clearingRequests) {
+      return;
+    }
+
+    const confirmClear = window.confirm(
+      t("admin.listingRequests.confirms.clear")
+    );
+
+    if (!confirmClear) {
+      return;
+    }
+
+    setClearingRequests(true);
+
+    try {
+      await apiRequest.post("/admin/listing-requests/clear");
+      setListingRequests([]);
+      setRequestError("");
+      await fetchAdminData(false);
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          t("admin.listingRequests.errors.clear")
+      );
+    } finally {
+      setClearingRequests(false);
+    }
+  };
+
   const handleDeletePost = async (post) => {
     const confirmDelete = window.confirm(
       t("admin.confirms.deletePost", {
@@ -624,21 +739,31 @@ function AdminPage() {
   };
 
   const handleRoleChange = async (id, role) => {
+    const userId = String(id || "").trim();
+    if (!userId) return;
+
     try {
-      const res = await apiRequest.put(`/admin/users/${id}/role`, {
-        role,
+      const res = await apiRequest.put(`/admin/users/${userId}/role`, {
+        role: String(role || "").toUpperCase(),
       });
+
+      const nextRole = res.data?.role || String(role || "").toUpperCase();
 
       setUsers((prev) =>
         prev.map((user) =>
-          user.id === id ? { ...user, role: res.data.role || role } : user
+          (user.id || user._id) === userId ? { ...user, role: nextRole } : user
         )
       );
+
+      if (currentUser?.id === userId) {
+        updateUser({ ...currentUser, role: nextRole });
+      }
 
       await fetchAdminData(false);
     } catch (err) {
       console.log("UPDATE ROLE ERROR:", err);
       alert(err.response?.data?.message || t("admin.errors.updateRole"));
+      await fetchAdminData(false);
     }
   };
 
@@ -956,7 +1081,7 @@ e.target.reset();
   const navItems = [
     { id: "desk", label: t("admin.tabs.desk") },
     { id: "people", label: t("admin.tabs.people"), count: 0 },
-    { id: "listings", label: t("admin.tabs.listings"), count: pendingListingsCount },
+    { id: "listings", label: t("admin.tabs.listings"), count: pendingListingsCount + openListingRequestCount },
     { id: "unlock", label: t("admin.tabs.unlock"), count: unlockQueue },
     { id: "billing", label: t("admin.tabs.billing"), count: billingQueue },
     { id: "support", label: t("admin.tabs.support"), count: supportQueue },
@@ -1085,7 +1210,7 @@ e.target.reset();
               type="button"
               onClick={() => {
                 setListingStatusFilter("PENDING");
-                openSection("listings");
+                openSection("listings", "properties");
               }}
             >
               <span>{t("admin.desk.listings")}</span>
@@ -1242,6 +1367,9 @@ e.target.reset();
               <option value="ALL">{t("admin.users.allRoles")}</option>
               <option value="USER">{t("admin.users.usersOnly")}</option>
               <option value="AGENT">{t("admin.users.agentsOnly")}</option>
+              <option value="LAWYER">
+                {t("admin.users.lawyersOnly", { defaultValue: "Lawyers" })}
+              </option>
               <option value="ADMIN">{t("admin.users.adminsOnly")}</option>
             </select>
           </div>
@@ -1284,12 +1412,13 @@ e.target.reset();
                         <select
                           value={user.role}
                           onChange={(e) =>
-                            handleRoleChange(user.id, e.target.value)
+                            handleRoleChange(user.id || user._id, e.target.value)
                           }
-                          disabled={user.id === currentUser?.id}
+                          disabled={(user.id || user._id) === currentUser?.id}
                         >
                           <option value="USER">USER</option>
                           <option value="AGENT">AGENT</option>
+                          <option value="LAWYER">LAWYER</option>
                           <option value="ADMIN">ADMIN</option>
                         </select>
                       </td>
@@ -1303,7 +1432,7 @@ e.target.reset();
                           type="button"
                           className="dangerBtn"
                           onClick={() => handleDeleteUser(user)}
-                          disabled={user.id === currentUser?.id}
+                          disabled={(user.id || user._id) === currentUser?.id}
                         >
                           {t("admin.buttons.delete")}
                         </button>
@@ -1324,6 +1453,149 @@ e.target.reset();
       )}
 
       {section === "listings" && (
+        <nav className="adminSubTabs">
+          <button
+            type="button"
+            className={listingPane === "requests" ? "isActive" : ""}
+            onClick={() => openSection("listings", "requests")}
+          >
+            {t("admin.tabs.listingRequests")}
+            {openListingRequestCount > 0 ? (
+              <span>{openListingRequestCount}</span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            className={listingPane === "properties" ? "isActive" : ""}
+            onClick={() => openSection("listings", "properties")}
+          >
+            {t("admin.tabs.posts")}
+            {pendingListingsCount > 0 ? <span>{pendingListingsCount}</span> : null}
+          </button>
+        </nav>
+      )}
+
+      {section === "listings" && listingPane === "requests" && (
+        <section className="adminSection">
+          <div className="sectionHeader">
+            <div>
+              <span>{t("admin.listingRequests.badge")}</span>
+              <h2>{t("admin.listingRequests.title")}</h2>
+              <p>{t("admin.listingRequests.description")}</p>
+            </div>
+            <div className="sectionHeaderActions">
+              <span className="countPill">
+                {t("admin.listingRequests.count", {
+                  count: filteredListingRequests.length,
+                })}
+              </span>
+              <button
+                type="button"
+                className="dangerBtn"
+                disabled={!listingRequests.length || clearingRequests}
+                onClick={handleClearListingRequests}
+              >
+                {clearingRequests
+                  ? t("admin.listingRequests.clearing")
+                  : t("admin.listingRequests.clear")}
+              </button>
+            </div>
+          </div>
+
+          <div className="filtersGrid">
+            <input
+              type="text"
+              placeholder={t("admin.listingRequests.searchPlaceholder")}
+              value={requestSearch}
+              onChange={(e) => setRequestSearch(e.target.value)}
+            />
+          </div>
+
+          {requestError ? (
+            <div className="emptyState">{requestError}</div>
+          ) : null}
+
+          <div className="adminRequestList">
+            {filteredListingRequests.length > 0 ? (
+              filteredListingRequests.map((item) => (
+                <article key={item.id} className="adminRequestRow">
+                  <img
+                    src={getImageUrl(
+                      item.cover || item.images?.[0],
+                      "/no-image.png"
+                    )}
+                    alt=""
+                    onError={(e) => {
+                      e.currentTarget.src = "/no-image.png";
+                    }}
+                  />
+                  <div className="adminRequestBody">
+                    <p className="adminRequestNumber">
+                      {item.number ? `#${item.number}` : t("admin.listingRequests.unnumbered")}
+                    </p>
+                    <h3>{item.title || t("admin.fallback.property")}</h3>
+                    <p>
+                      {item.requester?.username || t("admin.fallback.unknown")}
+                      {" · "}
+                      {item.city || t("admin.fallback.unknown")}
+                      {" · "}
+                      {formatMoney(item.price)}
+                    </p>
+                  </div>
+                  <div className="adminRequestSide">
+                    <div className="adminRequestMeta">
+                      <span
+                        className={`miniBadge ${(
+                          item.status || "OPEN"
+                        ).toLowerCase()}`}
+                      >
+                        {t(
+                          `admin.listingRequests.status.${String(
+                            item.status || "OPEN"
+                          ).toUpperCase()}`,
+                          { defaultValue: item.status || "OPEN" }
+                        )}
+                      </span>
+                      <span>
+                        {t("admin.listingRequests.notesCount", {
+                          count:
+                            item.commentCount ||
+                            item._count?.adminComments ||
+                            0,
+                        })}
+                      </span>
+                    </div>
+                    <div className="adminRequestActions">
+                      <button
+                        type="button"
+                        className="viewBtn"
+                        onClick={() => navigate(`/listing-requests/${item.id}`)}
+                      >
+                        {t("admin.buttons.view")}
+                      </button>
+                      {item.property?.id ? (
+                        <button
+                          type="button"
+                          className="viewBtn"
+                          onClick={() => handleViewPost(item.property.id)}
+                        >
+                          {t("admin.listingRequests.openListing")}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="emptyState">
+                {t("admin.listingRequests.empty")}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {section === "listings" && listingPane === "properties" && (
         <section className="adminSection">
           <div className="sectionHeader">
             <div>
@@ -1361,7 +1633,11 @@ e.target.reset();
               <option value="ALL">{t("admin.posts.allProperties")}</option>
               <option value="apartment">{t("admin.values.apartment")}</option>
               <option value="house">{t("admin.values.house")}</option>
+              <option value="villa">{t("admin.values.villa", { defaultValue: "Villa" })}</option>
               <option value="land">{t("admin.values.land")}</option>
+              <option value="office">{t("admin.values.office", { defaultValue: "Office" })}</option>
+              <option value="shop">{t("admin.values.shop", { defaultValue: "Shop" })}</option>
+              <option value="warehouse">{t("admin.values.warehouse", { defaultValue: "Warehouse" })}</option>
             </select>
 
             <select
@@ -1407,7 +1683,10 @@ e.target.reset();
                             }}
                           />
 
-                          <span>{post.title || t("admin.fallback.property")}</span>
+                          <span>
+                            {post.number ? `#${post.number} · ` : ""}
+                            {post.title || t("admin.fallback.property")}
+                          </span>
                         </div>
                       </td>
 
@@ -2134,8 +2413,8 @@ e.target.reset();
                   defaultValue: "Property Reports",
                 })}
               </span>
-              <h2>Listing reports</h2>
-              <p>Review user reports on suspicious or incorrect listings.</p>
+              <h2>{t("admin.tabs.propertyReports")}</h2>
+              <p>{t("admin.desk.reportsHint")}</p>
             </div>
           </div>
           <AdminBillingPanel section="reports" />

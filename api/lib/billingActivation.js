@@ -74,7 +74,7 @@ export const activatePaidSubscription = async ({
       message: restored
         ? `Your agent account and listings are back. Premium is active until ${endDate.toDateString()}.`
         : `Your Premium subscription is active until ${endDate.toDateString()}. You can list homes yourself without the free-listing limit.`,
-      link: "/billing",
+      link: "/profile",
       metadata: {
         paymentId,
         subscriptionId: subscription.id,
@@ -284,7 +284,7 @@ export const chargeSavedCardForRenewal = async (userId) => {
         title: "Auto-renew failed",
         message:
           "We could not charge your saved card. Auto-renew was turned off — update your card on Billing.",
-        link: "/billing",
+        link: "/profile",
         metadata: { paymentId: payment.id },
       },
     });

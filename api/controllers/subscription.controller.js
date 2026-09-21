@@ -252,7 +252,7 @@ export const cancelMySubscription = async (req, res) => {
         message: accessUntil
           ? `Your plan will not renew. You keep access until ${accessUntil.toDateString()}.`
           : "Your plan will not renew. You keep access until this period ends.",
-        link: "/billing",
+        link: "/profile",
         metadata: {
           subscriptionId: updated.id,
           cancelled: true,
@@ -330,7 +330,7 @@ export const resumeMySubscription = async (req, res) => {
         message: accessUntil
           ? `Your plan is active again until ${accessUntil.toDateString()}.`
           : "Your Premium plan is active again.",
-        link: "/billing",
+        link: "/profile",
         metadata: {
           subscriptionId: updated.id,
           resumed: true,
