@@ -14,6 +14,7 @@ import {
   listTicketLawyers,
   listTickets,
   updateTicketStatus,
+  deleteTicket,
 } from "../controllers/ticket.controller.js";
 
 const optionalTicketImages = (req, res, next) => {
@@ -46,5 +47,6 @@ router.get("/:id", getTicket);
 router.post("/:id/messages", addTicketMessage);
 router.post("/:id/assign", assignTicket);
 router.patch("/:id", updateTicketStatus);
+router.delete("/:id", deleteTicket);
 
 export default router;

@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import apiRequest from "../../lib/apiRequest";
@@ -22,6 +22,7 @@ function apiPath(value) {
 
 function TicketDetailPage() {
   const params = useParams();
+  const navigate = useNavigate();
   const number = ticketKey(params.number);
   const { t } = useTranslation();
   const { currentUser } = useContext(AuthContext);
@@ -38,6 +39,7 @@ function TicketDetailPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   const load = async () => {
     const res = await apiRequest.get(apiPath(number));
@@ -102,6 +104,23 @@ function TicketDetailPage() {
     }
   };
 
+  const removeTicket = async () => {
+    if (!ticket) return;
+    const label = ticket.number ? `#${ticket.number}` : ticket.title;
+    if (!window.confirm(t("tickets.removeConfirm", { number: label }))) {
+      return;
+    }
+
+    try {
+      setRemoving(true);
+      await apiRequest.delete(apiPath(number));
+      navigate("/tickets", { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || t("tickets.errors.remove"));
+      setRemoving(false);
+    }
+  };
+
   const changeStatus = async (status) => {
     try {
       const res = await apiRequest.patch(apiPath(number), { status });
@@ -139,9 +158,16 @@ function TicketDetailPage() {
         title={ticket.title}
         kicker={`${t(`tickets.category.${ticket.category}`)} · ${lawyerName(ticket, t)}`}
         action={
-          <Link className="tkText" to={backTo}>
-            {t("tickets.back")}
-          </Link>
+          <div className="tkHeadActions">
+            {isAdmin ? (
+              <button type="button" className="tkRemove" onClick={removeTicket} disabled={removing}>
+                {removing ? t("tickets.removing") : t("tickets.remove")}
+              </button>
+            ) : null}
+            <Link className="tkText" to={backTo}>
+              {t("tickets.back")}
+            </Link>
+          </div>
         }
       />
 

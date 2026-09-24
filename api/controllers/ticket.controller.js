@@ -567,6 +567,30 @@ export const updateTicketStatus = async (req, res) => {
   }
 };
 
+export const deleteTicket = async (req, res) => {
+  try {
+    if (!isAdmin(req.userRole)) {
+      return res.status(403).json({ message: "Only an admin can remove a ticket." });
+    }
+
+    const ticket = await prisma.ticket.findFirst({
+      where: ticketWhere(clean(req.params.id)),
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found." });
+    }
+
+    await prisma.ticketMessage.deleteMany({ where: { ticketId: ticket.id } });
+    await prisma.ticket.delete({ where: { id: ticket.id } });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("deleteTicket", error);
+    return res.status(500).json({ message: "Could not remove the ticket." });
+  }
+};
+
 export const listTicketLawyers = async (req, res) => {
   try {
     if (!isAdmin(req.userRole)) {

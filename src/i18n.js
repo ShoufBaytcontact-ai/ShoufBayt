@@ -165,7 +165,11 @@ const resources = {
           take: "Could not take the ticket.",
           assign: "Could not assign the lawyer.",
           status: "Could not update status.",
+          remove: "Could not remove the ticket.",
         },
+        remove: "Remove",
+        removing: "Removing…",
+        removeConfirm: "Remove ticket {{number}}? This cannot be undone.",
       },
       lawyerHub: {
         badge: "Lawyer desk",
@@ -1771,7 +1775,11 @@ const resources = {
           take: "تعذر استلام التذكرة.",
           assign: "تعذر تعيين المحامي.",
           status: "تعذر تحديث الحالة.",
+          remove: "تعذر حذف التذكرة.",
         },
+        remove: "حذف",
+        removing: "جارٍ الحذف…",
+        removeConfirm: "حذف التذكرة {{number}}؟ لا يمكن التراجع عن ذلك.",
       },
       lawyerHub: {
         badge: "مكتب المحامي",

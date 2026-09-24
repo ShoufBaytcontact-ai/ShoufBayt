@@ -150,18 +150,22 @@ export function TicketTable({
   variant = "admin",
   onStatusChange,
   statusBusy,
+  onRemove,
+  removingId,
 }) {
   const lawyerView = variant === "lawyer";
   const canEditStatus = lawyerView && typeof onStatusChange === "function";
+  const canRemove = typeof onRemove === "function";
 
   return (
-    <div className={`tkTable ${lawyerView ? "isLawyer" : "isAdmin"}`}>
+    <div className={`tkTable ${lawyerView ? "isLawyer" : "isAdmin"}${canRemove ? " canRemove" : ""}`}>
       <div className="tkTableHead">
         <span>{t("tickets.cols.number")}</span>
         <span>{t("tickets.cols.case")}</span>
         <span>{lawyerView ? t("tickets.cols.client") : t("tickets.cols.lawyer")}</span>
         {lawyerView ? <span>{t("tickets.cols.phone")}</span> : null}
         <span>{t("tickets.cols.status")}</span>
+        {canRemove ? <span /> : null}
       </div>
       <ul>
         {tickets.map((ticket) => (
@@ -195,6 +199,16 @@ export function TicketTable({
               ) : (
                 <StatusMark status={ticket.status} t={t} />
               )}
+              {canRemove ? (
+                <button
+                  type="button"
+                  className="tkRemove"
+                  disabled={removingId === ticket.id}
+                  onClick={() => onRemove(ticket)}
+                >
+                  {removingId === ticket.id ? t("tickets.removing") : t("tickets.remove")}
+                </button>
+              ) : null}
             </div>
           </li>
         ))}
@@ -216,6 +230,7 @@ function TicketsPage() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [removingId, setRemovingId] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -256,6 +271,24 @@ function TicketsPage() {
       alive = false;
     };
   }, [status, t, isAdmin, isLawyer]);
+
+  const removeTicket = async (ticket) => {
+    const label = ticket.number ? `#${ticket.number}` : ticket.title;
+    if (!window.confirm(t("tickets.removeConfirm", { number: label }))) {
+      return;
+    }
+
+    try {
+      setRemovingId(ticket.id);
+      setError("");
+      await apiRequest.delete(`/tickets/${encodeURIComponent(ticket.number || ticket.id)}`);
+      setTickets((current) => current.filter((item) => item.id !== ticket.id));
+    } catch (err) {
+      setError(err.response?.data?.message || t("tickets.errors.remove"));
+    } finally {
+      setRemovingId("");
+    }
+  };
 
   const openCount = useMemo(
     () => tickets.filter((item) => item.status === "OPEN").length,
@@ -360,7 +393,13 @@ function TicketsPage() {
           ) : null}
 
           {!loading && tickets.length ? (
-            <TicketTable tickets={tickets} t={t} variant="admin" />
+            <TicketTable
+              tickets={tickets}
+              t={t}
+              variant="admin"
+              onRemove={removeTicket}
+              removingId={removingId}
+            />
           ) : null}
         </div>
         <LawyerWorkload lawyers={lawyers} t={t} />

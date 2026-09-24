@@ -35,6 +35,12 @@
   line-height: 1.1;
 }
 
+.tkHeadActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .tkHead p {
   margin: 8px 0 0;
   color: var(--text-muted);
@@ -290,6 +296,27 @@
   grid-template-columns: 150px minmax(0, 1.5fr) minmax(0, 1fr) 140px;
   gap: 12px;
   align-items: center;
+}
+
+.tkTable.isAdmin.canRemove .tkTableHead,
+.tkTable.isAdmin.canRemove .tkRow {
+  grid-template-columns: 150px minmax(0, 1.5fr) minmax(0, 1fr) 120px 88px;
+}
+
+.tkRemove {
+  justify-self: end;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border-color));
+  background: transparent;
+  color: var(--danger);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font: 700 12px/1 Figtree, sans-serif;
+  cursor: pointer;
+}
+
+.tkRemove:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .tkTable.isLawyer .tkTableHead,
