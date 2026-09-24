@@ -190,7 +190,6 @@ function Navbar() {
           <div className="brandText">
             <div className="brandName">
               <span className="brandTitle">ShoufBayt</span>
-              <span className="betaBadge">{t("nav.beta")}</span>
             </div>
             <small>{t("nav.brandSubtitle")}</small>
           </div>

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import apiRequest from "../../lib/apiRequest";
 import "./googleAuthButton.scss";
@@ -74,13 +73,12 @@ function GoogleIcon() {
 
 function GoogleAuthButton({ onSuccess, onError, disabled }) {
   const { t, i18n } = useTranslation();
-  const buttonHostRef = useRef(null);
+  const hostRef = useRef(null);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const [clientId, setClientId] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -105,18 +103,11 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
         }
 
         setClientId(nextClientId);
-
-        if (!nextClientId) {
-          setIsReady(true);
-          return;
-        }
-
-        await loadGoogleIdentity();
-
-        if (!cancelled) {
-          setIsReady(true);
-        }
       } catch {
+        if (!cancelled) {
+          setClientId("");
+        }
+      } finally {
         if (!cancelled) {
           setIsReady(true);
         }
@@ -131,27 +122,7 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
   }, []);
 
   useEffect(() => {
-    if (!open) {
-      return undefined;
-    }
-
-    const onKeyDown = (event) => {
-      if (event.key === "Escape" && !isBusy) {
-        setOpen(false);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, isBusy]);
-
-  useEffect(() => {
-    if (!open || !clientId || !buttonHostRef.current) {
+    if (!isReady || !clientId || !hostRef.current || disabled) {
       return undefined;
     }
 
@@ -162,7 +133,7 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
         const google = await loadGoogleIdentity();
         const identity = google?.accounts?.id;
 
-        if (cancelled || !identity || !buttonHostRef.current) {
+        if (cancelled || !identity || !hostRef.current) {
           return;
         }
 
@@ -190,7 +161,6 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
               const res = await apiRequest.post("/auth/google", {
                 credential: response.credential,
               });
-              setOpen(false);
               onSuccessRef.current?.(res.data);
             } catch (error) {
               onErrorRef.current?.(
@@ -198,21 +168,27 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
                   t("auth.google.failed", {
                     defaultValue: "Google sign-in failed. Please try again.",
                   })
-              );
+                );
             } finally {
               setIsBusy(false);
             }
           },
         });
 
-        buttonHostRef.current.innerHTML = "";
-        identity.renderButton(buttonHostRef.current, {
+        const width = Math.min(
+          400,
+          Math.max(240, Math.floor(hostRef.current.getBoundingClientRect().width))
+        );
+
+        hostRef.current.innerHTML = "";
+        identity.renderButton(hostRef.current, {
           type: "standard",
           theme: isDarkTheme() ? "filled_black" : "outline",
           size: "large",
           text: "continue_with",
-          shape: "pill",
-          width: 280,
+          shape: "rectangular",
+          width,
+          logo_alignment: "left",
           locale: i18n.language === "ar" ? "ar" : "en",
         });
       } catch {
@@ -221,7 +197,6 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
             defaultValue: "Google sign-in is unavailable right now.",
           })
         );
-        setOpen(false);
       }
     };
 
@@ -230,124 +205,43 @@ function GoogleAuthButton({ onSuccess, onError, disabled }) {
     return () => {
       cancelled = true;
     };
-  }, [open, clientId, i18n.language, t]);
+  }, [isReady, clientId, disabled, i18n.language, t]);
 
-  const handleOpen = () => {
-    if (disabled || isBusy || !isReady) {
-      return;
-    }
-
-    if (!clientId) {
-      onErrorRef.current?.(
-        t("auth.google.notConfigured", {
-          defaultValue:
-            "Add GOOGLE_CLIENT_ID to api/.env, then restart the API.",
-        })
-      );
-      return;
-    }
-
-    if (!window.google?.accounts?.id) {
-      onErrorRef.current?.(
-        t("auth.google.unavailable", {
-          defaultValue: "Google sign-in is unavailable right now.",
-        })
-      );
-      return;
-    }
-
-    setOpen(true);
+  const reportMissing = () => {
+    onErrorRef.current?.(
+      t("auth.google.notConfigured", {
+        defaultValue: "Add GOOGLE_CLIENT_ID to api/.env, then restart the API.",
+      })
+    );
   };
 
-  const handleClose = () => {
-    if (isBusy) {
-      return;
-    }
-    setOpen(false);
-  };
+  if (!isReady) {
+    return (
+      <button type="button" className="googleAuthBtn" disabled>
+        <GoogleIcon />
+        <span>{t("auth.google.connecting", { defaultValue: "Connecting..." })}</span>
+      </button>
+    );
+  }
+
+  if (!clientId) {
+    return (
+      <button type="button" className="googleAuthBtn" onClick={reportMissing} disabled={disabled}>
+        <GoogleIcon />
+        <span>{t("auth.google.continue", { defaultValue: "Continue with Google" })}</span>
+      </button>
+    );
+  }
 
   return (
-    <>
-      <button
-        type="button"
-        className="googleAuthBtn"
-        onClick={handleOpen}
-        disabled={disabled || isBusy || !isReady}
-      >
-        <GoogleIcon />
-        <span>
-          {isBusy
-            ? t("auth.google.connecting", { defaultValue: "Connecting..." })
-            : t("auth.google.continue", { defaultValue: "Continue with Google" })}
-        </span>
-      </button>
-
-      {open
-        ? createPortal(
-            <div
-              className="googleAuthOverlay"
-              onClick={handleClose}
-              role="presentation"
-            >
-              <div
-                className="googleAuthModal"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="google-auth-title"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  className="googleAuthClose"
-                  onClick={handleClose}
-                  aria-label={t("auth.google.close", { defaultValue: "Close" })}
-                  disabled={isBusy}
-                >
-                  ×
-                </button>
-
-                <span className="googleAuthBadge">
-                  {t("auth.google.popupBadge", { defaultValue: "ShoufBayt" })}
-                </span>
-
-                <div className="googleAuthModalIcon">
-                  <GoogleIcon />
-                </div>
-
-                <h2 id="google-auth-title">
-                  {t("auth.google.popupTitle", {
-                    defaultValue: "Continue with Google",
-                  })}
-                </h2>
-                <p>
-                  {t("auth.google.popupDescription", {
-                    defaultValue:
-                      "Choose a Google account in the small window to sign in to ShoufBayt.",
-                  })}
-                </p>
-
-                <div className="googleAuthGsi" ref={buttonHostRef} />
-
-                {isBusy ? (
-                  <small>
-                    {t("auth.google.connecting", {
-                      defaultValue: "Connecting...",
-                    })}
-                  </small>
-                ) : (
-                  <small>
-                    {t("auth.google.popupHint", {
-                      defaultValue:
-                        "Use the Google button below. Allow popups if your browser asks.",
-                    })}
-                  </small>
-                )}
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
-    </>
+    <div className={`googleAuthSlot${isBusy || disabled ? " isBusy" : ""}`}>
+      <div ref={hostRef} className="googleAuthGsi" />
+      {isBusy ? (
+        <p className="googleAuthStatus">
+          {t("auth.google.connecting", { defaultValue: "Connecting..." })}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

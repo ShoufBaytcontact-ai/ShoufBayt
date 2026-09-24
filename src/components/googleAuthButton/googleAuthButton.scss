@@ -34,102 +34,31 @@
   cursor: not-allowed;
 }
 
-.googleAuthOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1400;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(8, 10, 14, 0.62);
-  backdrop-filter: blur(8px);
+.googleAuthSlot {
+  width: 100%;
 }
 
-.googleAuthModal {
-  position: relative;
-  width: min(380px, 100%);
-  padding: 28px 24px 22px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-lift);
-  text-align: center;
-  color: var(--text-main);
-}
-
-.googleAuthClose {
-  position: absolute;
-  top: 12px;
-  inset-inline-end: 12px;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-main);
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.googleAuthClose:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.googleAuthBadge {
-  display: inline-block;
-  margin: 0 0 14px;
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.googleAuthModalIcon {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 16px;
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-elevated);
-}
-
-.googleAuthModalIcon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.googleAuthModal h2 {
-  margin: 0 0 8px;
-  font-family: var(--font-display);
-  font-size: 1.55rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.googleAuthModal p {
-  margin: 0 0 20px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.65;
+.googleAuthSlot.isBusy {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .googleAuthGsi {
   display: flex;
   justify-content: center;
   min-height: 44px;
+  width: 100%;
 }
 
-.googleAuthModal small {
-  display: block;
-  margin-top: 14px;
+.googleAuthGsi > div {
+  width: 100% !important;
+}
+
+.googleAuthStatus {
+  margin: 8px 0 0;
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 13px;
+  text-align: center;
 }
 
 .authDivider {

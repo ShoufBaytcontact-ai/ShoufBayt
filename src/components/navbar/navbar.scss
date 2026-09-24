@@ -63,31 +63,6 @@
   letter-spacing: -0.03em;
 }
 
-.betaBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 3.5px 8px 3px;
-  border-radius: 999px;
-  font-family: var(--font-body);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  user-select: none;
-  color: var(--accent-ink);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 62%),
-    linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
-    0 6px 14px color-mix(in srgb, var(--accent) 26%, transparent);
-  transform: translateY(-0.5px);
-}
 
 .brandText small {
   margin-top: 5px;
@@ -776,8 +751,7 @@ html[dir="rtl"] .mobileMessageButton {
     white-space: nowrap;
   }
 
-  .brandText small,
-  .betaBadge {
+  .brandText small {
     display: none;
   }
 

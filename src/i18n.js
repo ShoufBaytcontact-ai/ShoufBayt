@@ -139,8 +139,8 @@ const resources = {
         },
         category: {
           REAL_ESTATE_DOCUMENTS: "Real estate documents",
-          CONSTRUCTION: "Construction",
           LAND_REGISTRY_CADASTRE: "Land Registry and Cadastre",
+          CONSTRUCTION: "Construction",
           LAWYER_DEFENSE: "Lawyer defence",
           PAYMENT: "Payment",
           OTHER: "Other",
@@ -1745,8 +1745,8 @@ const resources = {
         },
         category: {
           REAL_ESTATE_DOCUMENTS: "أوراق عقارية",
-          CONSTRUCTION: "البناء",
           LAND_REGISTRY_CADASTRE: "السجل العقاري والمساحة",
+          CONSTRUCTION: "البناء",
           LAWYER_DEFENSE: "دفاع محامٍ",
           PAYMENT: "الدفع",
           OTHER: "أخرى",
