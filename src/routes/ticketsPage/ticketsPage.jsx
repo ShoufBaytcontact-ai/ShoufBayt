@@ -458,7 +458,7 @@ export function NewTicketPage() {
         <label>
           {t("tickets.fields.category")}
           <select name="category" value={form.category} onChange={onChange}>
-            {["CONTRACT", "PAYMENT", "CONSTRUCTION", "NEIGHBOR", "DELAY", "OTHER"].map(
+            {["REAL_ESTATE_DOCUMENTS", "CONSTRUCTION", "LAND_REGISTRY_CADASTRE", "LAWYER_DEFENSE", "PAYMENT", "OTHER"].map(
               (item) => (
                 <option key={item} value={item}>
                   {t(`tickets.category.${item}`)}

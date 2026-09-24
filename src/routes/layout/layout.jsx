@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import "./layout.scss";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/footer";
+import HelpChat from "../../components/helpChat/helpChat";
 import { RouteLoader } from "../../components/houseLoader/houseLoader";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { needsPhoneVerification } from "../../lib/phoneGate";
@@ -18,6 +19,7 @@ function Layout() {
       </main>
 
       <Footer />
+      <HelpChat />
     </div>
   );
 }

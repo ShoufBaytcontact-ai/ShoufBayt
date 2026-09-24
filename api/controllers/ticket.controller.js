@@ -11,11 +11,11 @@ import {
 } from "../lib/ticketEmail.js";
 
 const CATEGORIES = [
-  "CONTRACT",
-  "PAYMENT",
+  "REAL_ESTATE_DOCUMENTS",
   "CONSTRUCTION",
-  "NEIGHBOR",
-  "DELAY",
+  "LAND_REGISTRY_CADASTRE",
+  "LAWYER_DEFENSE",
+  "PAYMENT",
   "OTHER",
 ];
 

@@ -901,12 +901,15 @@ enum TicketStatus {
 }
 
 enum TicketCategory {
-  CONTRACT
-  PAYMENT
+  REAL_ESTATE_DOCUMENTS
   CONSTRUCTION
+  LAND_REGISTRY_CADASTRE
+  LAWYER_DEFENSE
+  PAYMENT
+  OTHER
+  CONTRACT
   NEIGHBOR
   DELAY
-  OTHER
 }
 
 model TicketSequence {
