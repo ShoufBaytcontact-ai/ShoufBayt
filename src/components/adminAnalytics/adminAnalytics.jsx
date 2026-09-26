@@ -10,6 +10,7 @@ const PROPERTY_TYPES = [
   "OFFICE",
   "SHOP",
   "WAREHOUSE",
+  "BUILDING",
 ];
 
 function listingKind(post) {

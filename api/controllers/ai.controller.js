@@ -8,6 +8,7 @@ const PROPERTY_TYPES = [
   "OFFICE",
   "SHOP",
   "WAREHOUSE",
+  "BUILDING",
 ];
 
 const LISTING_TYPES = ["SALE", "RENT"];
@@ -143,6 +144,7 @@ const getPropertyLabel = (
     OFFICE: "office",
     SHOP: "shop",
     WAREHOUSE: "warehouse",
+    BUILDING: "building",
   };
 
   return labels[normalizedType] || "property";
@@ -294,6 +296,19 @@ export const generatePropertyDescription = async (
             "en-US"
           )}m², providing excellent flexibility for construction, investment, or future development.`
         : "The land provides excellent potential for construction, investment, or future development.";
+    } else if (normalizedPropertyType === "BUILDING") {
+      const garageCount = Number(req.body.garage ?? req.body.garages);
+      const garageText =
+        Number.isFinite(garageCount) && garageCount > 0
+          ? `${garageCount} garage space${garageCount === 1 ? "" : "s"}`
+          : "garage space";
+      const areaText = area
+        ? `${area.toLocaleString("en-US")}m²`
+        : "a practical floor area";
+
+      specifications =
+        `The building includes ${garageText} and approximately ${areaText}. ` +
+        "It is suited to investment, multiple units, or commercial use.";
     } else {
       const bedroomText = bedrooms
         ? `${bedrooms} bedroom${

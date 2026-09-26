@@ -23,6 +23,7 @@ const PROPERTY_TYPES = [
   "OFFICE",
   "SHOP",
   "WAREHOUSE",
+  "BUILDING",
 ];
 
 const LISTING_TYPES = ["SALE", "RENT"];
@@ -385,12 +386,22 @@ export const createListingRequest = async (req, res) => {
     }
 
     const price = toInt(data.price, "Price");
-    const bedrooms = toInt(data.bedrooms ?? data.bedroom ?? 0, "Bedrooms", {
-      allowZero: true,
-    });
-    const bathrooms = toInt(data.bathrooms ?? data.bathroom ?? 0, "Bathrooms", {
-      allowZero: true,
-    });
+    const roomsLocked =
+      propertyType === "LAND" || propertyType === "BUILDING";
+    const bedrooms = roomsLocked
+      ? 0
+      : toInt(data.bedrooms ?? data.bedroom ?? 0, "Bedrooms", {
+          allowZero: true,
+        });
+    const bathrooms = roomsLocked
+      ? 0
+      : toInt(data.bathrooms ?? data.bathroom ?? 0, "Bathrooms", {
+          allowZero: true,
+        });
+    const garage =
+      propertyType === "BUILDING"
+        ? toInt(data.garage ?? data.garages ?? 0, "Garage", { allowZero: true })
+        : null;
     const latitude = toFloat(data.latitude, "Latitude");
     const longitude = toFloat(data.longitude, "Longitude");
     const areaValue = data.area ?? detail.size ?? detail.area;
@@ -439,6 +450,7 @@ export const createListingRequest = async (req, res) => {
         longitude,
         bedrooms,
         bathrooms,
+        garage,
         area,
         propertyType,
         listingType,
@@ -1127,6 +1139,10 @@ const awardProposal = async (db, { listingRequestId, proposalId, userId }) => {
       longitude,
       bedrooms: toSafeInt(request.bedrooms, 0),
       bathrooms: toSafeInt(request.bathrooms, 0),
+      garage:
+        propertyType === "BUILDING"
+          ? toSafeInt(request.garage, 0)
+          : null,
       area:
         request.area === undefined || request.area === null
           ? null

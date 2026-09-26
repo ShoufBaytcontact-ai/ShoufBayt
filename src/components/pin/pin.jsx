@@ -4,7 +4,7 @@ import { Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { isPropertyUnavailable } from "../../lib/propertyStatus";
 import { getMapCoordinates } from "../../lib/mapCoordinates";
-import { isLandListing } from "../../lib/propertyKind";
+import { isBuildingListing, locksRoomCounts } from "../../lib/propertyKind";
 
 function makePropertyIcon(kind) {
   return L.divIcon({
@@ -97,11 +97,14 @@ function Pin({ item }) {
             <p className="popupAddress">{item.city || "Unknown city"}</p>
 
             <div className="popupDetails">
-              {!isLandListing(item) && (
+              {!locksRoomCounts(item) && (
                 <>
                   <span>{item.bedroom || 0} Beds</span>
                   <span>{item.bathroom || 0} Baths</span>
                 </>
+              )}
+              {isBuildingListing(item) && (
+                <span>{item.garage || 0} Garage</span>
               )}
               <span>{item.property || "Property"}</span>
             </div>

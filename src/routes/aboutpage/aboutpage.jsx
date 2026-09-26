@@ -81,7 +81,7 @@ function AboutPage() {
           <p>{t("home.types.description")}</p>
         </div>
         <div className="aboutTypesGrid">
-          {["apartment", "house", "villa", "land", "office", "shop", "warehouse"].map((item) => (
+          {["apartment", "house", "villa", "land", "building", "office", "shop", "warehouse"].map((item) => (
             <Link key={item} to={`/list?property=${item}`} className="aboutTypeChip">
               {t(`home.types.${item}`)}
             </Link>

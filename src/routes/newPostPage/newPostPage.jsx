@@ -19,6 +19,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MAP_TILES, SATELLITE_LABELS, SATELLITE_TILES } from "../../lib/mapTiles";
+import { locksRoomCounts, withCategoryChange } from "../../lib/propertyKind";
 
 const locationIcon = L.divIcon({
   className: "propertyMarker",
@@ -40,6 +41,7 @@ const PROPERTY_OPTIONS = [
   "house",
   "villa",
   "land",
+  "building",
   "office",
   "shop",
 ];
@@ -51,6 +53,7 @@ const initialForm = {
   city: "",
   bedroom: "1",
   bathroom: "1",
+  garage: "",
   size: "",
   type: "sale",
   property: "apartment",
@@ -147,7 +150,8 @@ function NewPostPage() {
   const [mapType, setMapType] = useState("map");
   const [quota, setQuota] = useState(null);
 
-  const isLandProperty = form.property === "land";
+  const isBuildingProperty = form.property === "building";
+  const roomsLocked = locksRoomCounts(form.property);
 
   useEffect(() => {
     if (!currentUser) {
@@ -205,6 +209,7 @@ function NewPostPage() {
       size: form.size,
       bedroom: form.bedroom,
       bathroom: form.bathroom,
+      garage: form.garage,
     }),
     [form, images]
   );
@@ -212,27 +217,7 @@ function NewPostPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => {
-      if (name === "property" && value === "land") {
-        return {
-          ...prev,
-          property: value,
-          bedroom: "0",
-          bathroom: "0",
-        };
-      }
-
-      if (name === "property" && prev.property === "land") {
-        return {
-          ...prev,
-          property: value,
-          bedroom: prev.bedroom === "0" ? "1" : prev.bedroom,
-          bathroom: prev.bathroom === "0" ? "1" : prev.bathroom,
-        };
-      }
-
-      return { ...prev, [name]: value };
-    });
+    setForm((prev) => withCategoryChange(prev, name, value));
 
     setError("");
   };
@@ -296,13 +281,16 @@ function NewPostPage() {
     if (!form.price || Number(form.price) <= 0) {
       return t("newPost.validation.price");
     }
-    if (!isLandProperty) {
+    if (!roomsLocked) {
       if (form.bedroom === "" || Number(form.bedroom) < 0) {
         return t("newPost.validation.bedrooms");
       }
       if (form.bathroom === "" || Number(form.bathroom) < 0) {
         return t("newPost.validation.bathrooms");
       }
+    }
+    if (isBuildingProperty && (form.garage === "" || Number(form.garage) < 0)) {
+      return t("newPost.validation.garage");
     }
     if (!form.description.trim() || form.description.trim().length < 20) {
       return t("newPost.validation.description");
@@ -363,8 +351,9 @@ function NewPostPage() {
         price: Number(form.price),
         address: form.address.trim(),
         city: form.city.trim(),
-        bedroom: isLandProperty ? 0 : Number(form.bedroom),
-        bathroom: isLandProperty ? 0 : Number(form.bathroom),
+        bedroom: roomsLocked ? 0 : Number(form.bedroom),
+        bathroom: roomsLocked ? 0 : Number(form.bathroom),
+        garage: isBuildingProperty ? Number(form.garage) : null,
         latitude: String(location.latitude),
         longitude: String(location.longitude),
         type: form.type,
@@ -624,43 +613,69 @@ function NewPostPage() {
 
               <label
                 className={
-                  isLandProperty ? "requestField isLocked" : "requestField"
+                  roomsLocked ? "requestField isLocked" : "requestField"
                 }
               >
                 {t("newPost.form.bedrooms")}
-                {isLandProperty && (
-                  <small>{t("newPost.form.landLocked")}</small>
+                {roomsLocked && (
+                  <small>
+                    {t(
+                      isBuildingProperty
+                        ? "newPost.form.buildingLocked"
+                        : "newPost.form.landLocked"
+                    )}
+                  </small>
                 )}
                 <input
                   name="bedroom"
                   type="number"
                   min="0"
-                  value={isLandProperty ? "0" : form.bedroom}
+                  value={roomsLocked ? "0" : form.bedroom}
                   onChange={handleChange}
-                  disabled={isLandProperty}
-                  placeholder={isLandProperty ? "—" : "2"}
+                  disabled={roomsLocked}
+                  placeholder={roomsLocked ? "—" : "2"}
                 />
               </label>
 
               <label
                 className={
-                  isLandProperty ? "requestField isLocked" : "requestField"
+                  roomsLocked ? "requestField isLocked" : "requestField"
                 }
               >
                 {t("newPost.form.bathrooms")}
-                {isLandProperty && (
-                  <small>{t("newPost.form.landLocked")}</small>
+                {roomsLocked && (
+                  <small>
+                    {t(
+                      isBuildingProperty
+                        ? "newPost.form.buildingLocked"
+                        : "newPost.form.landLocked"
+                    )}
+                  </small>
                 )}
                 <input
                   name="bathroom"
                   type="number"
                   min="0"
-                  value={isLandProperty ? "0" : form.bathroom}
+                  value={roomsLocked ? "0" : form.bathroom}
                   onChange={handleChange}
-                  disabled={isLandProperty}
-                  placeholder={isLandProperty ? "—" : "1"}
+                  disabled={roomsLocked}
+                  placeholder={roomsLocked ? "—" : "1"}
                 />
               </label>
+
+              {isBuildingProperty && (
+                <label className="requestField">
+                  {t("newPost.form.garage")}
+                  <input
+                    name="garage"
+                    type="number"
+                    min="0"
+                    value={form.garage}
+                    onChange={handleChange}
+                    placeholder="1"
+                  />
+                </label>
+              )}
 
               <label className="requestField">
                 {t("newPost.form.size")}
@@ -945,7 +960,7 @@ function NewPostPage() {
                   {t(`newPost.options.${summary.property}`)}
                 </strong>
               </li>
-              {!isLandProperty && (
+              {!roomsLocked && (
                 <li>
                   <span>{t("newPost.confirm.layout")}</span>
                   <strong>
@@ -954,6 +969,12 @@ function NewPostPage() {
                       baths: summary.bathroom || 0,
                     })}
                   </strong>
+                </li>
+              )}
+              {isBuildingProperty && (
+                <li>
+                  <span>{t("newPost.form.garage")}</span>
+                  <strong>{summary.garage || 0}</strong>
                 </li>
               )}
               {summary.size && (

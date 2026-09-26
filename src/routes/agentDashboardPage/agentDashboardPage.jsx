@@ -16,7 +16,7 @@ import {
   toApiPropertyStatus,
   toUiPropertyStatus,
 } from "../../lib/propertyStatus";
-import { isLandListing } from "../../lib/propertyKind";
+import { isBuildingListing, locksRoomCounts } from "../../lib/propertyKind";
 import "./agentDashboardPage.scss";
 
 function getImageUrl(image, fallback = "/no-image.png") {
@@ -1010,7 +1010,7 @@ function AgentDashboardPage() {
                     </p>
 
                     <ul className="leadBriefFacts">
-                      {!isLandListing(request) && (
+                      {!locksRoomCounts(request) && (
                         <>
                           <li>
                             {t("agentHub.leads.beds", {
@@ -1023,6 +1023,11 @@ function AgentDashboardPage() {
                             })}
                           </li>
                         </>
+                      )}
+                      {isBuildingListing(request) && (
+                        <li>
+                          {request.garage || 0} {t("card.features.garage")}
+                        </li>
                       )}
                       {propertyType ? <li>{propertyType}</li> : null}
                     </ul>
@@ -1258,7 +1263,7 @@ function AgentDashboardPage() {
                     </div>
 
                     <div className="officeListingMeta">
-                      {!isLandListing(item) && (
+                      {!locksRoomCounts(item) && (
                         <>
                           <span>
                             {beds} {t("card.features.bedrooms")}
@@ -1267,6 +1272,11 @@ function AgentDashboardPage() {
                             {baths} {t("card.features.bathrooms")}
                           </span>
                         </>
+                      )}
+                      {isBuildingListing(item) && (
+                        <span>
+                          {item.garage || 0} {t("card.features.garage")}
+                        </span>
                       )}
                       {area ? (
                         <span>

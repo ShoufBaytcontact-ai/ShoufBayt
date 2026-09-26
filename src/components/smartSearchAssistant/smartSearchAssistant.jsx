@@ -136,6 +136,14 @@ function SmartSearchAssistant() {
       filters.property = "land";
     }
 
+    if (
+      lowerText.includes("building") ||
+      lowerText.includes("مبنى") ||
+      lowerText.includes("مبان")
+    ) {
+      filters.property = "building";
+    }
+
     filters.bedroom = detectNumberBeforeWords(lowerText, [
       "bedroom",
       "bedrooms",

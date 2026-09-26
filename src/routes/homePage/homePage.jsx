@@ -20,6 +20,7 @@ const PROPERTY_TYPES = [
   "house",
   "villa",
   "land",
+  "building",
   "office",
   "shop",
   "warehouse",
@@ -90,6 +91,17 @@ function TypeIcon({ type }) {
         <path d="M3 17h18" />
         <path d="M5 17 9 9l4 5 3-3 3 6" />
         <path d="M16 8.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+      </svg>
+    );
+  }
+
+  if (type === "building") {
+    return (
+      <svg {...common}>
+        <path d="M5 20V4h10v16" />
+        <path d="M15 9h4v11" />
+        <path d="M8 8h4M8 12h4M8 16h4" />
+        <path d="M16.5 13h1M16.5 16h1" />
       </svg>
     );
   }

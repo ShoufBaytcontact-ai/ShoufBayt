@@ -6,7 +6,7 @@ import apiRequest from "../../lib/apiRequest";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import StatusBadge from "../statusBadge/statusBadge";
 import { getListingPhone, toCallHref } from "../../lib/listingContact";
-import { isLandListing } from "../../lib/propertyKind";
+import { isBuildingListing, locksRoomCounts } from "../../lib/propertyKind";
 import {
   canViewPropertyDetails,
   isPropertyUnavailable,
@@ -31,6 +31,16 @@ function BedIcon() {
       <path d="M3 16h18" />
       <path d="M5 19v-2" />
       <path d="M19 19v-2" />
+    </svg>
+  );
+}
+
+function GarageIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 20V9l8-5 8 5v11" />
+      <path d="M8 20v-7h8v7" />
+      <path d="M8 16h8" />
     </svg>
   );
 }
@@ -178,7 +188,8 @@ function Card({ item }) {
   const bedroom = post.bedroom ?? 0;
   const bathroom = post.bathroom ?? 0;
   const propertySize = post.postDetail?.size || post.size || post.area || 0;
-  const hideRooms = isLandListing(post);
+  const hideRooms = locksRoomCounts(post);
+  const showGarage = isBuildingListing(post);
 
   const images = Array.isArray(post.images) ? post.images : [];
   const mainImage = getImageUrl(images[0], "/no-image.png");
@@ -361,6 +372,15 @@ function Card({ item }) {
                 </span>
               </div>
             </>
+          )}
+
+          {showGarage && (
+            <div>
+              <GarageIcon />
+              <span>
+                {post.garage || 0} {t("card.features.garage")}
+              </span>
+            </div>
           )}
 
           <div>

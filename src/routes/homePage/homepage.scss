@@ -370,7 +370,8 @@
 
 .homeTypeCard--office .homeTypeIcon,
 .homeTypeCard--shop .homeTypeIcon,
-.homeTypeCard--warehouse .homeTypeIcon {
+.homeTypeCard--warehouse .homeTypeIcon,
+.homeTypeCard--building .homeTypeIcon {
   background: var(--accent-3-soft);
   color: var(--accent-3);
 }

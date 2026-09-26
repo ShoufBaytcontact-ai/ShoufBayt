@@ -1638,6 +1638,7 @@ e.target.reset();
               <option value="office">{t("admin.values.office", { defaultValue: "Office" })}</option>
               <option value="shop">{t("admin.values.shop", { defaultValue: "Shop" })}</option>
               <option value="warehouse">{t("admin.values.warehouse", { defaultValue: "Warehouse" })}</option>
+              <option value="building">{t("admin.values.building", { defaultValue: "Building" })}</option>
             </select>
 
             <select

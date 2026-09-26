@@ -17,6 +17,7 @@ import {
   isPropertyUnavailable,
   toUiPropertyStatus,
 } from "../../lib/propertyStatus";
+import { isBuildingListing, locksRoomCounts } from "../../lib/propertyKind";
 
 function LocationIcon() {
   return (
@@ -51,6 +52,16 @@ function BedIcon() {
       <path d="M3 16h18" />
       <path d="M5 19v-2" />
       <path d="M19 19v-2" />
+    </svg>
+  );
+}
+
+function GarageIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 20V9l8-5 8 5v11" />
+      <path d="M8 20v-7h8v7" />
+      <path d="M8 16h8" />
     </svg>
   );
 }
@@ -266,9 +277,8 @@ function SinglePage() {
       ? post.verificationImages.filter(Boolean).map((image) => getImageUrl(image))
       : [];
 
-  const isLandProperty =
-    String(post?.property || post?.propertyType || "").toLowerCase() ===
-    "land";
+  const hideRooms = locksRoomCounts(post || {});
+  const showGarage = isBuildingListing(post || {});
 
   const stats = [
     {
@@ -276,7 +286,7 @@ function SinglePage() {
       value: `${postDetail.size || post?.size || post?.area || 0}`,
       label: t("single.features.areaUnit"),
     },
-    ...(!isLandProperty
+    ...(!hideRooms
       ? [
           {
             icon: <BedIcon />,
@@ -287,6 +297,15 @@ function SinglePage() {
             icon: <BathIcon />,
             value: post?.bathroom || 0,
             label: t("single.features.bathrooms"),
+          },
+        ]
+      : []),
+    ...(showGarage
+      ? [
+          {
+            icon: <GarageIcon />,
+            value: post?.garage || 0,
+            label: t("single.features.garage"),
           },
         ]
       : []),

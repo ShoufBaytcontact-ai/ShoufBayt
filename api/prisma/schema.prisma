@@ -83,6 +83,7 @@ enum PropertyType {
   OFFICE
   SHOP
   WAREHOUSE
+  BUILDING
 }
 
 enum ListingType {
@@ -351,6 +352,7 @@ model ListingRequest {
 
   bedrooms  Int
   bathrooms Int
+  garage    Int?
   area      Int?
 
   propertyType PropertyType
@@ -475,6 +477,7 @@ model Property {
 
   bedrooms  Int
   bathrooms Int
+  garage    Int?
   area      Int?
 
   propertyType PropertyType

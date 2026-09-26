@@ -8,6 +8,7 @@ const PROPERTY_TYPES = [
   "house",
   "villa",
   "land",
+  "building",
   "office",
   "shop",
   "warehouse",

@@ -19,6 +19,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MAP_TILES, SATELLITE_LABELS, SATELLITE_TILES } from "../../lib/mapTiles";
+import { locksRoomCounts, withCategoryChange } from "../../lib/propertyKind";
 
 const locationIcon = L.divIcon({
   className: "propertyMarker",
@@ -40,6 +41,7 @@ const PROPERTY_OPTIONS = [
   "house",
   "villa",
   "land",
+  "building",
   "office",
   "shop",
 ];
@@ -54,6 +56,7 @@ const initialForm = {
   city: "",
   bedroom: "",
   bathroom: "",
+  garage: "",
   size: "",
   type: "buy",
   property: "apartment",
@@ -186,7 +189,8 @@ function EditPostPage() {
   const canEditPost = Boolean(
     currentUser && postOwnerId && (isOwner || isRequester || isAdmin)
   );
-  const isLand = form.property === "land";
+  const isBuilding = form.property === "building";
+  const roomsLocked = locksRoomCounts(form.property);
   const totalImages = existingImages.length + newImages.length;
 
   useEffect(() => {
@@ -235,6 +239,10 @@ function EditPostPage() {
           city: post.city || "",
           bedroom: post.bedroom ?? post.bedrooms ?? "",
           bathroom: post.bathroom ?? post.bathrooms ?? "",
+          garage:
+            post.garage === null || post.garage === undefined
+              ? ""
+              : String(post.garage),
           size: post.postDetail?.size || post.area || "",
           type: normalizeDealType(post),
           property: normalizeCategory(post),
@@ -273,22 +281,7 @@ function EditPostPage() {
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setForm((prev) => {
-      if (name === "property" && value === "land") {
-        return { ...prev, property: value, bedroom: "0", bathroom: "0" };
-      }
-
-      if (name === "property" && prev.property === "land") {
-        return {
-          ...prev,
-          property: value,
-          bedroom: prev.bedroom === "0" ? "1" : prev.bedroom,
-          bathroom: prev.bathroom === "0" ? "1" : prev.bathroom,
-        };
-      }
-
-      return { ...prev, [name]: value };
-    });
+    setForm((prev) => withCategoryChange(prev, name, value));
 
     setError("");
   };
@@ -370,11 +363,14 @@ function EditPostPage() {
     if (!form.price || Number(form.price) <= 0) {
       return t("editPost.validation.priceRequired");
     }
-    if (!isLand && (form.bedroom === "" || Number(form.bedroom) < 0)) {
+    if (!roomsLocked && (form.bedroom === "" || Number(form.bedroom) < 0)) {
       return t("editPost.validation.bedroomRequired");
     }
-    if (!isLand && (form.bathroom === "" || Number(form.bathroom) < 0)) {
+    if (!roomsLocked && (form.bathroom === "" || Number(form.bathroom) < 0)) {
       return t("editPost.validation.bathroomRequired");
+    }
+    if (isBuilding && (form.garage === "" || Number(form.garage) < 0)) {
+      return t("newPost.validation.garage");
     }
     if (!form.desc.trim()) {
       return t("editPost.validation.descriptionRequired");
@@ -408,8 +404,9 @@ function EditPostPage() {
         price: Number(form.price),
         address: form.address.trim(),
         city: form.city.trim(),
-        bedroom: isLand ? 0 : Number(form.bedroom),
-        bathroom: isLand ? 0 : Number(form.bathroom),
+        bedroom: roomsLocked ? 0 : Number(form.bedroom),
+        bathroom: roomsLocked ? 0 : Number(form.bathroom),
+        garage: isBuilding ? Number(form.garage) : "",
         size: form.size ? Number(form.size) : "",
         type: form.type,
         property: form.property,
@@ -584,29 +581,62 @@ function EditPostPage() {
               </select>
             </label>
 
-            <label className={isLand ? "requestField isLocked" : "requestField"}>
+            <label className={roomsLocked ? "requestField isLocked" : "requestField"}>
               {t("editPost.form.bedrooms")}
+              {roomsLocked && (
+                <small>
+                  {t(
+                    isBuilding
+                      ? "newPost.form.buildingLocked"
+                      : "newPost.form.landLocked"
+                  )}
+                </small>
+              )}
               <input
                 name="bedroom"
                 type="number"
                 min="0"
-                value={isLand ? "0" : form.bedroom}
+                value={roomsLocked ? "0" : form.bedroom}
                 onChange={handleChange}
-                disabled={saving || isLand}
+                disabled={saving || roomsLocked}
               />
             </label>
 
-            <label className={isLand ? "requestField isLocked" : "requestField"}>
+            <label className={roomsLocked ? "requestField isLocked" : "requestField"}>
               {t("editPost.form.bathrooms")}
+              {roomsLocked && (
+                <small>
+                  {t(
+                    isBuilding
+                      ? "newPost.form.buildingLocked"
+                      : "newPost.form.landLocked"
+                  )}
+                </small>
+              )}
               <input
                 name="bathroom"
                 type="number"
                 min="0"
-                value={isLand ? "0" : form.bathroom}
+                value={roomsLocked ? "0" : form.bathroom}
                 onChange={handleChange}
-                disabled={saving || isLand}
+                disabled={saving || roomsLocked}
               />
             </label>
+
+            {isBuilding && (
+              <label className="requestField">
+                {t("newPost.form.garage")}
+                <input
+                  name="garage"
+                  type="number"
+                  min="0"
+                  value={form.garage}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="1"
+                />
+              </label>
+            )}
 
             <label className="requestField">
               {t("editPost.form.size")}

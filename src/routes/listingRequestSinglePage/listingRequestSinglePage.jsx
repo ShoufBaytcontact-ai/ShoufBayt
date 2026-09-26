@@ -8,6 +8,7 @@ import AdminListingNotes from "../../components/adminListingNotes/adminListingNo
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { listingRequestApi } from "../../lib/services";
 import "../singlePage/singlePage.scss";
+import { isBuildingListing, locksRoomCounts } from "../../lib/propertyKind";
 
 function LocationIcon() {
   return (
@@ -29,6 +30,16 @@ function SizeIcon() {
       <path d="M20 4l-6 6" />
       <path d="M4 20l6-6" />
       <path d="M20 20l-6-6" />
+    </svg>
+  );
+}
+
+function GarageIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 20V9l8-5 8 5v11" />
+      <path d="M8 20v-7h8v7" />
+      <path d="M8 16h8" />
     </svg>
   );
 }
@@ -199,7 +210,8 @@ function ListingRequestSinglePage() {
       }
     : null;
 
-  const isLandProperty = String(propertyKey || "").toLowerCase() === "land";
+  const hideRooms = locksRoomCounts(propertyKey || "");
+  const showGarage = isBuildingListing(propertyKey || "");
 
   const stats = [
     {
@@ -207,7 +219,7 @@ function ListingRequestSinglePage() {
       value: `${request.area || 0}`,
       label: t("single.features.areaUnit"),
     },
-    ...(!isLandProperty
+    ...(!hideRooms
       ? [
           {
             icon: <BedIcon />,
@@ -218,6 +230,15 @@ function ListingRequestSinglePage() {
             icon: <BathIcon />,
             value: request.bathrooms || 0,
             label: t("single.features.bathrooms"),
+          },
+        ]
+      : []),
+    ...(showGarage
+      ? [
+          {
+            icon: <GarageIcon />,
+            value: request.garage || 0,
+            label: t("single.features.garage"),
           },
         ]
       : []),

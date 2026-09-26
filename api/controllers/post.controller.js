@@ -22,6 +22,7 @@ const PROPERTY_TYPES = [
   "OFFICE",
   "SHOP",
   "WAREHOUSE",
+  "BUILDING",
 ];
 
 const LISTING_TYPES = [
@@ -1461,6 +1462,23 @@ export const addPost = async (req, res) => {
       });
     }
 
+    const roomsLocked =
+      propertyType === "LAND" || propertyType === "BUILDING";
+    const savedBedrooms = roomsLocked ? 0 : bedrooms;
+    const savedBathrooms = roomsLocked ? 0 : bathrooms;
+    const garageSource =
+      propertyData.garage ??
+      propertyData.garages ??
+      req.body.garage ??
+      req.body.garages;
+    const garage =
+      propertyType === "BUILDING"
+        ? toNonNegativeInteger(
+            hasValue(garageSource) ? garageSource : 0,
+            "Garage"
+          )
+        : null;
+
     const areaValue =
       propertyData.area ??
       detailData.area ??
@@ -1534,8 +1552,9 @@ export const addPost = async (req, res) => {
         city,
         latitude,
         longitude,
-        bedrooms,
-        bathrooms,
+        bedrooms: savedBedrooms,
+        bathrooms: savedBathrooms,
+        garage,
         area,
         propertyType,
         listingType,
@@ -1729,6 +1748,35 @@ export const updatePost = async (req, res) => {
           req.body.propertyType ||
           req.body.property
       );
+    }
+
+    const resolvedPropertyType =
+      data.propertyType || existing.propertyType;
+    const garageSource =
+      propertyData.garage ??
+      propertyData.garages ??
+      req.body.garage ??
+      req.body.garages;
+
+    if (
+      resolvedPropertyType === "LAND" ||
+      resolvedPropertyType === "BUILDING"
+    ) {
+      data.bedrooms = 0;
+      data.bathrooms = 0;
+    }
+
+    if (resolvedPropertyType === "BUILDING") {
+      data.garage = hasValue(garageSource)
+        ? toNonNegativeInteger(garageSource, "Garage")
+        : Number.isInteger(existing.garage)
+          ? existing.garage
+          : 0;
+    } else if (
+      existing.propertyType === "BUILDING" ||
+      existing.garage != null
+    ) {
+      data.garage = null;
     }
 
     const areaValue =
