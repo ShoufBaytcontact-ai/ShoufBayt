@@ -459,7 +459,7 @@ ${t("single.chatMessage.closing")}`;
     : t("single.buttons.contactOwner");
 
   return (
-    <main className="singlePage pageFade">
+    <main className="singlePage isDesk pageFade">
       <div className="singleBar">
         <Link to="/list">{t("single.nav.backToProperties")}</Link>
         {canEditPost && (
@@ -537,28 +537,30 @@ ${t("single.chatMessage.closing")}`;
 
           {isAdmin ? <AdminListingNotes propertyId={post.id} /> : null}
 
-          <article className="singleCopy">
-            <h2>{t("single.sections.propertyDescription")}</h2>
-            {descriptionHtml ? (
-              <div
-                className="singleCopyBody"
-                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-              />
-            ) : (
-              <p className="singleCopyBody">{t("single.fallback.noDescription")}</p>
-            )}
-          </article>
-
-          <article className="singleMap">
-            <h2>{t("single.sections.propertyLocation")}</h2>
-            <div className="singleMapBox">
-              {mapPost ? (
-                <Map items={[mapPost]} />
+          <div className="singleLower">
+            <article className="singleCopy">
+              <h2>{t("single.sections.propertyDescription")}</h2>
+              {descriptionHtml ? (
+                <div
+                  className="singleCopyBody"
+                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                />
               ) : (
-                <p>{t("single.fallback.noLocation")}</p>
+                <p className="singleCopyBody">{t("single.fallback.noDescription")}</p>
               )}
-            </div>
-          </article>
+            </article>
+
+            <article className="singleMap">
+              <h2>{t("single.sections.propertyLocation")}</h2>
+              <div className="singleMapBox">
+                {mapPost ? (
+                  <Map items={[mapPost]} />
+                ) : (
+                  <p>{t("single.fallback.noLocation")}</p>
+                )}
+              </div>
+            </article>
+          </div>
         </div>
 
         <aside className="singleAside">
