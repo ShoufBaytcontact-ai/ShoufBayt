@@ -185,6 +185,21 @@
   transition: 0.2s ease;
 }
 
+.homePropertyChips a {
+  min-height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.homePropertyChips a:hover,
 .homePropertyChips button:hover,
 .homePropertyChips button.isActive {
   border-color: var(--accent-2);
@@ -371,7 +386,8 @@
 .homeTypeCard--office .homeTypeIcon,
 .homeTypeCard--shop .homeTypeIcon,
 .homeTypeCard--warehouse .homeTypeIcon,
-.homeTypeCard--building .homeTypeIcon {
+.homeTypeCard--building .homeTypeIcon,
+.homeTypeCard--investments .homeTypeIcon {
   background: var(--accent-3-soft);
   color: var(--accent-3);
 }

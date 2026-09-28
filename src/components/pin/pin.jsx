@@ -97,7 +97,7 @@ function Pin({ item }) {
             <p className="popupAddress">{item.city || "Unknown city"}</p>
 
             <div className="popupDetails">
-              {!locksRoomCounts(item) && (
+              {!locksRoomCounts(item) && item.bedroom != null && (
                 <>
                   <span>{item.bedroom || 0} Beds</span>
                   <span>{item.bathroom || 0} Baths</span>

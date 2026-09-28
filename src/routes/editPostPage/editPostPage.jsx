@@ -5,6 +5,8 @@ import { AuthContext } from "../../context/AuthContext.jsx";
 import apiRequest from "../../lib/apiRequest";
 import "../requestListingPage/requestListingPage.scss";
 import "../../components/map/map.scss";
+import PlaceLocation from "../../components/placeLocation/placeLocation";
+import HouseLoader from "../../components/houseLoader/houseLoader";
 import "./editPostPage.scss";
 
 import {
@@ -441,9 +443,14 @@ function EditPostPage() {
   );
 
   if (loading) {
+    const label = t("editPost.loading.title");
     return (
       <main className="requestListingPage editPostPage pageFade">
-        <div className="requestAlert">{t("editPost.loading.message")}</div>
+        <div className="editLoader" role="status" aria-live="polite" aria-label={label}>
+          <HouseLoader variant="inline" size="sm" jumping={false} label={label} />
+          <span>{label}</span>
+          <i />
+        </div>
       </main>
     );
   }
@@ -690,6 +697,12 @@ function EditPostPage() {
                 : t("editPost.location.useMyLocation")}
             </button>
           </header>
+
+          <PlaceLocation
+            onPlace={handleSelectLocation}
+            onError={setError}
+            disabled={saving}
+          />
 
           {location && (
             <div className="requestCoords">

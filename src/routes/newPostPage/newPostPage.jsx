@@ -6,6 +6,7 @@ import apiRequest from "../../lib/apiRequest";
 import { subscriptionApi } from "../../lib/services";
 import "../requestListingPage/requestListingPage.scss";
 import "../../components/map/map.scss";
+import PlaceLocation from "../../components/placeLocation/placeLocation";
 
 import {
   MapContainer,
@@ -722,6 +723,12 @@ function NewPostPage() {
                   : t("newPost.location.useMyLocation")}
               </button>
             </header>
+
+            <PlaceLocation
+              onPlace={handleSelectLocation}
+              onError={setError}
+              disabled={loading}
+            />
 
             {location && (
               <div className="requestCoords">

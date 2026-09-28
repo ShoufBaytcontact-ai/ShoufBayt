@@ -1,0 +1,366 @@
+.investmentsPage {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 28px 0 72px;
+  color: var(--text-main);
+}
+
+.investHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.investEyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.investHero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.investAdd {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.investGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.investCard {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: var(--bg-card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.investCard img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+  background: var(--bg-soft);
+}
+
+.investCard div {
+  padding: 14px 16px 16px;
+}
+
+.investCard small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.investCard h2 {
+  margin: 8px 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.investCard strong {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.investLoader {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 48px 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.investLoader .houseLoader {
+  gap: 0;
+}
+
+.investLoader i {
+  width: min(220px, 70%);
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 18%, var(--border-color));
+}
+
+.investLoader i::after {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--accent);
+  animation: investLoad 1.1s ease-in-out infinite;
+}
+
+@keyframes investLoad {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
+}
+
+.investEmpty,
+.investState {
+  margin: 12px 0 0;
+  padding: 28px 8px;
+  color: var(--text-secondary);
+}
+
+.investEmpty h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+}
+
+.investState.isError {
+  color: var(--danger);
+}
+
+.investForm {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 28px 0 72px;
+}
+
+.investForm form {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.investForm label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.investForm input,
+.investForm select,
+.investForm textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.investForm textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.investPublish {
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.investPublish:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.investFormActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.investFormActions a {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.investPhotos {
+  display: grid;
+  gap: 10px;
+}
+
+.investPhotos strong {
+  color: var(--text-main);
+}
+
+.investPhotos > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.investPhotos figure {
+  margin: 0;
+  width: 120px;
+}
+
+.investPhotos img {
+  width: 120px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.investPhotos button {
+  margin-top: 6px;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.investManage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.investManage a,
+.investManage button {
+  min-height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.investManage button {
+  border-color: transparent;
+  background: #8f2d2d;
+  color: #fff;
+}
+
+.investManage button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.investLocation {
+  display: grid;
+  gap: 10px;
+}
+
+.investLocationHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.investLocationHead strong {
+  display: block;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.investLocationHead span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.investLocate {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.investMapBox {
+  height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: #1b1f28;
+}
+
+.investMapBox .mapWrapper,
+.investMapBox .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.investPinSave {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.investAlert {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .investHero,
+  .investGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .investHero h1 {
+    max-width: none;
+  }
+}

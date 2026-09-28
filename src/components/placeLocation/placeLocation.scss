@@ -1,0 +1,62 @@
+.placeLocation {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.placeLocationRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.placeLocationRow input[type="text"] {
+  flex: 1 1 220px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.placeLocationRow button,
+.placeLocationRow label {
+  min-height: 44px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.placeLocationRow button {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
+.placeLocationRow button:disabled,
+.placeLocationRow label.isDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.placeLocationRow label input {
+  display: none;
+}
+
+.placeLocation p {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+}

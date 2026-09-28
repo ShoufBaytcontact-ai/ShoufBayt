@@ -211,6 +211,7 @@ model User {
   reviewedApplications AgentApplication[] @relation("ApplicationReviewer")
 
   properties         Property[]
+  investments        Investment[]
   requestedProperties Property[] @relation("PropertyRequester")
   reviewedProperties Property[] @relation("PropertyReviewer")
 
@@ -955,6 +956,41 @@ model Ticket {
   @@index([status, createdAt])
   @@index([propertyId])
   @@index([year, seq])
+}
+
+model Investment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  title       String
+  price       Int
+  city        String
+  address     String
+  latitude    Float?
+  longitude   Float?
+  images      String[] @default([])
+  description String
+
+  investmentType InvestmentType
+  status         PropertyStatus @default(PUBLISHED)
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status, createdAt])
+  @@index([city])
+  @@index([investmentType])
+}
+
+enum InvestmentType {
+  BUILDING
+  LAND
+  OFFICE
+  SHOP
+  WAREHOUSE
 }
 
 model TicketMessage {

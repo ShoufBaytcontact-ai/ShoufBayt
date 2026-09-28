@@ -7,6 +7,7 @@ import PhoneField from "../../components/phoneField/PhoneField";
 import { isValidPhone } from "../../lib/phoneCountries";
 import "./requestListingPage.scss";
 import "../../components/map/map.scss";
+import PlaceLocation from "../../components/placeLocation/placeLocation";
 
 import {
   MapContainer,
@@ -612,6 +613,8 @@ function RequestListingPage() {
                   : t("requestListing.location.useMyLocation")}
               </button>
             </header>
+
+            <PlaceLocation onPlace={handleSelectLocation} onError={setError} />
 
             {location && (
               <div className="requestCoords">

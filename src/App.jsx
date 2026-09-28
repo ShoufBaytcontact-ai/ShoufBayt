@@ -25,6 +25,10 @@ import RequestListingPage from "./routes/requestListingPage/requestListingPage";
 import ListingRequestSinglePage from "./routes/listingRequestSinglePage/listingRequestSinglePage";
 import AgentDashboardPage from "./routes/agentDashboardPage/agentDashboardPage";
 import OwnerDashboardPage from "./routes/ownerDashboardPage/ownerDashboardPage";
+import InvestmentsPage from "./routes/investmentsPage/investmentsPage";
+import InvestmentSinglePage from "./routes/investmentsPage/investmentSinglePage";
+import NewInvestmentPage from "./routes/investmentsPage/newInvestmentPage";
+import EditInvestmentPage from "./routes/investmentsPage/editInvestmentPage";
 import TicketsPage, { NewTicketPage } from "./routes/ticketsPage/ticketsPage";
 import TicketDetailPage from "./routes/ticketsPage/ticketDetailPage";
 import LawyerDashboardPage from "./routes/lawyerDashboardPage/lawyerDashboardPage";
@@ -74,6 +78,14 @@ const router = createBrowserRouter([
       {
         path: "about",
         element: <AboutPage />,
+      },
+      {
+        path: "investments",
+        element: <InvestmentsPage />,
+      },
+      {
+        path: "investments/:id",
+        element: <InvestmentSinglePage />,
       },
       {
         path: "live",
@@ -135,6 +147,14 @@ const router = createBrowserRouter([
           {
             path: "newPostPage",
             element: <NewPostPage />,
+          },
+          {
+            path: "investments/new",
+            element: <NewInvestmentPage />,
+          },
+          {
+            path: "investments/:id/edit",
+            element: <EditInvestmentPage />,
           },
           {
             path: "posts/edit/:id",

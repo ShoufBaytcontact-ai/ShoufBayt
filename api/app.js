@@ -11,6 +11,8 @@ import { fileURLToPath } from "url";
 
 import userroute from "./routes/user.route.js";
 import postroute from "./routes/post.route.js";
+import investmentroute from "./routes/investment.route.js";
+import georoute from "./routes/geo.route.js";
 import authroute from "./routes/auth.route.js";
 import chatroute from "./routes/chat.route.js";
 import messageroute from "./routes/message.route.js";
@@ -169,6 +171,8 @@ app.post("/api/users/phone/request", shouldBeLoggedIN, savePhone);
 app.put("/api/users/phone", shouldBeLoggedIN, savePhone);
 app.use("/api/users", userroute);
 app.use("/api/posts", postroute);
+app.use("/api/investments", investmentroute);
+app.use("/api/geo", georoute);
 app.use("/api/properties", postroute);
 app.use("/api/chats", chatroute);
 app.use("/api/messages", messageroute);
@@ -225,7 +229,7 @@ const siteOrigin = toPublicHttpsOrigin(
       : CLIENT_URL) ||
     "https://shoufbayt.com"
 ) || "https://shoufbayt.com";
-const publicPages = ["/", "/list", "/tickets", "/about", "/contact"];
+const publicPages = ["/", "/list", "/investments", "/tickets", "/about", "/contact"];
 
 app.get("/robots.txt", (_req, res) => {
   res.type("text/plain").send(

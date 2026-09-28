@@ -22,7 +22,6 @@ const PROPERTY_TYPES = [
   "land",
   "building",
   "office",
-  "shop",
   "warehouse",
 ];
 
@@ -223,6 +222,7 @@ function HomeSearch({ type, city, property, onTypeChange, onCityChange, onProper
             {t(`home.types.${item}`)}
           </button>
         ))}
+        <Link to="/investments">{t("nav.investments")}</Link>
       </div>
 
       <div className="homeCities">
@@ -363,6 +363,12 @@ function HomePage() {
               <strong>{t(`home.types.${item}`)}</strong>
             </Link>
           ))}
+          <Link to="/investments" className="homeTypeCard homeTypeCard--investments">
+            <span className="homeTypeIcon">
+              <TypeIcon type="shop" />
+            </span>
+            <strong>{t("nav.investments")}</strong>
+          </Link>
         </div>
       </section>
 

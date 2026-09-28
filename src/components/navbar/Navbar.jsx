@@ -61,6 +61,7 @@ function Navbar() {
     const links = [
       { labelKey: "nav.properties", path: "/list" },
       { labelKey: "nav.tickets", path: "/tickets" },
+      { labelKey: "nav.investments", path: "/investments" },
       { labelKey: "nav.live", path: "/live" },
     ];
 
