@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import apiRequest from "../../lib/apiRequest";
-import { subscriptionApi } from "../../lib/services";
 import "../requestListingPage/requestListingPage.scss";
 import "../../components/map/map.scss";
 import PlaceLocation from "../../components/placeLocation/placeLocation";
@@ -149,7 +148,6 @@ function NewPostPage() {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [verificationPreviews, setVerificationPreviews] = useState([]);
   const [mapType, setMapType] = useState("map");
-  const [quota, setQuota] = useState(null);
 
   const isBuildingProperty = form.property === "building";
   const roomsLocked = locksRoomCounts(form.property);
@@ -160,31 +158,6 @@ function NewPostPage() {
       return;
     }
   }, [currentUser, navigate]);
-
-  useEffect(() => {
-    if (!isSelfList) {
-      setQuota(null);
-      return undefined;
-    }
-
-    let cancelled = false;
-    subscriptionApi
-      .me()
-      .then((res) => {
-        if (!cancelled) {
-          setQuota(res.data?.listingQuota || null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setQuota(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isSelfList]);
 
   useEffect(() => {
     const urls = images.map((file) => URL.createObjectURL(file));
@@ -308,14 +281,8 @@ function NewPostPage() {
     return "";
   };
 
-  const listingBlocked = Boolean(isSelfList && quota && !quota.allowed);
-
   const goToConfirm = (e) => {
     e.preventDefault();
-    if (listingBlocked) {
-      setError(t("listingPlan.limitError"));
-      return;
-    }
     const validationError = validateDetails();
     if (validationError) {
       setError(validationError);
@@ -328,12 +295,6 @@ function NewPostPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (listingBlocked) {
-      setError(t("listingPlan.limitError"));
-      setStep("details");
-      return;
-    }
 
     const validationError = validateDetails();
     if (validationError) {
@@ -472,27 +433,6 @@ function NewPostPage() {
         </div>
       </section>
 
-      {isSelfList && quota && (
-        <div className={`requestAlert ${listingBlocked ? "error" : ""}`}>
-          {quota.launchPremiumFree
-            ? t("listingPlan.launchNotice", {
-                date: new Date(quota.launchFreeUntil).toLocaleDateString(
-                  undefined,
-                  { year: "numeric", month: "short", day: "numeric" }
-                ),
-                price: quota.priceMonthly,
-              })
-            : quota.unlimited
-              ? t("listingPlan.premiumActive")
-              : t("listingPlan.remaining", {
-                  remaining: quota.remaining,
-                  limit: quota.freeLimit,
-                  used: quota.used,
-                  price: quota.priceMonthly,
-                })}
-        </div>
-      )}
-
       <nav
         className="requestTabs"
         aria-label={t(isSelfList ? "newPost.moderation.badge" : "newPost.hero.badge")}
@@ -510,30 +450,7 @@ function NewPostPage() {
         </button>
       </nav>
 
-      {listingBlocked && (
-        <section className="requestCard">
-          <header className="requestCardHeader">
-            <p className="requestEyebrow">{t("listingPlan.limitBadge")}</p>
-            <h2>{t("listingPlan.limitTitle")}</h2>
-            <p>
-              {t("listingPlan.limitText", {
-                price: quota?.priceMonthly ?? 20,
-                limit: quota?.freeLimit ?? 1,
-              })}
-            </p>
-          </header>
-          <div className="requestActions">
-            <Link to="/contact" className="requestPrimaryBtn">
-              {t("listingPlan.upgrade")}
-            </Link>
-            <Link to="/request-listing" className="requestTextLink">
-              {t("listingPlan.useAgent")}
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {step === "details" && !listingBlocked && (
+      {step === "details" && (
         <form className="requestForm" onSubmit={goToConfirm}>
           <section className="requestCard">
             <header className="requestCardHeader">
@@ -920,7 +837,7 @@ function NewPostPage() {
         </form>
       )}
 
-      {step === "confirm" && !listingBlocked && (
+      {step === "confirm" && (
         <form className="requestForm" onSubmit={handleSubmit}>
           <section className="requestCard">
             <header className="requestCardHeader">

@@ -13,12 +13,7 @@ import {
 } from "../lib/uniqueFields.js";
 import { sendEmailChangeCodeEmail } from "../lib/sendEmail.js";
 import { sendAgentStatusEmail } from "../lib/Email.js";
-import {
-  grantPremiumTrialAfterVerification,
-  PLAN_PRICES,
-  restoreAgentListings,
-  TRIAL_DAYS,
-} from "../lib/subscription.js";
+import { restoreAgentListings } from "../lib/agentListings.js";
 import { notificationBadgeWhere } from "../lib/notify.js";
 import { getStoredFileUrl } from "../lib/cloudStorage.js";
 
@@ -597,7 +592,6 @@ export const updateAgentStatus = async (req, res) => {
 
     let updatedUser = user;
     let profile = user.agentProfile;
-    let subscription = null;
 
     if (finalStatus === "APPROVED") {
       profile = await prisma.agentProfile.upsert({
@@ -640,7 +634,6 @@ export const updateAgentStatus = async (req, res) => {
         },
       });
 
-      subscription = await grantPremiumTrialAfterVerification(id);
       await restoreAgentListings(id);
 
       if (application) {
@@ -678,13 +671,11 @@ export const updateAgentStatus = async (req, res) => {
           userId: id,
           type: "AGENT_APPLICATION_APPROVED",
           title: "Agent application approved",
-          message: subscription
-            ? `You're verified. Your ${TRIAL_DAYS}-day Premium trial has started — then $${PLAN_PRICES.PREMIUM}/month. No commission on sales.`
-            : `You're verified. Subscribe to Premium ($${PLAN_PRICES.PREMIUM}/month) in Billing to publish listings.`,
-          link: "/profile",
+          message:
+            "You're verified. You can publish listings and use the agent office.",
+          link: "/agent",
           metadata: {
             applicationId: application?.id || null,
-            subscriptionId: subscription?.id || null,
           },
         },
       });
@@ -729,9 +720,6 @@ export const updateAgentStatus = async (req, res) => {
         username: updatedUser.username,
         status: finalStatus,
         reason,
-        trialGranted: Boolean(subscription?.isTrial),
-        trialEndsAt: subscription?.endDate || subscription?.trialEnd || null,
-        paidUntil: subscription?.isTrial ? null : subscription?.endDate || null,
       });
       emailSent = Boolean(mailed);
     } catch (emailError) {
@@ -746,7 +734,6 @@ export const updateAgentStatus = async (req, res) => {
           : "Agent rejected successfully",
       user: removePassword(updatedUser),
       profile,
-      subscription,
       emailSent,
     });
   } catch (error) {
@@ -998,27 +985,6 @@ export const deleteUser = async (req, res) => {
     });
 
     await prisma.notification.deleteMany({
-      where: {
-        userId: id,
-      },
-    });
-
-    await prisma.payment.updateMany({
-      where: {
-        reviewedBy: id,
-      },
-      data: {
-        reviewedBy: null,
-      },
-    });
-
-    await prisma.payment.deleteMany({
-      where: {
-        userId: id,
-      },
-    });
-
-    await prisma.subscription.deleteMany({
       where: {
         userId: id,
       },

@@ -27,7 +27,6 @@ const sessionFieldsFromUser = (user) => {
     emailVerified: Boolean(user.emailVerified),
     role: user.role,
     status: user.status,
-    premiumTrialClaimed: user.premiumTrialClaimed,
     agentProfile: user.agentProfile || null,
   };
 };

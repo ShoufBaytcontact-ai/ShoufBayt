@@ -1,5 +1,5 @@
 import { nextListingNumber } from "../lib/listingNumber.js";
-import { assertAgentSubscriptionAccess, ensureAgentProfile } from "../lib/subscription.js";
+import { ensureAgentProfile, requireActiveAgent } from "../lib/agentProfile.js";
 import {
   findEligibleLeadAgents,
   MAX_PROPOSALS_PER_REQUEST,
@@ -657,7 +657,7 @@ export const cancelListingRequest = async (req, res) => {
 
 export const getAgentLeads = async (req, res) => {
   try {
-    const access = await assertAgentSubscriptionAccess(req.userId);
+    const access = await requireActiveAgent(req.userId);
 
     if (access?.user?.role === "ADMIN") {
       return res.status(200).json([]);
@@ -739,7 +739,7 @@ export const submitListingProposal = async (req, res) => {
       return res.status(400).json({ message: "Invalid request ID" });
     }
 
-    await assertAgentSubscriptionAccess(req.userId);
+    await requireActiveAgent(req.userId);
 
     const agent = await ensureAgentProfile(req.userId);
 

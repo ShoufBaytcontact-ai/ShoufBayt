@@ -1,9 +1,4 @@
 import prisma from "./prisma.js";
-import {
-  getCurrentSubscription,
-  expireIfNeeded,
-  hasActiveSubscriptionAccess,
-} from "./subscription.js";
 
 export const MAX_NOTIFY_AGENTS = 100;
 export const MAX_PROPOSALS_PER_REQUEST = 10;
@@ -16,8 +11,7 @@ const hasGoodStanding = (agent) => {
 };
 
 /**
- * Verified Premium agents who can receive listing-lead notifications.
- * Inbox itself lists every open request for Premium agents.
+ * Verified agents who can receive listing-lead notifications.
  */
 export const findEligibleLeadAgents = async ({
   limit = MAX_NOTIFY_AGENTS,
@@ -46,11 +40,6 @@ export const findEligibleLeadAgents = async ({
       continue;
     }
     if (!hasGoodStanding(agent)) continue;
-
-    let subscription = await getCurrentSubscription(agent.userId);
-    subscription = await expireIfNeeded(subscription);
-
-    if (!hasActiveSubscriptionAccess(subscription)) continue;
 
     eligible.push(agent);
   }

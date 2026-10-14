@@ -40,13 +40,12 @@ export function readAgentPreview() {
 
 export function AgentUnlockPath({ currentStep = 1 }) {
   const { t } = useTranslation();
-  const step = Math.min(4, Math.max(1, Number(currentStep) || 1));
+  const step = Math.min(3, Math.max(1, Number(currentStep) || 1));
 
   const steps = [
     { id: 1, label: t("agentUnlock.steps.profile") },
-    { id: 2, label: t("agentUnlock.steps.pay") },
-    { id: 3, label: t("agentUnlock.steps.review") },
-    { id: 4, label: t("agentUnlock.steps.live") },
+    { id: 2, label: t("agentUnlock.steps.review") },
+    { id: 3, label: t("agentUnlock.steps.live") },
   ];
 
   return (
@@ -102,9 +101,8 @@ export function AgentPreviewCard({
   );
 }
 
-export function getUnlockStep({ isAgent, isPending, isPaid } = {}) {
-  if (isAgent) return 4;
-  if (isPending && isPaid) return 3;
+export function getUnlockStep({ isAgent, isPending } = {}) {
+  if (isAgent) return 3;
   if (isPending) return 2;
   return 1;
 }

@@ -194,19 +194,6 @@ export const findFullNameOwner = async (fullName, excludeUserId) => {
   return hit ? { id: hit.userId } : null;
 };
 
-export const findTransactionOwner = async (transactionId, excludePaymentId) => {
-  const value = String(transactionId || "").trim();
-  if (!value) return null;
-
-  return prisma.payment.findFirst({
-    where: {
-      transactionId: value,
-      ...(excludePaymentId ? { NOT: { id: excludePaymentId } } : {}),
-    },
-    select: { id: true, userId: true },
-  });
-};
-
 export const assertUsernameAvailable = async (username, excludeUserId) => {
   if (await findUsernameOwner(username, excludeUserId)) {
     throw new UniqueConflictError("Username already exists", "USERNAME_TAKEN");
@@ -263,18 +250,6 @@ export const assertFullNameAvailable = async (fullName, excludeUserId) => {
   }
 };
 
-export const assertTransactionAvailable = async (
-  transactionId,
-  excludePaymentId
-) => {
-  if (await findTransactionOwner(transactionId, excludePaymentId)) {
-    throw new UniqueConflictError(
-      "This transaction ID was already submitted",
-      "TRANSACTION_TAKEN"
-    );
-  }
-};
-
 export const uniqueTargetMessage = (error) => {
   const target = String(
     Array.isArray(error?.meta?.target)
@@ -293,12 +268,6 @@ export const uniqueTargetMessage = (error) => {
   }
   if (target.includes("googleid")) {
     return "This email already has a Google account. Use Continue with Google.";
-  }
-  if (target.includes("stripe")) {
-    return "This billing customer is already linked to another account";
-  }
-  if (target.includes("transaction")) {
-    return "This transaction ID was already submitted";
   }
   if (target.includes("slug")) {
     return "A listing with this address already exists";

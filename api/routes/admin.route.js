@@ -38,16 +38,6 @@ import {
 } from "../controllers/agent.controller.js";
 
 import {
-  getAdminPayments,
-  reviewPayment,
-} from "../controllers/payment.controller.js";
-
-import {
-  getAdminSubscriptions,
-  expireSubscription,
-} from "../controllers/subscription.controller.js";
-
-import {
   getAdminReports,
   reviewPropertyReport,
 } from "../controllers/report.controller.js";
@@ -103,14 +93,6 @@ router.get("/contact-messages", getAdminContactMessages);
 router.put("/contact-messages/:id/status", updateContactMessageStatus);
 router.put("/contact-messages/:id/reply", replyToContactMessage);
 router.delete("/contact-messages/:id", deleteContactMessage);
-
-/* Payments */
-router.get("/payments", getAdminPayments);
-router.patch("/payments/:id/review", reviewPayment);
-
-/* Subscriptions */
-router.get("/subscriptions", getAdminSubscriptions);
-router.patch("/subscriptions/:id/expire", expireSubscription);
 
 /* Reports */
 router.get("/reports", getAdminReports);

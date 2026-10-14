@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./agentBoxRequest.scss";
 import apiRequest from "../../lib/apiRequest";
@@ -23,7 +23,6 @@ const initialForm = {
 
 function AgentRequestBox({ compact = false }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { currentUser, updateUser } = useContext(AuthContext);
 
   const [freshUser, setFreshUser] = useState(currentUser);
@@ -284,7 +283,6 @@ function AgentRequestBox({ compact = false }) {
       setApplication((prev) => ({
         ...(prev || {}),
         status: "PENDING",
-        isPaid: false,
         name: preview.name,
         fullName: preview.name,
         title: preview.title,
@@ -317,7 +315,6 @@ function AgentRequestBox({ compact = false }) {
   const unlockStep = getUnlockStep({
     isAgent,
     isPending: isPending || showHandoff,
-    isPaid: Boolean(application?.isPaid),
   });
 
   const boxClass = (extra = "") =>
@@ -333,8 +330,8 @@ function AgentRequestBox({ compact = false }) {
       </div>
     );
 
-  const goToPremium = () => {
-    navigate("/profile");
+  const closeHandoff = () => {
+    setShowHandoff(false);
   };
 
   const handoffOverlay =
@@ -350,9 +347,9 @@ function AgentRequestBox({ compact = false }) {
           <div className="handoffCopy">
             <p className="eyebrow">{t("agentUnlock.handoff.badge")}</p>
             <h2>{t("agentUnlock.handoff.title")}</h2>
-            <p>{t("agentUnlock.handoff.description", { price: 20 })}</p>
+            <p>{t("agentUnlock.handoff.description")}</p>
             <div className="handoffActions">
-              <button type="button" className="handoffPrimary" onClick={goToPremium}>
+              <button type="button" className="handoffPrimary" onClick={closeHandoff}>
                 {t("agentUnlock.handoff.continue")}
               </button>
               <button
@@ -413,8 +410,6 @@ function AgentRequestBox({ compact = false }) {
   }
 
   if (isPending) {
-    const waitingReview = Boolean(application?.isPaid);
-
     return (
       <>
         {handoffOverlay}
@@ -423,17 +418,11 @@ function AgentRequestBox({ compact = false }) {
             <div>
               <span>{t("agentRequest.pending.badge")}</span>
               <h2>{t("agentRequest.pending.title")}</h2>
-              <p>
-                {waitingReview
-                  ? t("agentRequest.pending.waitingReview")
-                  : t("agentRequest.pending.description")}
-              </p>
+              <p>{t("agentRequest.pending.description")}</p>
             </div>
 
             <Link to="/profile">
-              {waitingReview
-                ? t("agentRequest.pending.viewBilling")
-                : t("agentRequest.pending.completePayment")}
+              {t("agentRequest.pending.viewProfile")}
             </Link>
           </div>
         )}

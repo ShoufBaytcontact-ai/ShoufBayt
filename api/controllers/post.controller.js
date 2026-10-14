@@ -1,8 +1,5 @@
 import prisma from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
-import {
-  assertAgentSubscriptionAccess,
-} from "../lib/subscription.js";
 import { nextListingNumber } from "../lib/listingNumber.js";
 import { purgeListingRequests } from "../lib/purgeListingRequests.js";
 import { publishAgentInventoryListings, publishAllAgentInventoryListings } from "../lib/publishAgentInventory.js";
@@ -1371,19 +1368,6 @@ export const addPost = async (req, res) => {
         message: "Your account cannot create listings.",
         code: "LISTING_CREATE_FORBIDDEN",
       });
-    }
-
-    if (user.role === "AGENT") {
-      try {
-        await assertAgentSubscriptionAccess(tokenUserId);
-      } catch (subscriptionError) {
-        return res.status(subscriptionError.status || 403).json({
-          message:
-            subscriptionError.message ||
-            "Active subscription required to create listings",
-          code: subscriptionError.code || "SUBSCRIPTION_REQUIRED",
-        });
-      }
     }
 
     if (user.role === "USER") {

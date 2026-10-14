@@ -21,8 +21,6 @@ import publicroute from "./routes/public.route.js";
 import contactroute from "./routes/contact.route.js";
 import agentroute from "./routes/agent.route.js";
 import airoute from "./routes/ai.route.js";
-import subscriptionroute from "./routes/subscription.route.js";
-import paymentroute from "./routes/payment.route.js";
 import notificationroute from "./routes/notification.route.js";
 import reportroute from "./routes/report.route.js";
 import reviewroute from "./routes/review.route.js";
@@ -30,14 +28,9 @@ import listingRequestroute from "./routes/listingRequest.route.js";
 import appointmentroute from "./routes/appointment.route.js";
 import ticketroute from "./routes/ticket.route.js";
 import { startVisitReminderJob } from "./lib/visitReminderJob.js";
-import { startAutoRenewJob } from "./lib/autoRenewJob.js";
-import { startSubscriptionExpiryReminderJob } from "./lib/subscriptionExpiryReminderJob.js";
-import { startLaunchPeriodEmailJob } from "./lib/launchPeriodEmailJob.js";
-import { restoreListingsForActiveAgents } from "./lib/subscription.js";
 import { ensurePropertySearchIndexes } from "./lib/ensureSearchIndexes.js";
 import { ensureUniqueIndexes } from "./lib/ensureUniqueIndexes.js";
 import { initRealtime } from "./lib/realtime.js";
-import { stripeWebhook } from "./controllers/payment.controller.js";
 import { isR2Enabled } from "./lib/cloudStorage.js";
 import { shouldBeLoggedIN } from "./middleware/verifyToken.js";
 import { savePhone } from "./controllers/phone.controller.js";
@@ -129,13 +122,6 @@ app.use(
   })
 );
 
-// Stripe needs the raw body for signature verification
-app.post(
-  "/api/payments/webhook/stripe",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
-
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(cookieParser());
@@ -196,8 +182,6 @@ app.post(
 );
 app.use("/api/agents", agentroute);
 app.use("/api/ai", airoute);
-app.use("/api/subscriptions", subscriptionroute);
-app.use("/api/payments", paymentroute);
 app.use("/api/notifications", notificationroute);
 app.use("/api/reports", reportroute);
 app.use("/api/reviews", reviewroute);
@@ -332,12 +316,6 @@ httpServer.listen(PORT, () => {
       : "Image uploads: Cloudflare R2 is missing keys in api/.env"
   );
   startVisitReminderJob();
-  startAutoRenewJob();
-  startSubscriptionExpiryReminderJob();
-  startLaunchPeriodEmailJob();
-  restoreListingsForActiveAgents().catch((error) => {
-    console.error("Failed to restore agent listings on startup:", error);
-  });
   ensurePropertySearchIndexes().catch((error) => {
     console.error("Failed to ensure property search indexes:", error);
   });

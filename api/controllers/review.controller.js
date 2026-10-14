@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma.js";
-import { cleanText, isValidObjectId } from "../lib/subscription.js";
+import { cleanText, isValidObjectId } from "../lib/text.js";
 
 const handleError = (res, error, fallbackMessage) => {
   console.error(fallbackMessage.toUpperCase(), error);

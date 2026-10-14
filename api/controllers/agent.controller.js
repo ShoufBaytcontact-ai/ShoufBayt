@@ -1,11 +1,5 @@
 import prisma from "../lib/prisma.js";
-import {
-  grantPremiumTrialAfterVerification,
-  isLaunchPremiumFree,
-  PLAN_PRICES,
-  restoreAgentListings,
-  TRIAL_DAYS,
-} from "../lib/subscription.js";
+import { restoreAgentListings } from "../lib/agentListings.js";
 import {
   sendAgentApplicationReceivedEmail,
   sendAgentStatusEmail,
@@ -141,55 +135,12 @@ const handleError = (
 
 const decorateAgentApplications = async (applications) => {
   const list = Array.isArray(applications) ? applications : [];
-  const userIds = list.map((item) => item.userId).filter(Boolean);
 
-  const payments = userIds.length
-    ? await prisma.payment.findMany({
-        where: {
-          userId: { in: userIds },
-        },
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
-
-  const latestByUser = {};
-  for (const payment of payments) {
-    if (!latestByUser[payment.userId]) {
-      latestByUser[payment.userId] = payment;
-    }
-  }
-
-  return list.map((item) => {
-    const latestPayment = latestByUser[item.userId] || null;
-    const isPaid =
-      isLaunchPremiumFree() ||
-      payments.some(
-        (payment) => payment.userId === item.userId && payment.status === "SUCCESS"
-      );
-    const paymentStatus = isPaid
-      ? "SUCCESS"
-      : latestPayment?.status || "UNPAID";
-
-    return {
-      ...item,
-      name: item.fullName || item.name || item.user?.username,
-      title: item.agencyName || item.title || "Real Estate Agent",
-      latestPayment,
-      paymentStatus,
-      isPaid,
-      launchPremiumFree: isLaunchPremiumFree(),
-    };
-  });
-};
-
-const getLatestSuccessfulPayment = async (userId) => {
-  return prisma.payment.findFirst({
-    where: {
-      userId,
-      status: "SUCCESS",
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  return list.map((item) => ({
+    ...item,
+    name: item.fullName || item.name || item.user?.username,
+    title: item.agencyName || item.title || "Real Estate Agent",
+  }));
 };
 
 const validateMongoId = (
@@ -1198,16 +1149,6 @@ export const approveAgentRequest = async (req, res) => {
       });
     }
 
-    const paid = await getLatestSuccessfulPayment(application.userId);
-
-    if (!paid && !isLaunchPremiumFree()) {
-      return res.status(400).json({
-        message:
-          "This applicant has not completed payment yet. Approve their payment on the Payments tab first, then approve this request.",
-        code: "PAYMENT_REQUIRED",
-      });
-    }
-
     if (application.user.role === "ADMIN") {
       return res.status(400).json({
         message: "Admin accounts cannot be converted to agents",
@@ -1342,23 +1283,6 @@ export const approveAgentRequest = async (req, res) => {
             },
           });
 
-        /*
-         * IMPORTANT:
-         *
-         * grantPremiumTrialAfterVerification must use the
-         * `tx` client passed here instead of using the global
-         * `prisma` client internally.
-         */
-        const subscription =
-          await grantPremiumTrialAfterVerification(
-            application.userId,
-            tx
-          );
-
-        /*
-         * restoreAgentListings must also use the passed
-         * transaction client internally.
-         */
         await restoreAgentListings(
           application.userId,
           tx
@@ -1370,15 +1294,13 @@ export const approveAgentRequest = async (req, res) => {
             type: "AGENT_APPLICATION_APPROVED",
             title: "Agent application approved",
 
-            message: subscription
-              ? `You're verified. Your ${TRIAL_DAYS}-day Premium trial has started — then $${PLAN_PRICES.PREMIUM}/month. No commission on sales.`
-              : `You're verified. Subscribe to Premium ($${PLAN_PRICES.PREMIUM}/month) in Billing to publish listings.`,
+            message:
+              "You're verified. You can publish listings and use the agent office.",
 
-            link: "/profile",
+            link: "/agent",
 
             metadata: {
               applicationId,
-              subscriptionId: subscription?.id || null,
             },
           },
         });
@@ -1387,7 +1309,6 @@ export const approveAgentRequest = async (req, res) => {
           profile,
           user: updatedUser,
           application: updatedApplication,
-          subscription,
         };
       },
       {
@@ -1416,19 +1337,6 @@ export const approveAgentRequest = async (req, res) => {
         to: result.user.email,
         username: result.user.username,
         status: "APPROVED",
-
-        trialGranted: Boolean(
-          result.subscription?.isTrial
-        ),
-
-        trialEndsAt:
-          result.subscription?.endDate ||
-          result.subscription?.trialEnd ||
-          null,
-
-        paidUntil: result.subscription?.isTrial
-          ? null
-          : result.subscription?.endDate || null,
       });
 
       emailSent = Boolean(mailed);

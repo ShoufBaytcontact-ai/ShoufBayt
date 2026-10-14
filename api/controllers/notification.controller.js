@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma.js";
-import { cleanText, isValidObjectId } from "../lib/subscription.js";
+import { cleanText, isValidObjectId } from "../lib/text.js";
 import { notificationWhereForRole } from "../lib/notify.js";
 
 const handleError = (res, error, fallbackMessage) => {

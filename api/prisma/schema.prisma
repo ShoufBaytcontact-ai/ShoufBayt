@@ -31,33 +31,6 @@ enum PropertyStatus {
   ARCHIVED
 }
 
-enum SubscriptionPlan {
-  PREMIUM
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  GRACE
-  INACTIVE
-  EXPIRED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCESS
-  FAILED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  CARD
-  BANK_TRANSFER
-  OMT
-  BOB
-  WHISH
-}
-
 enum AgentApplicationStatus {
   PENDING
   APPROVED
@@ -105,15 +78,11 @@ enum VerificationCodeType {
 }
 
 enum NotificationType {
-  SUBSCRIPTION_EXPIRING
-  SUBSCRIPTION_EXPIRED
   AGENT_APPLICATION_APPROVED
   AGENT_APPLICATION_REJECTED
   PROPERTY_APPROVED
   PROPERTY_REJECTED
   CONTACT_REPLY
-  PAYMENT_CONFIRMED
-  PAYMENT_FAILED
   NEW_MESSAGE
   LISTING_REQUEST
   LISTING_REQUEST_ACCEPTED
@@ -193,15 +162,8 @@ model User {
 
   emailVerified Boolean @default(false)
 
-  /** One-time 30-day Premium trial already granted (after verification only) */
-  premiumTrialClaimed Boolean @default(false)
-
   /** Welcome email sent after the first successful sign-in */
   welcomeEmailSentAt DateTime?
-
-  /** Stripe customer + default card for automatic Premium renewals */
-  stripeCustomerId       String?
-  stripePaymentMethodId  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -221,9 +183,6 @@ model User {
 
   messages Message[]
 
-  subscriptions    Subscription[]
-  payments         Payment[]
-  reviewedPayments Payment[] @relation("PaymentReviewer")
   notifications    Notification[]
   contactMessages  ContactMessage[]
   verificationCodes VerificationCode[]
@@ -491,9 +450,6 @@ model Property {
   views       Int       @default(0)
   publishedAt DateTime?
 
-  /** Hidden after grace ended; restored when agent renews Premium */
-  pausedBySubscription Boolean @default(false)
-
   rejectionReason String?
   moderationNote  String?
   reviewedAt      DateTime?
@@ -716,73 +672,6 @@ model ContactMessage {
   @@index([status])
 }
 
-// ─── Subscription & Payment ───────────────────────────────────────────────────
-
-model Subscription {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  plan   SubscriptionPlan   @default(PREMIUM)
-  status SubscriptionStatus @default(EXPIRED)
-
-  /** True when this period is the post-verification 30-day Premium trial */
-  isTrial Boolean @default(false)
-
-  trialStart DateTime?
-  trialEnd   DateTime?
-
-  startDate   DateTime?
-  endDate     DateTime?
-  graceEndsAt DateTime?
-  inactiveAt  DateTime?
-
-  autoRenew Boolean @default(false)
-  isCurrent Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  payments Payment[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([userId, isCurrent])
-  @@index([status, endDate])
-}
-
-model Payment {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  subscriptionId String?       @db.ObjectId
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-
-  amount   Float
-  currency String @default("USD")
-
-  method PaymentMethod
-  status PaymentStatus @default(PENDING)
-
-  transactionId String?
-  proofUrl      String?
-  adminNotes    String?
-
-  reviewedBy String?   @db.ObjectId
-  reviewer   User?     @relation("PaymentReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
-  reviewedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([subscriptionId])
-  @@index([status])
-  @@index([reviewedBy])
-}
-
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 model Notification {
@@ -796,7 +685,7 @@ model Notification {
   message String
   link    String?
 
-  // e.g. { propertyId, subscriptionId, paymentId }
+  // e.g. { propertyId }
   metadata Json?
 
   isRead Boolean @default(false)

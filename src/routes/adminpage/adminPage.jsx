@@ -68,7 +68,6 @@ function AdminPage() {
 
   const [section, setSection] = useState("desk");
   const [peoplePane, setPeoplePane] = useState("users");
-  const [billingPane, setBillingPane] = useState("payments");
   const [supportPane, setSupportPane] = useState("inbox");
 
   const [userSearch, setUserSearch] = useState("");
@@ -294,9 +293,6 @@ function AdminPage() {
     if (sectionParam === "people" && paneParam) {
       setPeoplePane(paneParam);
     }
-    if (sectionParam === "billing" && paneParam) {
-      setBillingPane(paneParam);
-    }
     if (sectionParam === "support" && paneParam) {
       setSupportPane(paneParam === "live" ? "inbox" : paneParam);
     }
@@ -429,10 +425,6 @@ function AdminPage() {
 
     if (nextSection === "people" && pane) {
       setPeoplePane(pane);
-    }
-
-    if (nextSection === "billing" && pane) {
-      setBillingPane(pane);
     }
 
     if (nextSection === "support" && pane) {
@@ -1046,11 +1038,9 @@ e.target.reset();
     }
   };
 
-  const pendingPaymentsCount = Number(stats?.pendingPaymentsCount || 0);
   const pendingReportsCount = Number(stats?.pendingReportsCount || 0);
   const unlockQueue = agentRequestsCount;
   const supportQueue = openMessagesCount + pendingReportsCount;
-  const billingQueue = pendingPaymentsCount;
 
   if (loading) {
     return (
@@ -1083,7 +1073,6 @@ e.target.reset();
     { id: "people", label: t("admin.tabs.people"), count: 0 },
     { id: "listings", label: t("admin.tabs.listings"), count: pendingListingsCount + openListingRequestCount },
     { id: "unlock", label: t("admin.tabs.unlock"), count: unlockQueue },
-    { id: "billing", label: t("admin.tabs.billing"), count: billingQueue },
     { id: "support", label: t("admin.tabs.support"), count: supportQueue },
   ];
 
@@ -1191,11 +1180,6 @@ e.target.reset();
               <strong>{unlockQueue}</strong>
               <p>{t("admin.desk.unlockHint")}</p>
             </button>
-            <button type="button" onClick={() => openSection("billing", "payments")}>
-              <span>{t("admin.desk.payments")}</span>
-              <strong>{billingQueue}</strong>
-              <p>{t("admin.desk.paymentsHint")}</p>
-            </button>
             <button type="button" onClick={() => openSection("support", "inbox")}>
               <span>{t("admin.desk.support")}</span>
               <strong>{openMessagesCount}</strong>
@@ -1231,10 +1215,6 @@ e.target.reset();
             <div>
               <span>{t("admin.stats.totalPosts")}</span>
               <strong>{Number(stats?.postsCount ?? posts.length)}</strong>
-            </div>
-            <div>
-              <span>{t("admin.stats.subscriptions")}</span>
-              <strong>{Number(stats?.subscriptionsCount ?? 0)}</strong>
             </div>
           </section>
 
@@ -2357,54 +2337,6 @@ e.target.reset();
         </section>
       )}
 
-      {section === "billing" && (
-        <nav className="adminSubTabs">
-          <button
-            type="button"
-            className={billingPane === "payments" ? "isActive" : ""}
-            onClick={() => setBillingPane("payments")}
-          >
-            {t("admin.tabs.payments")}
-            {billingQueue > 0 ? <span>{billingQueue}</span> : null}
-          </button>
-          <button
-            type="button"
-            className={billingPane === "subscriptions" ? "isActive" : ""}
-            onClick={() => setBillingPane("subscriptions")}
-          >
-            {t("admin.tabs.subscriptions")}
-          </button>
-        </nav>
-      )}
-
-      {section === "billing" && billingPane === "payments" && (
-        <section className="adminSection">
-          <div className="sectionHeader">
-            <div>
-              <span>{t("admin.tabs.payments", { defaultValue: "Payments" })}</span>
-              <h2>{t("admin.tabs.payments")}</h2>
-              <p>{t("admin.desk.paymentsHint")}</p>
-            </div>
-          </div>
-          <AdminBillingPanel section="payments" />
-        </section>
-      )}
-
-      {section === "billing" && billingPane === "subscriptions" && (
-        <section className="adminSection">
-          <div className="sectionHeader">
-            <div>
-              <span>
-                {t("admin.tabs.subscriptions", { defaultValue: "Subscriptions" })}
-              </span>
-              <h2>{t("admin.tabs.subscriptions")}</h2>
-              <p>{t("admin.desk.subscriptionsHint")}</p>
-            </div>
-          </div>
-          <AdminBillingPanel section="subscriptions" />
-        </section>
-      )}
-
       {section === "support" && supportPane === "reports" && (
         <section className="adminSection">
           <div className="sectionHeader">
@@ -2418,7 +2350,7 @@ e.target.reset();
               <p>{t("admin.desk.reportsHint")}</p>
             </div>
           </div>
-          <AdminBillingPanel section="reports" />
+          <AdminBillingPanel />
         </section>
       )}
     </main>

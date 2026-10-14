@@ -114,16 +114,6 @@ function AdminAgentRequests({ onRequestUpdated }) {
   const handleApprove = async (request) => {
     const agentName =
       request.name || request.user?.username || t("adminAgentRequests.fallback.thisUser");
-    const isPaid =
-      request.isPaid ||
-      String(request.paymentStatus || request.latestPayment?.status || "").toUpperCase() ===
-        "SUCCESS";
-
-    if (!isPaid) {
-      alert(t("adminAgentRequests.errors.paymentRequired"));
-      return;
-    }
-
     const confirmApprove = window.confirm(
       t("adminAgentRequests.confirms.approve", { name: agentName })
     );
@@ -239,32 +229,6 @@ function AdminAgentRequests({ onRequestUpdated }) {
     });
   };
 
-  const getPaymentStatus = (request) => {
-    return String(
-      request.paymentStatus || request.latestPayment?.status || "UNPAID"
-    ).toUpperCase();
-  };
-
-  const getPaymentLabel = (status) => {
-    const value = (status || "UNPAID").toUpperCase();
-
-    if (value === "SUCCESS") {
-      return t("adminAgentRequests.status.paid", { defaultValue: "PAID" });
-    }
-
-    if (value === "PENDING") {
-      return t("adminAgentRequests.status.paymentPending", {
-        defaultValue: "PAYMENT PENDING",
-      });
-    }
-
-    if (value === "FAILED") {
-      return t("adminAgentRequests.status.failed", { defaultValue: "FAILED" });
-    }
-
-    return t("adminAgentRequests.status.unpaid", { defaultValue: "UNPAID" });
-  };
-
   const getStatusLabel = (status) => {
     const value = (status || "PENDING").toUpperCase();
 
@@ -360,9 +324,6 @@ function AdminAgentRequests({ onRequestUpdated }) {
             const status = (request.status || "PENDING").toUpperCase();
             const isPending = status === "PENDING";
             const isWorking = actionLoading === request.id;
-            const paymentStatus = getPaymentStatus(request);
-            const isPaid =
-              request.isPaid || paymentStatus === "SUCCESS";
             const displayName =
               request.name ||
               request.fullName ||
@@ -411,13 +372,6 @@ function AdminAgentRequests({ onRequestUpdated }) {
                         t("adminAgentRequests.fallback.noLocation")}
                     </b>
                   </div>
-
-                  <div>
-                    <span>{t("adminAgentRequests.labels.payment")}</span>
-                    <b className={`paymentBadge ${paymentStatus.toLowerCase()}`}>
-                      {getPaymentLabel(paymentStatus)}
-                    </b>
-                  </div>
                 </div>
 
                 <div className="requestBio">
@@ -451,19 +405,12 @@ function AdminAgentRequests({ onRequestUpdated }) {
                     <>
                       <button
                         type="button"
-                        disabled={isWorking || !isPaid}
-                        title={
-                          isPaid
-                            ? undefined
-                            : t("adminAgentRequests.errors.paymentRequired")
-                        }
+                        disabled={isWorking}
                         onClick={() => handleApprove(request)}
                       >
                         {isWorking
                           ? t("adminAgentRequests.buttons.working")
-                          : isPaid
-                            ? t("adminAgentRequests.buttons.approve")
-                            : t("adminAgentRequests.buttons.waitForPayment")}
+                          : t("adminAgentRequests.buttons.approve")}
                       </button>
 
                       <button

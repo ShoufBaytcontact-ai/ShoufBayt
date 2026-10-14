@@ -220,11 +220,5 @@ export const ensureUniqueIndexes = async () => {
   await createSparseUniqueIndex("User", "User_phoneKey_unique", {
     phoneKey: 1,
   });
-  await createSparseUniqueIndex("User", "User_stripeCustomerId_unique", {
-    stripeCustomerId: 1,
-  });
-  await createSparseUniqueIndex("Payment", "Payment_transactionId_unique", {
-    transactionId: 1,
-  });
   await ensureGoogleIdUniqueIndex();
 };

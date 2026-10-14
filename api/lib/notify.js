@@ -6,8 +6,6 @@ export const AGENT_ONLY_NOTIFICATION_TYPES = [
   "LISTING_LEAD",
   "LISTING_PROPOSAL_ACCEPTED",
   "LISTING_PROPOSAL_REJECTED",
-  "SUBSCRIPTION_EXPIRING",
-  "SUBSCRIPTION_EXPIRED",
 ];
 
 /** Alerts that belong to the homeowner who submitted a listing request. */

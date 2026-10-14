@@ -1,11 +1,10 @@
 import prisma from "../lib/prisma.js";
 import { createNotification } from "../lib/notify.js";
 import {
-  grantPremiumTrialAfterVerification,
   archiveListingsForFormerAgent,
   restoreAgentListings,
-  ensureAgentProfile,
-} from "../lib/subscription.js";
+} from "../lib/agentListings.js";
+import { ensureAgentProfile } from "../lib/agentProfile.js";
 import {
   assertPhoneAvailable,
   assertFullNameAvailable,
@@ -298,10 +297,6 @@ export const getAdminStats = async (req, res) => {
       reportsCount,
       pendingReportsCount,
 
-      allSubscriptionsCount,
-      subscriptionsCount,
-      paymentsCount,
-      pendingPaymentsCount,
       notificationsCount,
     ] = await Promise.all([
       prisma.user.count(),
@@ -436,23 +431,6 @@ export const getAdminStats = async (req, res) => {
         },
       }),
 
-      prisma.subscription.count(),
-
-      prisma.subscription.count({
-        where: {
-          isCurrent: true,
-          status: {
-            in: ["ACTIVE", "GRACE"],
-          },
-        },
-      }),
-
-      prisma.payment.count(),
-      prisma.payment.count({
-        where: {
-          status: "PENDING",
-        },
-      }),
       prisma.notification.count(),
     ]);
 
@@ -499,10 +477,6 @@ export const getAdminStats = async (req, res) => {
       pendingReportsCount,
       openReportsCount: pendingReportsCount,
 
-      allSubscriptionsCount,
-      subscriptionsCount,
-      paymentsCount,
-      pendingPaymentsCount,
       notificationsCount,
 
       // Compatibility with your older frontend
@@ -567,8 +541,6 @@ export const getAdminUsers = async (req, res) => {
             agentReviews: true,
             propertyReports: true,
             agentApplications: true,
-            subscriptions: true,
-            payments: true,
           },
         },
       },
@@ -1485,27 +1457,6 @@ export const deleteAdminUser = async (req, res) => {
       },
     });
 
-    await prisma.payment.updateMany({
-      where: {
-        reviewedBy: id,
-      },
-      data: {
-        reviewedBy: null,
-      },
-    });
-
-    await prisma.payment.deleteMany({
-      where: {
-        userId: id,
-      },
-    });
-
-    await prisma.subscription.deleteMany({
-      where: {
-        userId: id,
-      },
-    });
-
     await prisma.verificationCode.deleteMany({
       where: {
         userId: id,
@@ -1949,24 +1900,6 @@ export const reviewAgentApplication = async (
     }
 
     if (status === "APPROVED") {
-      const paidPayment = await prisma.payment.findFirst({
-        where: {
-          userId: application.userId,
-          status: "SUCCESS",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      if (!paidPayment) {
-        return res.status(400).json({
-          message:
-            "This applicant has not completed payment yet. Approve their payment on the Payments tab first, then approve this request.",
-          code: "PAYMENT_REQUIRED",
-        });
-      }
-
       await assertPhoneAvailable(application.phone, application.userId);
       await assertFullNameAvailable(application.fullName, application.userId);
 
@@ -2034,10 +1967,6 @@ export const reviewAgentApplication = async (
           },
         });
 
-      const subscription = await grantPremiumTrialAfterVerification(
-        application.userId
-      );
-
       await restoreAgentListings(application.userId);
 
       const updatedApplication =
@@ -2082,7 +2011,6 @@ export const reviewAgentApplication = async (
         application: updatedApplication,
         user: updatedUser,
         profile,
-        subscription,
       });
     }
 
@@ -2381,8 +2309,6 @@ export const createAdminAgent = async (
       });
     }
 
-    const subscription = await grantPremiumTrialAfterVerification(userId);
-
     await restoreAgentListings(userId);
 
     return res.status(201).json({
@@ -2434,7 +2360,6 @@ export const createAdminAgent = async (
       updatedAt: profile.updatedAt,
 
       profile,
-      subscription,
     });
   } catch (error) {
     return handleError(
